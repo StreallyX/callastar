@@ -200,7 +200,7 @@ async function main() {
 
   console.log('\n📋 Creating Phase 2 data...');
 
-  // Create admin settings
+  // Create admin settings (legacy - kept for backward compatibility)
   const adminSettings = await prisma.adminSettings.upsert({
     where: { key: 'platformCommissionRate' },
     update: {},
@@ -211,6 +211,26 @@ async function main() {
   });
 
   console.log('✅ Admin settings created');
+
+  // Create platform settings (new unified settings model)
+  const existingPlatformSettings = await prisma.platformSettings.findFirst();
+  
+  if (!existingPlatformSettings) {
+    const platformSettings = await prisma.platformSettings.create({
+      data: {
+        platformFeePercentage: 15.0, // 15%
+        platformFeeFixed: null, // No fixed fee by default
+        minimumPayoutAmount: 10.0, // 10 EUR minimum
+        holdingPeriodDays: 7, // 7 days holding period
+        payoutMode: 'AUTOMATIC',
+        payoutFrequencyOptions: ['DAILY', 'WEEKLY', 'MONTHLY'],
+        currency: 'EUR',
+      },
+    });
+    console.log('✅ Platform settings created with defaults');
+  } else {
+    console.log('✅ Platform settings already exist, skipping...');
+  }
 
   // Create call requests
   const callRequest1 = await prisma.callRequest.create({

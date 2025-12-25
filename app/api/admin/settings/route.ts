@@ -1,14 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import prisma from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { 
+  getPlatformSettings, 
+  updatePlatformSettings, 
+  formatSettingsResponse,
+  PlatformSettingsUpdate 
+} from '@/lib/settings';
+import { PayoutMode } from '@prisma/client';
 
-// Schema validation
+// Schema validation for update
 const updateSettingsSchema = z.object({
-  platformCommissionRate: z.number().min(0).max(100),
+  platformFeePercentage: z.number().min(0).max(100).optional(),
+  platformFeeFixed: z.number().min(0).nullable().optional(),
+  minimumPayoutAmount: z.number().min(0).optional(),
+  holdingPeriodDays: z.number().int().min(0).optional(),
+  payoutMode: z.enum([PayoutMode.AUTOMATIC, PayoutMode.MANUAL]).optional(),
+  payoutFrequencyOptions: z.array(z.string()).optional(),
+  currency: z.string().optional(),
 });
 
-// GET /api/admin/settings - Get all settings
+/**
+ * GET /api/admin/settings
+ * Fetch current platform settings
+ * 
+ * @returns Platform settings with all configuration parameters
+ */
 export async function GET(request: NextRequest) {
   try {
     // Verify authentication and admin role
@@ -25,29 +42,33 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const settings = await prisma.adminSettings.findMany();
-
-    // Convert to key-value object
-    const settingsObj = settings.reduce((acc, setting) => {
-      acc[setting.key] = setting.value;
-      return acc;
-    }, {} as Record<string, string>);
+    // Fetch settings (creates defaults if not exist)
+    const settings = await getPlatformSettings();
+    const formattedSettings = formatSettingsResponse(settings);
 
     return NextResponse.json({ 
-      settings: {
-        platformCommissionRate: Number(settingsObj.platformCommissionRate || 10)
-      }
+      success: true,
+      settings: formattedSettings 
     });
   } catch (error) {
-    console.error('Error fetching settings:', error);
+    console.error('Error fetching platform settings:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération des paramètres' },
+      { 
+        success: false,
+        error: 'Erreur lors de la récupération des paramètres' 
+      },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/admin/settings - Update a setting
+/**
+ * PUT /api/admin/settings
+ * Update platform settings (admin only)
+ * 
+ * @body Partial settings object with fields to update
+ * @returns Updated platform settings
+ */
 export async function PUT(request: NextRequest) {
   try {
     // Verify authentication and admin role
@@ -68,37 +89,46 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const validatedData = updateSettingsSchema.parse(body);
 
-    // Upsert platformCommissionRate setting
-    const setting = await prisma.adminSettings.upsert({
-      where: {
-        key: 'platformCommissionRate',
-      },
-      update: {
-        value: String(validatedData.platformCommissionRate),
-      },
-      create: {
-        key: 'platformCommissionRate',
-        value: String(validatedData.platformCommissionRate),
-      },
-    });
+    // Update settings
+    const updatedSettings = await updatePlatformSettings(
+      validatedData as PlatformSettingsUpdate
+    );
+    const formattedSettings = formatSettingsResponse(updatedSettings);
 
     return NextResponse.json({ 
-      settings: {
-        platformCommissionRate: Number(setting.value)
-      }
+      success: true,
+      settings: formattedSettings,
+      message: 'Paramètres mis à jour avec succès'
     });
   } catch (error) {
-    console.error('Error updating setting:', error);
+    console.error('Error updating platform settings:', error);
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Données invalides', details: error.issues },
+        { 
+          success: false,
+          error: 'Données invalides', 
+          details: error.issues 
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: error.message 
+        },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour du paramètre' },
+      { 
+        success: false,
+        error: 'Erreur lors de la mise à jour des paramètres' 
+      },
       { status: 500 }
     );
   }

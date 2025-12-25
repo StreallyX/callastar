@@ -60,6 +60,7 @@ enum NotificationType {
   SYSTEM
 }
 
+// User's payout schedule enums
 enum PayoutSchedule {
   DAILY
   WEEKLY
@@ -72,6 +73,63 @@ enum PayoutAction {
   UNBLOCKED
   COMPLETED
   FAILED
+}
+
+// Payment system enums
+enum PayoutMode {
+  AUTOMATIC
+  MANUAL
+}
+
+enum PayoutFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum TransactionEventType {
+  PAYMENT_CREATED
+  PAYMENT_SUCCEEDED
+  PAYMENT_FAILED
+  REFUND_CREATED
+  REFUND_SUCCEEDED
+  REFUND_FAILED
+  PAYOUT_CREATED
+  PAYOUT_PAID
+  PAYOUT_FAILED
+  TRANSFER_CREATED
+  TRANSFER_SUCCEEDED
+  TRANSFER_FAILED
+  WEBHOOK_RECEIVED
+  DISPUTE_CREATED
+  DISPUTE_UPDATED
+  DISPUTE_CLOSED
+}
+
+enum EntityType {
+  PAYMENT
+  PAYOUT
+  REFUND
+  DISPUTE
+  TRANSFER
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum DisputeStatus {
+  WARNING_NEEDS_RESPONSE
+  WARNING_UNDER_REVIEW
+  WARNING_CLOSED
+  NEEDS_RESPONSE
+  UNDER_REVIEW
+  CHARGE_REFUNDED
+  WON
+  LOST
 }
 
 // Models
@@ -144,22 +202,28 @@ model Creator {
   stripeAccountId    String?
   isStripeOnboarded  Boolean         @default(false)
   
-  // Payout settings
+  // User's payout settings (from feature branch)
   payoutSchedule     PayoutSchedule  @default(WEEKLY)
   payoutMinimum      Decimal         @default(10) @db.Decimal(10, 2)
   isPayoutBlocked    Boolean         @default(false)
   payoutBlockReason  String?
   
+  // Payment system fields
+  payoutBlocked        Boolean  @default(false)
+  payoutBlockedReason  String?  @db.Text
+  
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 
   // Relations
-  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  callOffers         CallOffer[]
-  callRequestsReceived CallRequest[] @relation("CreatorRequests")
-  reviewsReceived    Review[]        @relation("CreatorReviews")
-  payouts            Payout[]
-  payoutAuditLogs    PayoutAuditLog[]
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  callOffers           CallOffer[]
+  callRequestsReceived CallRequest[]       @relation("CreatorRequests")
+  reviewsReceived      Review[]            @relation("CreatorReviews")
+  payouts              Payout[]
+  payoutAuditLogs      PayoutAuditLog[]
+  payoutScheduleNew    PayoutScheduleNew?
+  refundsInitiated     Refund[]            @relation("RefundInitiator")
 
   @@index([userId])
   @@index([isPayoutBlocked])
@@ -217,6 +281,8 @@ model Payment {
   status                 PaymentStatus @default(PENDING)
   platformFee            Decimal       @db.Decimal(10, 2)
   creatorAmount          Decimal       @db.Decimal(10, 2)
+  refundedAmount         Decimal       @db.Decimal(10, 2) @default(0)
+  disputeStatus          String?
   createdAt              DateTime      @default(now())
   
   // Payout tracking fields
@@ -226,7 +292,10 @@ model Payment {
   payoutDate             DateTime?     // Date when payout was actually transferred
 
   // Relations
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking        Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  refunds        Refund[]
+  disputes       Dispute[]
+  transactionLogs TransactionLog[] @relation("PaymentLogs")
 
   @@index([stripePaymentIntentId])
   @@index([payoutStatus])
@@ -295,10 +364,14 @@ model Payout {
   amount          Decimal      @db.Decimal(10, 2)
   stripePayoutId  String?
   status          PayoutStatus @default(PENDING)
+  failureReason   String?      @db.Text
+  retriedCount    Int          @default(0)
   createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   // Relations
-  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator         Creator          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  transactionLogs TransactionLog[] @relation("PayoutLogs")
 
   @@index([creatorId])
   @@index([status])
@@ -313,6 +386,7 @@ model AdminSettings {
   @@index([key])
 }
 
+// User's audit log model
 model PayoutAuditLog {
   id               String        @id @default(cuid())
   creatorId        String
@@ -332,4 +406,112 @@ model PayoutAuditLog {
   @@index([creatorId])
   @@index([action])
   @@index([createdAt])
+}
+
+// Platform-wide financial settings (singleton pattern - should have only one row)
+model PlatformSettings {
+  id                      String   @id @default(cuid())
+  platformFeePercentage   Decimal  @db.Decimal(5, 2) // e.g., 15.00 for 15%
+  platformFeeFixed        Decimal? @db.Decimal(10, 2) // Optional fixed fee in addition to percentage
+  minimumPayoutAmount     Decimal  @db.Decimal(10, 2) // e.g., 10.00 EUR
+  holdingPeriodDays       Int      // e.g., 7 days
+  payoutMode              PayoutMode @default(AUTOMATIC)
+  payoutFrequencyOptions  String[] // e.g., ["DAILY", "WEEKLY", "MONTHLY"]
+  currency                String   @default("EUR")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+// Comprehensive audit log for all financial transactions
+model TransactionLog {
+  id              String               @id @default(cuid())
+  eventType       TransactionEventType
+  entityType      EntityType
+  entityId        String               // ID of the related entity (payment, payout, refund, etc.)
+  stripeEventId   String?              // Stripe event ID for webhook events
+  amount          Decimal?             @db.Decimal(10, 2)
+  currency        String?
+  status          String?
+  metadata        Json?                // Additional structured data
+  errorMessage    String?              @db.Text
+  createdAt       DateTime             @default(now())
+
+  // Optional relations
+  paymentId       String?
+  payoutId        String?
+  refundId        String?
+
+  payment         Payment?  @relation("PaymentLogs", fields: [paymentId], references: [id], onDelete: SetNull)
+  payout          Payout?   @relation("PayoutLogs", fields: [payoutId], references: [id], onDelete: SetNull)
+  refund          Refund?   @relation("RefundLogs", fields: [refundId], references: [id], onDelete: SetNull)
+
+  @@index([eventType])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@index([stripeEventId])
+}
+
+// Refund tracking
+model Refund {
+  id              String       @id @default(cuid())
+  paymentId       String
+  amount          Decimal      @db.Decimal(10, 2)
+  currency        String       @default("EUR")
+  reason          String       @db.Text
+  status          RefundStatus @default(PENDING)
+  stripeRefundId  String?      @unique
+  initiatedById   String       // Admin/Creator who initiated the refund
+  metadata        Json?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  payment         Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  initiatedBy     Creator          @relation("RefundInitiator", fields: [initiatedById], references: [id])
+  transactionLogs TransactionLog[] @relation("RefundLogs")
+
+  @@index([paymentId])
+  @@index([status])
+  @@index([stripeRefundId])
+}
+
+// Dispute/Chargeback tracking
+model Dispute {
+  id                String        @id @default(cuid())
+  paymentId         String
+  stripeDisputeId   String        @unique
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("EUR")
+  reason            String
+  status            DisputeStatus
+  evidenceDetails   Json?         // Store evidence submission details
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  payment           Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([status])
+  @@index([stripeDisputeId])
+}
+
+// Per-creator payout scheduling (renamed to avoid conflict with enum)
+model PayoutScheduleNew {
+  id              String          @id @default(cuid())
+  creatorId       String          @unique
+  mode            PayoutMode      @default(AUTOMATIC)
+  frequency       PayoutFrequency @default(WEEKLY)
+  nextPayoutDate  DateTime?
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  creator         Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId])
+  @@index([nextPayoutDate])
+  @@index([isActive])
 }
