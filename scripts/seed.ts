@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-async function main() {
+const prisma = new PrismaClient();
 
-  const prisma = new PrismaClient();
+async function main() {
   console.log('🌱 Seeding database...');
 
   // Hash password for test users
@@ -337,5 +337,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    //await prisma.$disconnect();
+    await prisma.$disconnect();
   });
