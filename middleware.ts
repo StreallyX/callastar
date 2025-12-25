@@ -33,10 +33,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protect dashboard routes
+  // Protect dashboard routes - CRITICAL: All dashboard routes require authentication
   if (pathname.startsWith('/dashboard')) {
     if (!user) {
-      return NextResponse.redirect(new URL('/auth/login', request.url));
+      // No valid authentication - redirect to login immediately
+      const response = NextResponse.redirect(new URL('/auth/login', request.url));
+      // Clear any invalid auth cookies
+      response.cookies.delete('auth-token');
+      return response;
     }
 
     // Protect admin dashboard

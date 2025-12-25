@@ -25,6 +25,7 @@ export default function AdminDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState('');
   const [payoutAmount, setPayoutAmount] = useState('');
@@ -40,19 +41,23 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       // Get user data
-      const userResponse = await fetch('/api/auth/me');
+      const userResponse = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
       if (!userResponse.ok) {
-        router.push('/auth/login');
+        // User is not authenticated, redirect immediately
+        window.location.href = '/auth/login';
         return;
       }
       const userData = await userResponse.json();
       
       if (userData?.user?.role !== 'ADMIN') {
-        router.push('/dashboard/user');
+        window.location.href = '/dashboard/user';
         return;
       }
       
       setUser(userData?.user);
+      setAuthChecked(true);
 
       // Get dashboard data
       const dashboardResponse = await fetch('/api/admin/dashboard');
@@ -161,7 +166,8 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) {
+  // Don't render anything until authentication is verified
+  if (!authChecked || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />

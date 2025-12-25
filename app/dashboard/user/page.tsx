@@ -20,6 +20,7 @@ export default function UserDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [callRequests, setCallRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
@@ -32,13 +33,17 @@ export default function UserDashboard() {
   const fetchData = async () => {
     try {
       // Get user data
-      const userResponse = await fetch('/api/auth/me');
+      const userResponse = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
       if (!userResponse.ok) {
-        router.push('/auth/login');
+        // User is not authenticated, redirect immediately
+        window.location.href = '/auth/login';
         return;
       }
       const userData = await userResponse.json();
       setUser(userData?.user);
+      setAuthChecked(true);
 
       // Get bookings
       const bookingsResponse = await fetch('/api/bookings');
@@ -118,7 +123,8 @@ export default function UserDashboard() {
     }
   };
 
-  if (loading) {
+  // Don't render anything until authentication is verified
+  if (!authChecked || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />

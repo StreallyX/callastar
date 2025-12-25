@@ -25,6 +25,7 @@ export default function CreatorDashboard() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creatingOffer, setCreatingOffer] = useState(false);
   const [stripeOnboarding, setStripeOnboarding] = useState({
@@ -48,19 +49,23 @@ export default function CreatorDashboard() {
   const fetchData = async () => {
     try {
       // Get user data
-      const userResponse = await fetch('/api/auth/me');
+      const userResponse = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
       if (!userResponse.ok) {
-        router.push('/auth/login');
+        // User is not authenticated, redirect immediately
+        window.location.href = '/auth/login';
         return;
       }
       const userData = await userResponse.json();
       
       if (userData?.user?.role !== 'CREATOR') {
-        router.push('/dashboard/user');
+        window.location.href = '/dashboard/user';
         return;
       }
       
       setUser(userData?.user);
+      setAuthChecked(true);
 
       // Get offers
       const offersResponse = await fetch(`/api/call-offers?creatorId=${userData?.user?.creator?.id}`);
@@ -283,7 +288,8 @@ export default function CreatorDashboard() {
     }
   };
 
-  if (loading) {
+  // Don't render anything until authentication is verified
+  if (!authChecked || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
