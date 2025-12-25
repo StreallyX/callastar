@@ -1,8 +1,7 @@
 generator client {
-    provider = "prisma-client-js"
-    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
-    output = "/home/ubuntu/call-a-star/nextjs_space/node_modules/.prisma/client"
+  provider = "prisma-client-js"
 }
+
 
 datasource db {
     provider = "postgresql"
