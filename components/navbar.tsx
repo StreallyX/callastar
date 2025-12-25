@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Star, LogOut, User, LayoutDashboard, Settings, TestTube2 } from 'lucide-react';
+import { Star, LogOut, User, LayoutDashboard, Settings, TestTube2, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -104,6 +104,12 @@ export function Navbar() {
                         <LayoutDashboard className="w-4 h-4 mr-2" />
                         Dashboard
                       </DropdownMenuItem>
+                      {user?.role === 'CREATOR' && (
+                        <DropdownMenuItem onClick={() => router.push('/dashboard/creator/payouts')}>
+                          <Wallet className="w-4 h-4 mr-2" />
+                          Paiements
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => router.push(getSettingsPath())}>
                         <Settings className="w-4 h-4 mr-2" />
                         Paramètres

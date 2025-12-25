@@ -11,8 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, DollarSign, Loader2, Plus, Video, TrendingUp, Trash2, MessageSquare, Star, Check, X } from 'lucide-react';
+import { Calendar, Clock, DollarSign, Loader2, Plus, Video, TrendingUp, Trash2, MessageSquare, Star, Check, X, CreditCard, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function CreatorDashboard() {
   const router = useRouter();
@@ -328,6 +329,48 @@ export default function CreatorDashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Payment Setup Card */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              Configuration des paiements
+            </CardTitle>
+            <CardDescription>
+              Gérez votre compte Stripe et vos paiements
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {stripeOnboarding.loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                ) : stripeOnboarding.onboarded ? (
+                  <Badge className="bg-green-500 text-white">
+                    Paiements activés
+                  </Badge>
+                ) : (
+                  <Badge className="bg-red-500 text-white">
+                    Configuration incomplète
+                  </Badge>
+                )}
+                <span className="text-sm text-gray-600">
+                  {stripeOnboarding.onboarded 
+                    ? 'Votre compte est configuré et prêt à recevoir des paiements'
+                    : 'Complétez votre configuration pour recevoir des paiements'
+                  }
+                </span>
+              </div>
+              <Link href="/dashboard/creator/payment-setup">
+                <Button variant="outline" size="sm">
+                  {stripeOnboarding.onboarded ? 'Voir les détails' : 'Configurer'}
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
