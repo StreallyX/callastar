@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const whereClause: any = {};
-    if (status && ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'].includes(status)) {
+    if (status && ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REVERSED'].includes(status)) {
       whereClause.status = status;
     }
 

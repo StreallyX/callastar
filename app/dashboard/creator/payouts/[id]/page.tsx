@@ -45,6 +45,8 @@ export default function PayoutRequestDetailsPage() {
         return 'bg-blue-500';
       case 'FAILED':
         return 'bg-red-500';
+      case 'REVERSED':
+        return 'bg-red-600';
       case 'PENDING':
         return 'bg-yellow-500';
       default:
@@ -60,6 +62,8 @@ export default function PayoutRequestDetailsPage() {
         return '⏳ En cours de traitement';
       case 'FAILED':
         return '✗ Échoué';
+      case 'REVERSED':
+        return '⚠ Inversé';
       case 'PENDING':
         return '⏳ En attente de traitement';
       default:
@@ -205,6 +209,33 @@ export default function PayoutRequestDetailsPage() {
                 <p className="text-sm text-red-700">
                   ❌ Le transfert a échoué. Veuillez contacter le support pour plus d'informations.
                 </p>
+              )}
+              {payoutRequest.status === 'REVERSED' && (
+                <div className="space-y-3">
+                  <p className="text-sm text-red-700 font-semibold">
+                    ⚠️ Le transfert de {Number(payoutRequest.totalAmount).toFixed(2)} € a été inversé par Stripe.
+                  </p>
+                  {payoutRequest.reversalReason && (
+                    <div className="text-sm">
+                      <p className="text-gray-600 font-medium">Raison :</p>
+                      <p className="text-gray-700 mt-1">{payoutRequest.reversalReason}</p>
+                    </div>
+                  )}
+                  {payoutRequest.reversedAt && (
+                    <p className="text-xs text-gray-500">
+                      Date d'inversion : {new Date(payoutRequest.reversedAt).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-700 mt-2">
+                    Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le support.
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>

@@ -131,7 +131,6 @@ export async function POST(
           amount: Number(payoutRequest.totalAmount),
           currency: payoutRequest.currency,
           destination: payoutRequest.creator.stripeAccountId,
-          status: transfer.status,
         },
         stripeDashboardLink,
         instructions: 'Le transfert a été créé sur Stripe. Il sera automatiquement traité par Stripe. Le statut sera mis à jour automatiquement via webhook lorsque le transfert sera terminé.',

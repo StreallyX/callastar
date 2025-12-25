@@ -80,6 +80,8 @@ export default function AdminPayoutRequestDetailsPage() {
         return 'bg-blue-500';
       case 'FAILED':
         return 'bg-red-500';
+      case 'REVERSED':
+        return 'bg-red-600';
       case 'PENDING':
         return 'bg-yellow-500';
       default:
@@ -95,6 +97,8 @@ export default function AdminPayoutRequestDetailsPage() {
         return '⏳ En cours de traitement';
       case 'FAILED':
         return '✗ Échoué';
+      case 'REVERSED':
+        return '⚠ Inversé';
       case 'PENDING':
         return '⏳ En attente de traitement';
       default:
@@ -314,6 +318,38 @@ export default function AdminPayoutRequestDetailsPage() {
                 <p className="text-sm text-red-700">
                   ❌ Le transfert a échoué. Vérifiez les détails sur le Stripe Dashboard et contactez le créateur si nécessaire.
                 </p>
+              )}
+              {payoutRequest.status === 'REVERSED' && (
+                <div className="space-y-3">
+                  <p className="text-sm text-red-700 font-semibold">
+                    ⚠️ Le transfert de {Number(payoutRequest.totalAmount).toFixed(2)} € a été inversé par Stripe.
+                  </p>
+                  {payoutRequest.reversalReason && (
+                    <div className="text-sm">
+                      <p className="text-gray-600 font-medium">Raison :</p>
+                      <p className="text-gray-700 mt-1">{payoutRequest.reversalReason}</p>
+                    </div>
+                  )}
+                  {payoutRequest.reversedAt && (
+                    <p className="text-xs text-gray-500">
+                      Date d'inversion : {new Date(payoutRequest.reversedAt).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  )}
+                  {payoutRequest.reversalId && (
+                    <p className="text-xs text-gray-500 font-mono">
+                      ID de l'inversion : {payoutRequest.reversalId}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-700 mt-2">
+                    Consultez le Stripe Dashboard pour plus de détails. Les paiements associés ont été marqués comme inversés.
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>

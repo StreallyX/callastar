@@ -417,17 +417,20 @@ export default function AdminDashboard() {
                             request.status === 'COMPLETED' ? 'default' :
                             request.status === 'PROCESSING' ? 'secondary' :
                             request.status === 'FAILED' ? 'destructive' :
+                            request.status === 'REVERSED' ? 'destructive' :
                             'outline'
                           } className={
                             request.status === 'COMPLETED' ? 'bg-green-500' :
                             request.status === 'PROCESSING' ? 'bg-blue-500' :
                             request.status === 'FAILED' ? 'bg-red-500' :
+                            request.status === 'REVERSED' ? 'bg-red-600' :
                             'bg-yellow-500'
                           }>
                             {request.status === 'COMPLETED' && '✓ Terminé'}
                             {request.status === 'PROCESSING' && '⏳ En cours'}
                             {request.status === 'PENDING' && '⏳ En attente'}
                             {request.status === 'FAILED' && '✗ Échoué'}
+                            {request.status === 'REVERSED' && '⚠ Inversé'}
                           </Badge>
                         </div>
                       </div>

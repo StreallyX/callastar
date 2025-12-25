@@ -134,6 +134,8 @@ export default function CreatorPayoutsPage() {
       PAID: { variant: 'default', label: 'Payé', icon: CheckCircle },
       PENDING: { variant: 'secondary', label: 'En attente', icon: Clock },
       FAILED: { variant: 'destructive', label: 'Échoué', icon: AlertCircle },
+      REVERSED: { variant: 'destructive', label: 'Inversé', icon: AlertCircle },
+      COMPLETED: { variant: 'default', label: 'Complété', icon: CheckCircle },
     };
 
     const config = variants[status] || variants.PENDING;

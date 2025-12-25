@@ -2,10 +2,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // Enums
@@ -42,13 +41,14 @@ enum CallRequestStatus {
 }
 
 enum PayoutStatus {
-  PENDING      // Initial state, awaiting payment
-  HELD         // Payment succeeded, funds held for 7 days
-  READY        // Holding period passed, ready for transfer
-  PROCESSING   // Transfer in progress
-  PAID         // Successfully transferred to creator (formerly PAID)
-  FAILED       // Transfer failed
-  CANCELLED    // Cancelled (refund/dispute)
+  PENDING // Initial state, awaiting payment
+  HELD // Payment succeeded, funds held for 7 days
+  READY // Holding period passed, ready for transfer
+  PROCESSING // Transfer in progress
+  PAID // Successfully transferred to creator (formerly PAID)
+  FAILED // Transfer failed
+  CANCELLED // Cancelled (refund/dispute)
+  REVERSED // Transfer was reversed by Stripe
 }
 
 enum NotificationType {
@@ -61,10 +61,11 @@ enum NotificationType {
 }
 
 enum PayoutRequestStatus {
-  PENDING      // Creator requested, awaiting admin review
-  PROCESSING   // Admin prepared Stripe transfer, awaiting confirmation
-  COMPLETED    // Transfer completed successfully
-  FAILED       // Transfer failed
+  PENDING // Creator requested, awaiting admin review
+  PROCESSING // Admin prepared Stripe transfer, awaiting confirmation
+  COMPLETED // Transfer completed successfully
+  FAILED // Transfer failed
+  REVERSED // Transfer was reversed by Stripe
 }
 
 // Models
@@ -130,22 +131,22 @@ model VerificationToken {
 }
 
 model Creator {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  bio                String?  @db.Text
-  profileImage       String?
-  stripeAccountId    String?
-  isStripeOnboarded  Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  bio               String?  @db.Text
+  profileImage      String?
+  stripeAccountId   String?
+  isStripeOnboarded Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Relations
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  callOffers       CallOffer[]
-  callRequestsReceived CallRequest[] @relation("CreatorRequests")
-  reviewsReceived  Review[]        @relation("CreatorReviews")
-  payouts          Payout[]
-  payoutRequests   PayoutRequest[]
+  user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  callOffers           CallOffer[]
+  callRequestsReceived CallRequest[]   @relation("CreatorRequests")
+  reviewsReceived      Review[]        @relation("CreatorReviews")
+  payouts              Payout[]
+  payoutRequests       PayoutRequest[]
 
   @@index([userId])
 }
@@ -157,7 +158,7 @@ model CallOffer {
   description     String          @db.Text
   price           Decimal         @db.Decimal(10, 2)
   dateTime        DateTime
-  duration        Int             // in minutes
+  duration        Int // in minutes
   status          CallOfferStatus @default(AVAILABLE)
   maxParticipants Int             @default(1)
   createdAt       DateTime        @default(now())
@@ -173,20 +174,20 @@ model CallOffer {
 }
 
 model Booking {
-  id                     String        @id @default(cuid())
-  userId                 String
-  callOfferId            String        @unique
-  status                 BookingStatus @default(PENDING)
-  totalPrice             Decimal       @db.Decimal(10, 2)
-  stripePaymentIntentId  String?
-  dailyRoomUrl           String?
-  dailyRoomName          String?
-  createdAt              DateTime      @default(now())
-  updatedAt              DateTime      @updatedAt
+  id                    String        @id @default(cuid())
+  userId                String
+  callOfferId           String        @unique
+  status                BookingStatus @default(PENDING)
+  totalPrice            Decimal       @db.Decimal(10, 2)
+  stripePaymentIntentId String?
+  dailyRoomUrl          String?
+  dailyRoomName         String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   // Relations
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  callOffer CallOffer  @relation(fields: [callOfferId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  callOffer CallOffer @relation(fields: [callOfferId], references: [id], onDelete: Cascade)
   payment   Payment?
   review    Review?
 
@@ -195,25 +196,25 @@ model Booking {
 }
 
 model Payment {
-  id                     String        @id @default(cuid())
-  bookingId              String        @unique
-  amount                 Decimal       @db.Decimal(10, 2)
-  stripePaymentIntentId  String
-  status                 PaymentStatus @default(PENDING)
-  platformFee            Decimal       @db.Decimal(10, 2)
-  creatorAmount          Decimal       @db.Decimal(10, 2)
-  createdAt              DateTime      @default(now())
-  
+  id                    String        @id @default(cuid())
+  bookingId             String        @unique
+  amount                Decimal       @db.Decimal(10, 2)
+  stripePaymentIntentId String
+  status                PaymentStatus @default(PENDING)
+  platformFee           Decimal       @db.Decimal(10, 2)
+  creatorAmount         Decimal       @db.Decimal(10, 2)
+  createdAt             DateTime      @default(now())
+
   // Payout tracking fields
-  payoutStatus           PayoutStatus  @default(HELD)
-  payoutReleaseDate      DateTime?     // Date when funds can be transferred (payment date + 7 days)
-  stripeTransferId       String?       // Stripe transfer ID when payout is completed
-  payoutDate             DateTime?     // Date when payout was actually transferred
-  payoutRequestId        String?       // Link to PayoutRequest when included in a request
+  payoutStatus      PayoutStatus @default(HELD)
+  payoutReleaseDate DateTime? // Date when funds can be transferred (payment date + 7 days)
+  stripeTransferId  String? // Stripe transfer ID when payout is completed
+  payoutDate        DateTime? // Date when payout was actually transferred
+  payoutRequestId   String? // Link to PayoutRequest when included in a request
 
   // Relations
-  booking        Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  payoutRequest  PayoutRequest? @relation(fields: [payoutRequestId], references: [id], onDelete: SetNull)
+  booking       Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  payoutRequest PayoutRequest? @relation(fields: [payoutRequestId], references: [id], onDelete: SetNull)
 
   @@index([stripePaymentIntentId])
   @@index([payoutStatus])
@@ -245,7 +246,7 @@ model Review {
   bookingId String   @unique
   userId    String
   creatorId String
-  rating    Int      // 1-5
+  rating    Int // 1-5
   comment   String   @db.Text
   createdAt DateTime @default(now())
 
@@ -282,23 +283,23 @@ model Payout {
   creatorId       String
   requestedAmount Decimal      @db.Decimal(10, 2) // Amount requested by creator
   actualAmount    Decimal?     @db.Decimal(10, 2) // Actual amount paid (may differ if fees applied)
-  stripePayoutId  String?      // Stripe payout/transfer ID
-  stripeAccountId String?      // Creator's Stripe account ID at time of payout
+  stripePayoutId  String? // Stripe payout/transfer ID
+  stripeAccountId String? // Creator's Stripe account ID at time of payout
   status          PayoutStatus @default(PENDING)
-  
+
   // Tracking dates
-  requestedAt     DateTime     @default(now()) // When creator requested the payout
-  processedAt     DateTime?    // When admin marked as processed
-  completedAt     DateTime?    // When Stripe confirmed payout success
-  failedAt        DateTime?    // When payout failed
-  
+  requestedAt DateTime  @default(now()) // When creator requested the payout
+  processedAt DateTime? // When admin marked as processed
+  completedAt DateTime? // When Stripe confirmed payout success
+  failedAt    DateTime? // When payout failed
+
   // Additional metadata
-  failureReason   String?      @db.Text // Reason if payout failed
-  notes           String?      @db.Text // Admin notes
-  processedBy     String?      // Admin user ID who processed it
-  
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  failureReason String? @db.Text // Reason if payout failed
+  notes         String? @db.Text // Admin notes
+  processedBy   String? // Admin user ID who processed it
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
@@ -309,16 +310,21 @@ model Payout {
 }
 
 model PayoutRequest {
-  id                String              @id @default(cuid())
-  creatorId         String
-  status            PayoutRequestStatus @default(PENDING)
-  totalAmount       Decimal             @db.Decimal(10, 2)
-  currency          String              @default("usd")
-  stripeTransferId  String?             // Stripe transfer ID
-  stripePayoutId    String?             // Stripe payout ID (if applicable)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  completedAt       DateTime?
+  id               String              @id @default(cuid())
+  creatorId        String
+  status           PayoutRequestStatus @default(PENDING)
+  totalAmount      Decimal             @db.Decimal(10, 2)
+  currency         String              @default("usd")
+  stripeTransferId String? // Stripe transfer ID
+  stripePayoutId   String? // Stripe payout ID (if applicable)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  completedAt      DateTime?
+
+  // Reversal tracking fields
+  reversalId     String? // Stripe reversal ID
+  reversalReason String? // Reason for reversal
+  reversedAt     DateTime? // When the transfer was reversed
 
   // Relations
   creator  Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
