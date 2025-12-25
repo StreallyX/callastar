@@ -1,26 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import prisma from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
-import { sendEmail } from '@/lib/email';
+import { db } from '@/lib/db';
+import { getUserFromRequest } from '@/lib/auth';
+import { createPayout, getConnectAccountDetails } from '@/lib/stripe';
 
-// Schema validation for creating payout
-const createPayoutSchema = z.object({
-  creatorId: z.string(),
-  amount: z.number().positive(),
+const processPayoutSchema = z.object({
+  payoutId: z.string(),
+  notes: z.string().optional(),
 });
 
-// GET /api/admin/payouts - Get all payouts
+/**
+ * GET /api/admin/payouts
+ * Get all payout requests with filters
+ */
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication and admin role
-    const token = request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== 'ADMIN') {
+    const jwtUser = await getUserFromRequest(request);
+    if (!jwtUser || jwtUser.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Accès réservé aux administrateurs' },
         { status: 403 }
@@ -31,7 +27,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const creatorId = searchParams.get('creatorId');
 
-    const payouts = await prisma.payout.findMany({
+    const payouts = await db.payout.findMany({
       where: {
         ...(status && { status: status as any }),
         ...(creatorId && { creatorId }),
@@ -48,12 +44,60 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [
+        {
+          status: 'asc', // PENDING first
+        },
+        {
+          requestedAt: 'desc',
+        },
+      ],
     });
 
-    return NextResponse.json(payouts);
+    // Get payment details for each payout request
+    const payoutsWithDetails = await Promise.all(
+      payouts.map(async (payout) => {
+        // Get READY payments for this creator to show available balance
+        const readyPayments = await db.payment.findMany({
+          where: {
+            payoutStatus: 'READY',
+            booking: {
+              callOffer: {
+                creatorId: payout.creatorId,
+              },
+            },
+          },
+        });
+
+        const availableBalance = readyPayments.reduce(
+          (sum, p) => sum + Number(p.creatorAmount),
+          0
+        );
+
+        return {
+          id: payout.id,
+          creatorId: payout.creatorId,
+          creatorName: payout.creator.user.name,
+          creatorEmail: payout.creator.user.email,
+          stripeAccountId: payout.stripeAccountId,
+          requestedAmount: Number(payout.requestedAmount),
+          actualAmount: payout.actualAmount ? Number(payout.actualAmount) : null,
+          availableBalance: Number(availableBalance.toFixed(2)),
+          status: payout.status,
+          requestedAt: payout.requestedAt,
+          processedAt: payout.processedAt,
+          completedAt: payout.completedAt,
+          failedAt: payout.failedAt,
+          failureReason: payout.failureReason,
+          notes: payout.notes,
+          stripePayoutId: payout.stripePayoutId,
+          createdAt: payout.createdAt,
+          updatedAt: payout.updatedAt,
+        };
+      })
+    );
+
+    return NextResponse.json(payoutsWithDetails);
   } catch (error) {
     console.error('Error fetching payouts:', error);
     return NextResponse.json(
@@ -63,92 +107,236 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/payouts - Create a payout
+/**
+ * POST /api/admin/payouts
+ * Process a payout request - actually transfer funds via Stripe
+ */
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication and admin role
-    const token = request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    const decoded = await verifyToken(token);
-    if (!decoded || decoded.role !== 'ADMIN') {
+    const jwtUser = await getUserFromRequest(request);
+    if (!jwtUser || jwtUser.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Accès réservé aux administrateurs' },
         { status: 403 }
       );
     }
 
-    // Parse and validate request body
     const body = await request.json();
-    const validatedData = createPayoutSchema.parse(body);
+    const { payoutId, notes } = processPayoutSchema.parse(body);
 
-    // Check if creator exists
-    const creator = await prisma.creator.findUnique({
-      where: { id: validatedData.creatorId },
-      include: {
-        user: true,
-      },
-    });
-
-    if (!creator) {
-      return NextResponse.json({ error: 'Créateur introuvable' }, { status: 404 });
-    }
-
-    // Create payout record
-    const payout = await prisma.payout.create({
-      data: {
-        creatorId: validatedData.creatorId,
-        amount: validatedData.amount,
-        status: 'PENDING',
-      },
+    // Get the payout request
+    const payout = await db.payout.findUnique({
+      where: { id: payoutId },
       include: {
         creator: {
           include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
+            user: true,
           },
         },
       },
     });
 
-    // TODO: Integrate with Stripe Connect to actually send the payout
-    // For now, we'll just mark it as PAID for demo purposes
-    // In production, you would use Stripe API: stripe.payouts.create()
+    if (!payout) {
+      return NextResponse.json(
+        { error: 'Demande de paiement introuvable' },
+        { status: 404 }
+      );
+    }
 
-    // Update payout status to PAID (in production, this would be done via webhook)
-    const updatedPayout = await prisma.payout.update({
-      where: { id: payout.id },
-      data: {
-        status: 'PAID',
+    if (payout.status !== 'PENDING') {
+      return NextResponse.json(
+        { error: 'Cette demande a déjà été traitée' },
+        { status: 400 }
+      );
+    }
+
+    // Verify Stripe account
+    if (!payout.stripeAccountId) {
+      return NextResponse.json(
+        { error: 'Compte Stripe non configuré pour ce créateur' },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const account = await getConnectAccountDetails(payout.stripeAccountId);
+      if (!account.payouts_enabled) {
+        return NextResponse.json(
+          {
+            error:
+              'Le compte Stripe de ce créateur n\'est pas encore configuré pour recevoir des paiements',
+          },
+          { status: 400 }
+        );
+      }
+    } catch (error) {
+      console.error('Error checking Stripe account:', error);
+      return NextResponse.json(
+        { error: 'Erreur lors de la vérification du compte Stripe' },
+        { status: 500 }
+      );
+    }
+
+    // Get all READY payments for this creator
+    const readyPayments = await db.payment.findMany({
+      where: {
+        payoutStatus: 'READY',
+        booking: {
+          callOffer: {
+            creatorId: payout.creatorId,
+          },
+        },
+      },
+      include: {
+        booking: {
+          include: {
+            callOffer: true,
+          },
+        },
       },
     });
 
-    // Send email notification to creator
-    try {
-      await sendEmail({
-        to: creator.user.email,
-        subject: 'Paiement reçu !',
-        html: `
-          <h1>Paiement reçu</h1>
-          <p>Bonjour ${creator.user.name},</p>
-          <p>Vous avez reçu un paiement de <strong>${validatedData.amount}€</strong> sur votre compte Call a Star.</p>
-          <p>Merci de faire partie de notre plateforme !</p>
-        `,
-      });
-    } catch (emailError) {
-      console.error('Error sending email:', emailError);
+    const availableBalance = readyPayments.reduce(
+      (sum, p) => sum + Number(p.creatorAmount),
+      0
+    );
+
+    // Validate that requested amount doesn't exceed available balance
+    if (Number(payout.requestedAmount) > availableBalance) {
+      return NextResponse.json(
+        {
+          error: `Le montant demandé (${Number(payout.requestedAmount).toFixed(2)}€) dépasse le solde disponible (${availableBalance.toFixed(2)}€)`,
+        },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(updatedPayout, { status: 201 });
-  } catch (error) {
-    console.error('Error creating payout:', error);
+    // Calculate which payments to include (up to requested amount)
+    let remainingAmount = Number(payout.requestedAmount);
+    const paymentsToProcess = [];
     
+    for (const payment of readyPayments) {
+      if (remainingAmount <= 0) break;
+      const paymentAmount = Number(payment.creatorAmount);
+      if (paymentAmount <= remainingAmount) {
+        paymentsToProcess.push(payment);
+        remainingAmount -= paymentAmount;
+      }
+    }
+
+    const actualAmount = paymentsToProcess.reduce(
+      (sum, p) => sum + Number(p.creatorAmount),
+      0
+    );
+
+    // Mark payout as PROCESSING
+    await db.payout.update({
+      where: { id: payoutId },
+      data: {
+        status: 'PROCESSING',
+        processedAt: new Date(),
+        processedBy: jwtUser.userId,
+        notes,
+        actualAmount,
+      },
+    });
+
+    // Mark payments as PROCESSING
+    await db.payment.updateMany({
+      where: {
+        id: { in: paymentsToProcess.map((p) => p.id) },
+      },
+      data: {
+        payoutStatus: 'PROCESSING',
+      },
+    });
+
+    try {
+      // Create transfer to creator's Stripe account
+      const transfer = await createPayout({
+        amount: actualAmount,
+        stripeAccountId: payout.stripeAccountId,
+        metadata: {
+          creatorId: payout.creatorId,
+          payoutRequestId: payoutId,
+          paymentIds: paymentsToProcess.map((p) => p.id).join(','),
+          paymentCount: String(paymentsToProcess.length),
+        },
+      });
+
+      console.log('✅ Payout transfer created:', {
+        transferId: transfer.id,
+        amount: actualAmount,
+        paymentCount: paymentsToProcess.length,
+      });
+
+      // Mark payout as PAID
+      await db.payout.update({
+        where: { id: payoutId },
+        data: {
+          status: 'PAID',
+          stripePayoutId: transfer.id,
+          completedAt: new Date(),
+          actualAmount,
+        },
+      });
+
+      // Mark payments as PAID
+      await db.payment.updateMany({
+        where: {
+          id: { in: paymentsToProcess.map((p) => p.id) },
+        },
+        data: {
+          payoutStatus: 'PAID',
+          stripeTransferId: transfer.id,
+          payoutDate: new Date(),
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Paiement de ${actualAmount.toFixed(2)}€ transféré avec succès`,
+        payout: {
+          id: payout.id,
+          amount: actualAmount,
+          stripePayoutId: transfer.id,
+          paymentCount: paymentsToProcess.length,
+          status: 'PAID',
+        },
+      });
+    } catch (error) {
+      console.error('❌ Error creating payout transfer:', error);
+
+      // Mark payout as FAILED
+      await db.payout.update({
+        where: { id: payoutId },
+        data: {
+          status: 'FAILED',
+          failedAt: new Date(),
+          failureReason: error instanceof Error ? error.message : 'Erreur inconnue',
+        },
+      });
+
+      // Mark payments back as READY
+      await db.payment.updateMany({
+        where: {
+          id: { in: paymentsToProcess.map((p) => p.id) },
+        },
+        data: {
+          payoutStatus: 'READY',
+        },
+      });
+
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erreur inconnue';
+      return NextResponse.json(
+        { error: 'Erreur lors du transfert: ' + errorMessage },
+        { status: 500 }
+      );
+    }
+  } catch (error) {
+    console.error('Error processing payout:', error);
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Données invalides', details: error.issues },
@@ -157,7 +345,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Erreur lors de la création du payout' },
+      { error: 'Erreur lors du traitement du payout' },
       { status: 500 }
     );
   }
