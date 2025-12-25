@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { stripe } from '@/lib/stripe';
+import { calculateNextPayoutDate } from '@/lib/payout-eligibility';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +45,24 @@ export async function POST(request: NextRequest) {
         where: { id: creator.id },
         data: { stripeAccountId: accountId },
       });
+
+      // Create default PayoutSchedule for new Stripe account
+      const existingSchedule = await db.payoutSchedule.findUnique({
+        where: { creatorId: creator.id },
+      });
+
+      if (!existingSchedule) {
+        await db.payoutSchedule.create({
+          data: {
+            creatorId: creator.id,
+            mode: 'AUTOMATIC',
+            frequency: 'WEEKLY',
+            isActive: true,
+            nextPayoutDate: null, // Will be set after first payout
+          },
+        });
+        console.log(`✅ Created default payout schedule for creator ${creator.id}`);
+      }
     }
 
     // Create account link for onboarding
@@ -98,6 +117,24 @@ export async function GET(request: NextRequest) {
         where: { id: creator.id },
         data: { isStripeOnboarded: true },
       });
+
+      // Ensure PayoutSchedule exists when onboarding is complete
+      const existingSchedule = await db.payoutSchedule.findUnique({
+        where: { creatorId: creator.id },
+      });
+
+      if (!existingSchedule) {
+        await db.payoutSchedule.create({
+          data: {
+            creatorId: creator.id,
+            mode: 'AUTOMATIC',
+            frequency: 'WEEKLY',
+            isActive: true,
+            nextPayoutDate: null,
+          },
+        });
+        console.log(`✅ Created default payout schedule for creator ${creator.id} on onboarding complete`);
+      }
     }
 
     return NextResponse.json({

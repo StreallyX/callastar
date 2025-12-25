@@ -5,23 +5,68 @@ import { createPayout, getConnectAccountDetails } from '@/lib/stripe';
 import { getPlatformSettings } from '@/lib/settings';
 import { logPayout } from '@/lib/logger';
 import { TransactionEventType, PayoutStatus } from '@prisma/client';
+import { checkPayoutEligibility, clearBalanceCache } from '@/lib/payout-eligibility';
 
 /**
  * POST /api/payouts/request
  * Request payout for all READY payments
+ * 
+ * Optional body parameters:
+ * - adminOverride: boolean (admin only) - Skip eligibility checks
  */
 export async function POST(request: NextRequest) {
   try {
     const jwtUser = await getUserFromRequest(request);
-    if (!jwtUser || jwtUser.role !== 'CREATOR') {
+    if (!jwtUser) {
       return NextResponse.json(
         { error: 'Non autorisé' },
         { status: 401 }
       );
     }
 
+    // Parse request body
+    const body = await request.json().catch(() => ({}));
+    const { adminOverride = false } = body;
+
+    // Check if user is admin (for admin override)
+    const isAdmin = jwtUser.role === 'ADMIN';
+    const isCreator = jwtUser.role === 'CREATOR';
+
+    if (!isCreator && !isAdmin) {
+      return NextResponse.json(
+        { error: 'Non autorisé' },
+        { status: 401 }
+      );
+    }
+
+    // Get creator ID (either from JWT for creators or from body for admins)
+    let creatorId: string;
+    if (isCreator) {
+      const creator = await prisma.creator.findUnique({
+        where: { userId: jwtUser.userId },
+        select: { id: true },
+      });
+      if (!creator) {
+        return NextResponse.json(
+          { error: 'Créateur introuvable' },
+          { status: 404 }
+        );
+      }
+      creatorId = creator.id;
+    } else {
+      // Admin can specify creator ID in body
+      creatorId = body.creatorId;
+      if (!creatorId) {
+        return NextResponse.json(
+          { error: 'creatorId required for admin payout' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Get creator details
     const creator = await prisma.creator.findUnique({
-      where: { userId: jwtUser.userId },
+      where: { id: creatorId },
     });
 
     if (!creator) {
@@ -31,7 +76,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if creator has completed Stripe onboarding
+    // Basic check: Stripe account must exist
     if (!creator.stripeAccountId || !creator.isStripeOnboarded) {
       return NextResponse.json(
         { error: 'Vous devez compléter votre configuration Stripe Connect pour demander un paiement' },
@@ -39,33 +84,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if payout is blocked
-    if (creator.payoutBlocked) {
-      return NextResponse.json(
-        { error: `Les paiements sont bloqués: ${creator.payoutBlockedReason || 'Raison inconnue'}` },
-        { status: 400 }
-      );
+    // Check eligibility (unless admin override)
+    if (!adminOverride || !isAdmin) {
+      console.log('🔍 Checking payout eligibility for creator:', creatorId);
+      const eligibility = await checkPayoutEligibility(creatorId);
+
+      if (!eligibility.eligible) {
+        console.log('❌ Creator not eligible:', eligibility.reason);
+        console.log('   Requirements:', eligibility.requirements);
+        
+        return NextResponse.json(
+          {
+            error: 'Non éligible pour un paiement',
+            reason: eligibility.reason,
+            requirements: eligibility.requirements,
+            details: eligibility.details,
+          },
+          { status: 400 }
+        );
+      }
+
+      console.log('✅ Creator eligible for payout. Available balance:', eligibility.availableBalance);
+    } else {
+      console.log('⚠️  Admin override: Skipping eligibility checks');
     }
 
     // Get platform settings
     const settings = await getPlatformSettings();
-
-    // Verify Stripe account is valid and can receive payouts
-    try {
-      const account = await getConnectAccountDetails(creator.stripeAccountId);
-      if (!account.payouts_enabled) {
-        return NextResponse.json(
-          { error: 'Votre compte Stripe n\'est pas encore configuré pour recevoir des paiements. Veuillez compléter votre configuration.' },
-          { status: 400 }
-        );
-      }
-    } catch (error) {
-      console.error('Error checking Stripe account:', error);
-      return NextResponse.json(
-        { error: 'Erreur lors de la vérification de votre compte Stripe' },
-        { status: 500 }
-      );
-    }
 
     // Get all READY payments for this creator
     const readyPayments = await prisma.payment.findMany({
@@ -186,8 +231,14 @@ export async function POST(request: NextRequest) {
           paymentCount: readyPayments.length,
           paymentIds: readyPayments.map(p => p.id),
           stripeTransferId: transfer.id,
+          manual: true,
+          adminOverride: adminOverride && isAdmin,
+          requestedBy: jwtUser.userId,
         },
       });
+
+      // Clear balance cache after successful payout
+      clearBalanceCache(creator.id);
 
       return NextResponse.json({
         success: true,

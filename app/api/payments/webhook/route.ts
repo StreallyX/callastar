@@ -1031,6 +1031,7 @@ async function handleTransferReversed(event: Stripe.Event): Promise<void> {
 
 /**
  * Handle account.updated
+ * Enhanced to auto-block payouts when KYC requirements are pending
  */
 async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
   const account = event.data.object as Stripe.Account;
@@ -1047,13 +1048,38 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
   const chargesEnabled = account.charges_enabled ?? false;
   const payoutsEnabled = account.payouts_enabled ?? false;
   const requirementsDisabledReason = account.requirements?.disabled_reason;
+  const currentlyDue = account.requirements?.currently_due || [];
+  const eventuallyDue = account.requirements?.eventually_due || [];
+  const pastDue = account.requirements?.past_due || [];
+
+  // Determine if payout should be blocked
+  let shouldBlockPayout = false;
+  let blockReason: string | null = null;
+
+  if (!payoutsEnabled) {
+    shouldBlockPayout = true;
+    blockReason = requirementsDisabledReason || 'Payouts not enabled on Stripe account';
+  } else if (currentlyDue.length > 0) {
+    shouldBlockPayout = true;
+    blockReason = `KYC requirements pending: ${currentlyDue.join(', ')}`;
+  } else if (pastDue.length > 0) {
+    shouldBlockPayout = true;
+    blockReason = `Past due requirements: ${pastDue.join(', ')}`;
+  }
+
+  // If previously blocked but now requirements are cleared, unblock
+  if (creator.payoutBlocked && !shouldBlockPayout && chargesEnabled && payoutsEnabled) {
+    shouldBlockPayout = false;
+    blockReason = null;
+    console.log('[Webhook] ✅ Auto-unblocking payouts for creator:', creator.id);
+  }
 
   await prisma.creator.update({
     where: { id: creator.id },
     data: {
-      isStripeOnboarded: chargesEnabled && payoutsEnabled,
-      payoutBlocked: !payoutsEnabled,
-      payoutBlockedReason: requirementsDisabledReason || null,
+      isStripeOnboarded: chargesEnabled && payoutsEnabled && currentlyDue.length === 0,
+      payoutBlocked: shouldBlockPayout,
+      payoutBlockedReason: blockReason,
     },
   });
 
@@ -1067,6 +1093,11 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
       chargesEnabled,
       payoutsEnabled,
       requirementsDisabledReason,
+      currentlyDue,
+      eventuallyDue,
+      pastDue,
+      payoutBlocked: shouldBlockPayout,
+      payoutBlockedReason: blockReason,
     },
   });
 
@@ -1074,7 +1105,9 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
     creatorId: creator.id,
     chargesEnabled,
     payoutsEnabled,
-    payoutBlocked: !payoutsEnabled,
+    payoutBlocked: shouldBlockPayout,
+    payoutBlockedReason: blockReason,
+    currentlyDue,
   });
 }
 
