@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               bio: true,
+              stripeAccountId: true,
               isStripeOnboarded: true,
             },
           },

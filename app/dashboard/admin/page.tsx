@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, DollarSign, Users, Calendar, TrendingUp, Send, CheckCircle, Settings as SettingsIcon, Video, Clock } from 'lucide-react';
+import { Loader2, DollarSign, Users, Calendar, TrendingUp, Send, CheckCircle, Settings as SettingsIcon, Video, Clock, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -33,6 +33,7 @@ export default function AdminDashboard() {
   const [platformCommission, setPlatformCommission] = useState('');
   const [updatingSettings, setUpdatingSettings] = useState(false);
   const [payoutRequests, setPayoutRequests] = useState<any[]>([]);
+  const [stripeLoginLoading, setStripeLoginLoading] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -166,6 +167,39 @@ export default function AdminDashboard() {
       toast.error(error.message);
     } finally {
       setUpdatingSettings(false);
+    }
+  };
+
+  /**
+   * Handle opening Stripe Connect dashboard for a user
+   * Generates a temporary login link and opens it in a new tab
+   */
+  const handleOpenStripeDashboard = async (userId: string) => {
+    try {
+      setStripeLoginLoading(userId);
+      console.log('Requesting Stripe login link for user:', userId);
+
+      const response = await fetch(`/api/admin/users/${userId}/stripe-login-link`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Échec de la génération du lien Stripe');
+      }
+
+      const { url } = await response.json();
+      console.log('Stripe login link received, opening in new tab:', url);
+
+      // Open Stripe dashboard in new tab
+      window.open(url, '_blank', 'noopener,noreferrer');
+      
+      toast.success('Ouverture du tableau de bord Stripe...');
+    } catch (error: any) {
+      console.error('Failed to open Stripe dashboard:', error);
+      toast.error(error.message || 'Erreur lors de l\'ouverture du tableau de bord Stripe');
+    } finally {
+      setStripeLoginLoading(null);
     }
   };
 
@@ -338,6 +372,7 @@ export default function AdminDashboard() {
                           <TableHead>Email</TableHead>
                           <TableHead>Rôle</TableHead>
                           <TableHead>Inscription</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -360,6 +395,29 @@ export default function AdminDashboard() {
                             </TableCell>
                             <TableCell>
                               {new Date(u.createdAt).toLocaleDateString('fr-FR')}
+                            </TableCell>
+                            <TableCell>
+                              {u.role === 'CREATOR' && u.creator?.stripeAccountId ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenStripeDashboard(u.id)}
+                                  disabled={stripeLoginLoading === u.id}
+                                  className="text-xs"
+                                  title="Ouvrir le tableau de bord Stripe Connect du créateur"
+                                >
+                                  {stripeLoginLoading === u.id ? (
+                                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <ExternalLink className="w-3 h-3 mr-1" />
+                                  )}
+                                  Stripe Dashboard
+                                </Button>
+                              ) : u.role === 'CREATOR' && !u.creator?.stripeAccountId ? (
+                                <span className="text-xs text-gray-400" title="Le créateur n'a pas encore configuré Stripe Connect">
+                                  Pas de compte Stripe
+                                </span>
+                              ) : null}
                             </TableCell>
                           </TableRow>
                         ))}
