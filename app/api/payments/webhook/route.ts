@@ -276,16 +276,173 @@ export async function POST(request: NextRequest) {
       if (!payoutRequestId) {
         // This is an AUTOMATIC TRANSFER REVERSAL
         // Could happen if a payment is disputed/refunded after the automatic transfer
-        console.log('ℹ️  AUTOMATIC TRANSFER REVERSAL (from payment) - No payout request processing needed');
+        console.log('ℹ️  AUTOMATIC TRANSFER REVERSAL (from payment) - Searching for related Payment record...');
         console.log('Transfer ID:', transfer.id);
         console.log('Reversal ID:', reversal?.id);
         console.log('Amount:', transfer.amount, 'cents');
         console.log('Destination:', transfer.destination);
         console.log('Reversal Reason:', reversal?.metadata?.reason || 'Not specified');
         console.log('This reversal is for an automatic transfer from a destination charge');
-        console.log('This might indicate a payment dispute or refund - check the related payment intent');
-        console.log('No payout request update needed - this is expected for automatic transfers');
         console.log('========================================');
+
+        try {
+          // Convert transfer amount from cents to EUR
+          const transferAmountEUR = transfer.amount / 100;
+          console.log('Transfer amount in EUR:', transferAmountEUR);
+
+          // Calculate date 30 days ago for filtering recent payments
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+          console.log('Searching for payments since:', thirtyDaysAgo.toISOString());
+
+          // Find matching Payment records
+          // We need to join through booking -> callOffer -> creator to match stripeAccountId
+          const matchingPayments = await db.payment.findMany({
+            where: {
+              // Match by creator amount (transfer amount should match what creator received)
+              creatorAmount: transferAmountEUR,
+              // Payment should be in succeeded or paid status
+              OR: [
+                { status: 'SUCCEEDED' },
+                { payoutStatus: 'PAID' },
+              ],
+              // Not already reversed
+              payoutStatus: { notIn: ['REVERSED'] },
+              // Only recent payments (within last 30 days)
+              createdAt: {
+                gte: thirtyDaysAgo
+              },
+              // Match by creator's Stripe account ID through relationships
+              booking: {
+                callOffer: {
+                  creator: {
+                    stripeAccountId: transfer.destination
+                  }
+                }
+              }
+            },
+            include: {
+              booking: {
+                include: {
+                  callOffer: {
+                    include: {
+                      creator: {
+                        include: {
+                          user: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 10, // Get up to 10 matches for logging
+          });
+
+          console.log('========================================');
+          console.log(`Found ${matchingPayments.length} matching payment(s)`);
+          
+          if (matchingPayments.length > 0) {
+            console.log('Matching Payment IDs:', matchingPayments.map(p => p.id).join(', '));
+            
+            if (matchingPayments.length > 1) {
+              console.warn('⚠️  WARNING: Multiple matching payments found!');
+              console.warn('Using most recent payment');
+              console.warn('All matches:');
+              matchingPayments.forEach((p, idx) => {
+                console.warn(`  ${idx + 1}. Payment ID: ${p.id}, Booking ID: ${p.bookingId}, Amount: ${p.amount}, Created: ${p.createdAt}`);
+              });
+            }
+
+            // Use the most recent match
+            const matchingPayment = matchingPayments[0];
+            
+            console.log('========================================');
+            console.log('Updating Payment record to REVERSED status...');
+            console.log('Payment ID:', matchingPayment.id);
+            console.log('Booking ID:', matchingPayment.bookingId);
+            console.log('Original Amount:', matchingPayment.amount);
+            console.log('Creator Amount:', matchingPayment.creatorAmount);
+            console.log('Previous Status:', matchingPayment.status);
+            console.log('Previous Payout Status:', matchingPayment.payoutStatus);
+            console.log('========================================');
+
+            // Update the payment record to REVERSED status
+            await db.payment.update({
+              where: { id: matchingPayment.id },
+              data: {
+                payoutStatus: 'REVERSED',
+              },
+            });
+
+            console.log('✅✅✅ PAYMENT RECORD UPDATED TO REVERSED ✅✅✅');
+            console.log('Payment ID:', matchingPayment.id);
+            console.log('Booking ID:', matchingPayment.bookingId);
+            console.log('Original Amount:', matchingPayment.amount, 'EUR');
+            console.log('Creator Amount:', matchingPayment.creatorAmount, 'EUR');
+            console.log('Transfer ID:', transfer.id);
+            console.log('Reversal ID:', reversal?.id);
+            console.log('New Payout Status: REVERSED');
+            console.log('Creator:', matchingPayment.booking.callOffer.creator.user.name);
+            console.log('Creator Stripe Account:', matchingPayment.booking.callOffer.creator.stripeAccountId);
+            console.log('========================================');
+
+            // Send notification to creator about the reversal
+            try {
+              await createNotification({
+                userId: matchingPayment.booking.callOffer.creator.userId,
+                type: 'SYSTEM',
+                title: 'Paiement inversé',
+                message: `Un paiement de ${Number(matchingPayment.creatorAmount).toFixed(2)}€ a été inversé. Raison: ${reversal?.metadata?.reason || 'Non spécifiée'}. Veuillez contacter le support si nécessaire.`,
+                link: '/dashboard/creator/payouts',
+              });
+
+              console.log('✅ Notification sent to creator');
+            } catch (notifError) {
+              console.error('Error sending notification to creator:', notifError);
+              // Continue anyway - notification is not critical
+            }
+
+          } else {
+            // No matching payment found
+            console.error('========================================');
+            console.error('⚠️⚠️⚠️ WARNING: Could not find matching Payment record ⚠️⚠️⚠️');
+            console.error('Transfer ID:', transfer.id);
+            console.error('Reversal ID:', reversal?.id);
+            console.error('Transfer Amount:', transfer.amount, 'cents (', transferAmountEUR, 'EUR)');
+            console.error('Destination Stripe Account:', transfer.destination);
+            console.error('Reversal Reason:', reversal?.metadata?.reason || 'Not specified');
+            console.error('========================================');
+            console.error('Search criteria used:');
+            console.error('  - creatorAmount:', transferAmountEUR, 'EUR');
+            console.error('  - stripeAccountId:', transfer.destination);
+            console.error('  - createdAt >= ', thirtyDaysAgo.toISOString());
+            console.error('  - status: SUCCEEDED or payoutStatus: PAID');
+            console.error('  - payoutStatus: not REVERSED');
+            console.error('========================================');
+            console.error('Possible reasons:');
+            console.error('  1. Payment is older than 30 days');
+            console.error('  2. Amount mismatch (fees/rounding differences)');
+            console.error('  3. Payment already processed/reversed');
+            console.error('  4. Stripe account ID mismatch');
+            console.error('  5. Payment record was never created');
+            console.error('========================================');
+            console.error('MANUAL DATABASE UPDATE MAY BE REQUIRED');
+            console.error('Please investigate in Stripe dashboard and database');
+            console.error('========================================');
+          }
+
+        } catch (error) {
+          console.error('========================================');
+          console.error('❌ ERROR processing automatic transfer reversal:', error);
+          console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+          console.error('Transfer ID:', transfer.id);
+          console.error('Reversal ID:', reversal?.id);
+          console.error('========================================');
+          // Continue anyway - webhook should return 200
+        }
+
+        // Always return 200 to acknowledge webhook
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
