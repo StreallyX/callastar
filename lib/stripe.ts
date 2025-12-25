@@ -36,8 +36,26 @@ export function calculatePayoutReleaseDate(paymentDate: Date): Date {
 
 /**
  * Create a Stripe Payment Intent with Stripe Connect support
- * When stripeAccountId is provided, uses destination charges with platform fee
- * Otherwise, uses regular payment intent (funds held on platform)
+ * 
+ * STRIPE CONNECT CHARGE TYPES:
+ * We use "Destination Charges" for our platform. This is the correct pattern when:
+ * - Platform collects payment on behalf of creator
+ * - Funds are automatically transferred to creator's connected account
+ * - Platform takes a fee before transfer
+ * 
+ * Destination Charges Configuration:
+ * - `application_fee_amount`: Platform fee deducted from payment
+ * - `transfer_data.destination`: Connected account receiving funds
+ * - NO `on_behalf_of` parameter (this is for Direct Charges only)
+ * 
+ * Why we DON'T use `on_behalf_of`:
+ * - `on_behalf_of` is for Direct Charges where the connected account is the merchant of record
+ * - Direct Charges require the connected account to have `card_payments` capability
+ * - This would make creators responsible for disputes, chargebacks, and customer support
+ * - Destination Charges keep the platform as merchant of record, which is our business model
+ * 
+ * When stripeAccountId is provided, uses destination charges with platform fee.
+ * Otherwise, uses regular payment intent (funds held on platform).
  */
 export async function createPaymentIntent({
   amount,
@@ -73,7 +91,7 @@ export async function createPaymentIntent({
     if (stripeAccountId && platformFee !== undefined) {
       const platformFeeInCents = Math.round(platformFee * 100);
       
-      console.log('Creating Stripe Connect payment intent:', {
+      console.log('Creating Stripe Connect payment intent (Destination Charge):', {
         amount: amountInCents,
         platformFee: platformFeeInCents,
         stripeAccountId,
@@ -81,8 +99,9 @@ export async function createPaymentIntent({
       });
 
       // Add Stripe Connect parameters for destination charge
+      // Note: We do NOT include `on_behalf_of` for destination charges
+      // This keeps the platform as merchant of record
       paymentIntentParams.application_fee_amount = platformFeeInCents;
-      paymentIntentParams.on_behalf_of = stripeAccountId;
       paymentIntentParams.transfer_data = {
         destination: stripeAccountId,
       };
@@ -102,7 +121,6 @@ export async function createPaymentIntent({
       id: paymentIntent.id,
       amount: paymentIntent.amount,
       application_fee_amount: paymentIntent.application_fee_amount,
-      on_behalf_of: paymentIntent.on_behalf_of,
       transfer_data: paymentIntent.transfer_data,
     });
 
