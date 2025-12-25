@@ -1,0 +1,69 @@
+import Link from 'next/link';
+import Image from 'next/image';
+import { Star, Calendar } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+interface CreatorCardProps {
+  creator: {
+    id: string;
+    bio?: string;
+    profileImage?: string;
+    user: {
+      id: string;
+      name: string;
+    };
+    callOffers?: Array<{
+      id: string;
+      title: string;
+      price: number;
+    }>;
+  };
+}
+
+export function CreatorCard({ creator }: CreatorCardProps) {
+  const offersCount = creator?.callOffers?.length ?? 0;
+
+  return (
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+      <CardHeader className="p-0">
+        <div className="relative aspect-square bg-gradient-to-br from-purple-200 to-pink-200">
+          {creator?.profileImage ? (
+            <Image
+              src={creator.profileImage}
+              alt={creator?.user?.name ?? 'Creator'}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Star className="w-16 h-16 text-purple-600" />
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      
+      <CardContent className="p-6">
+        <h3 className="text-xl font-semibold mb-2">{creator?.user?.name ?? 'Unknown'}</h3>
+        <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+          {creator?.bio ?? 'Pas de bio disponible'}
+        </p>
+        
+        {offersCount > 0 && (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Calendar className="w-4 h-4" />
+            <span>{offersCount} offre{offersCount > 1 ? 's' : ''} disponible{offersCount > 1 ? 's' : ''}</span>
+          </div>
+        )}
+      </CardContent>
+      
+      <CardFooter className="p-6 pt-0">
+        <Link href={`/creators/${creator?.id}`} className="w-full">
+          <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+            Voir le profil
+          </Button>
+        </Link>
+      </CardFooter>
+    </Card>
+  );
+}
