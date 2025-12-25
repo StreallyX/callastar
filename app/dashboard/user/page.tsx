@@ -37,8 +37,10 @@ export default function UserDashboard() {
         credentials: 'include',
       });
       if (!userResponse.ok) {
-        // User is not authenticated, redirect immediately
-        window.location.href = '/auth/login';
+        // User is not authenticated - clear cookie and redirect
+        document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        // Use router.push instead of window.location to work with Next.js
+        router.push('/auth/login');
         return;
       }
       const userData = await userResponse.json();
