@@ -19,6 +19,12 @@ CREATE TYPE "PayoutStatus" AS ENUM ('PENDING', 'HELD', 'READY', 'PROCESSING', 'P
 -- CreateEnum
 CREATE TYPE "NotificationType" AS ENUM ('BOOKING_CONFIRMED', 'BOOKING_CANCELLED', 'CALL_REQUEST', 'REVIEW_RECEIVED', 'PAYOUT_COMPLETED', 'SYSTEM');
 
+-- CreateEnum
+CREATE TYPE "PayoutSchedule" AS ENUM ('DAILY', 'WEEKLY', 'MANUAL');
+
+-- CreateEnum
+CREATE TYPE "PayoutAction" AS ENUM ('TRIGGERED', 'BLOCKED', 'UNBLOCKED', 'COMPLETED', 'FAILED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -77,6 +83,10 @@ CREATE TABLE "Creator" (
     "profileImage" TEXT,
     "stripeAccountId" TEXT,
     "isStripeOnboarded" BOOLEAN NOT NULL DEFAULT false,
+    "payoutSchedule" "PayoutSchedule" NOT NULL DEFAULT 'WEEKLY',
+    "payoutMinimum" DECIMAL(10,2) NOT NULL DEFAULT 10,
+    "isPayoutBlocked" BOOLEAN NOT NULL DEFAULT false,
+    "payoutBlockReason" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -198,6 +208,23 @@ CREATE TABLE "AdminSettings" (
     CONSTRAINT "AdminSettings_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "PayoutAuditLog" (
+    "id" TEXT NOT NULL,
+    "creatorId" TEXT NOT NULL,
+    "action" "PayoutAction" NOT NULL,
+    "amount" DECIMAL(10,2),
+    "status" "PayoutStatus",
+    "stripePayoutId" TEXT,
+    "adminId" TEXT,
+    "reason" TEXT,
+    "metadata" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "PayoutAuditLog_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -227,6 +254,9 @@ CREATE UNIQUE INDEX "Creator_userId_key" ON "Creator"("userId");
 
 -- CreateIndex
 CREATE INDEX "Creator_userId_idx" ON "Creator"("userId");
+
+-- CreateIndex
+CREATE INDEX "Creator_isPayoutBlocked_idx" ON "Creator"("isPayoutBlocked");
 
 -- CreateIndex
 CREATE INDEX "CallOffer_creatorId_idx" ON "CallOffer"("creatorId");
@@ -297,6 +327,15 @@ CREATE UNIQUE INDEX "AdminSettings_key_key" ON "AdminSettings"("key");
 -- CreateIndex
 CREATE INDEX "AdminSettings_key_idx" ON "AdminSettings"("key");
 
+-- CreateIndex
+CREATE INDEX "PayoutAuditLog_creatorId_idx" ON "PayoutAuditLog"("creatorId");
+
+-- CreateIndex
+CREATE INDEX "PayoutAuditLog_action_idx" ON "PayoutAuditLog"("action");
+
+-- CreateIndex
+CREATE INDEX "PayoutAuditLog_createdAt_idx" ON "PayoutAuditLog"("createdAt");
+
 -- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -338,3 +377,6 @@ ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "Payout" ADD CONSTRAINT "Payout_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "Creator"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PayoutAuditLog" ADD CONSTRAINT "PayoutAuditLog_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "Creator"("id") ON DELETE CASCADE ON UPDATE CASCADE;
