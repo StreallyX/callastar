@@ -549,6 +549,208 @@ export async function POST(request: NextRequest) {
       console.log('========================================');
     }
 
+    // Handle transfer.paid event (when payout is successfully sent to creator)
+    if (event.type === 'transfer.paid') {
+      const transfer = event.data.object as any;
+      const payoutRequestId = transfer.metadata?.payoutRequestId;
+      const paymentIds = transfer.metadata?.paymentIds?.split(',') || [];
+
+      console.log('========================================');
+      console.log('WEBHOOK: transfer.paid received');
+      console.log('Transfer ID:', transfer.id);
+      console.log('Amount:', transfer.amount, 'cents');
+      console.log('Destination:', transfer.destination);
+      console.log('Payout Request ID:', payoutRequestId);
+      console.log('Payment IDs:', paymentIds);
+      console.log('========================================');
+
+      if (payoutRequestId) {
+        try {
+          // Update payout status to PAID
+          await db.payout.update({
+            where: { id: payoutRequestId },
+            data: {
+              status: 'PAID',
+              stripePayoutId: transfer.id,
+              completedAt: new Date(),
+            },
+          });
+
+          console.log('✅ Payout marked as PAID:', payoutRequestId);
+
+          // Get the payout to send notification
+          const payout = await db.payout.findUnique({
+            where: { id: payoutRequestId },
+            include: {
+              creator: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          });
+
+          if (payout) {
+            // Send notification to creator
+            try {
+              await createNotification({
+                userId: payout.creator.userId,
+                type: 'PAYOUT_COMPLETED',
+                title: 'Paiement transféré !',
+                message: `Votre paiement de ${Number(payout.actualAmount || payout.requestedAmount).toFixed(2)}€ a été transféré sur votre compte Stripe.`,
+                link: '/dashboard/creator/payouts',
+              });
+
+              // Send email to creator
+              await sendEmail({
+                to: payout.creator.user.email,
+                subject: '💰 Paiement transféré - Call a Star',
+                html: `
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <meta charset="utf-8">
+                      <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                        .amount { font-size: 32px; font-weight: bold; color: #10b981; text-align: center; margin: 20px 0; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="container">
+                        <div class="header">
+                          <h1>💰 Paiement transféré !</h1>
+                        </div>
+                        <div class="content">
+                          <p>Bonjour ${payout.creator.user.name},</p>
+                          <p>Excellente nouvelle ! Votre paiement a été transféré sur votre compte Stripe.</p>
+                          <div class="amount">${Number(payout.actualAmount || payout.requestedAmount).toFixed(2)} €</div>
+                          <p>Les fonds devraient être disponibles sur votre compte bancaire dans 2-3 jours ouvrés selon les paramètres de votre compte Stripe.</p>
+                          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px;">
+                            Vous pouvez consulter les détails de ce transfert dans votre tableau de bord Stripe.
+                          </p>
+                        </div>
+                      </div>
+                    </body>
+                  </html>
+                `,
+              });
+
+              console.log('✅ Notification sent to creator');
+            } catch (error) {
+              console.error('Error sending notification:', error);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error updating payout status:', error);
+        }
+      }
+
+      // Update payment records if provided
+      if (paymentIds.length > 0) {
+        try {
+          await db.payment.updateMany({
+            where: {
+              id: { in: paymentIds },
+            },
+            data: {
+              payoutStatus: 'PAID',
+              stripeTransferId: transfer.id,
+              payoutDate: new Date(),
+            },
+          });
+
+          console.log('✅ Payments marked as PAID:', paymentIds.length);
+        } catch (error) {
+          console.error('❌ Error updating payment status:', error);
+        }
+      }
+    }
+
+    // Handle transfer.failed event
+    if (event.type === 'transfer.failed') {
+      const transfer = event.data.object as any;
+      const payoutRequestId = transfer.metadata?.payoutRequestId;
+      const paymentIds = transfer.metadata?.paymentIds?.split(',') || [];
+
+      console.log('========================================');
+      console.log('WEBHOOK: transfer.failed received');
+      console.log('Transfer ID:', transfer.id);
+      console.log('Amount:', transfer.amount, 'cents');
+      console.log('Destination:', transfer.destination);
+      console.log('Failure Message:', transfer.failure_message);
+      console.log('Payout Request ID:', payoutRequestId);
+      console.log('Payment IDs:', paymentIds);
+      console.log('========================================');
+
+      if (payoutRequestId) {
+        try {
+          // Update payout status to FAILED
+          await db.payout.update({
+            where: { id: payoutRequestId },
+            data: {
+              status: 'FAILED',
+              failedAt: new Date(),
+              failureReason: transfer.failure_message || 'Unknown error',
+            },
+          });
+
+          console.log('✅ Payout marked as FAILED:', payoutRequestId);
+
+          // Get the payout to send notification
+          const payout = await db.payout.findUnique({
+            where: { id: payoutRequestId },
+            include: {
+              creator: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          });
+
+          if (payout) {
+            // Send notification to creator
+            try {
+              await createNotification({
+                userId: payout.creator.userId,
+                type: 'SYSTEM',
+                title: 'Erreur de paiement',
+                message: `Le transfert de ${Number(payout.requestedAmount).toFixed(2)}€ a échoué. Veuillez contacter le support.`,
+                link: '/dashboard/creator/payouts',
+              });
+
+              console.log('✅ Notification sent to creator');
+            } catch (error) {
+              console.error('Error sending notification:', error);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error updating payout status:', error);
+        }
+      }
+
+      // Update payment records back to READY if provided
+      if (paymentIds.length > 0) {
+        try {
+          await db.payment.updateMany({
+            where: {
+              id: { in: paymentIds },
+            },
+            data: {
+              payoutStatus: 'READY',
+            },
+          });
+
+          console.log('✅ Payments reverted to READY:', paymentIds.length);
+        } catch (error) {
+          console.error('❌ Error updating payment status:', error);
+        }
+      }
+    }
+
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error: any) {
     console.error('========================================');
