@@ -127,13 +127,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // CRITICAL: Check if creator has completed Stripe Connect onboarding
-    if (!creator.isStripeOnboarded || !creator.stripeAccountId) {
-      return NextResponse.json(
-        { error: 'Vous devez d\'abord configurer votre compte Stripe Connect dans les paramètres pour créer des offres.' },
-        { status: 400 }
-      );
-    }
+    // Note: Stripe Connect validation is enforced at booking time, not offer creation.
+    // This allows creators to create offers first and set up payments later.
+    // See /api/bookings/route.ts for the Stripe Connect validation.
 
     // Create call offer
     const callOffer = await db.callOffer.create({
