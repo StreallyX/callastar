@@ -8,10 +8,17 @@ export const dynamic = 'force-dynamic';
 const createOfferSchema = z.object({
   title: z.string().min(3, 'Le titre doit contenir au moins 3 caractères'),
   description: z.string().min(10, 'La description doit contenir au moins 10 caractères'),
-  price: z.number().positive('Le prix doit être positif'),
-  dateTime: z.string().datetime(),
-  duration: z.number().positive('La durée doit être positive'),
+
+  // Accept "59.99" or 59.99
+  price: z.coerce.number().positive('Le prix doit être positif'),
+
+  // Accept ISO string OR Date-compatible input
+  dateTime: z.coerce.date(),
+
+  // Accept "30" or 30
+  duration: z.coerce.number().positive('La durée doit être positive'),
 });
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -113,7 +120,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const validatedData = createOfferSchema.parse(body);
 
     // Get creator
     const creator = await db.creator.findUnique({
@@ -132,13 +138,15 @@ export async function POST(request: NextRequest) {
     // See /api/bookings/route.ts for the Stripe Connect validation.
 
     // Create call offer
+    const validatedData = createOfferSchema.parse(body);
+
     const callOffer = await db.callOffer.create({
       data: {
         creatorId: creator.id,
         title: validatedData.title,
         description: validatedData.description,
         price: validatedData.price,
-        dateTime: new Date(validatedData.dateTime),
+        dateTime: validatedData.dateTime,
         duration: validatedData.duration,
       },
       include: {
@@ -154,6 +162,7 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
 
     return NextResponse.json(
       { callOffer },
