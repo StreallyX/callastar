@@ -88,27 +88,57 @@ export async function POST(request: NextRequest) {
         // Continue anyway - room can be created later
       }
 
-      // Create payment record with payout tracking
-      const amount = Number(booking.totalPrice);
-      const platformFee = Number(paymentIntent.metadata?.platformFee || 0);
-      const creatorAmount = Number(paymentIntent.metadata?.creatorAmount || 0);
-      
-      // Calculate payout release date (7 days from now)
-      const paymentDate = new Date();
-      const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
+      // Check if payment record already exists
+      const existingPayment = await db.payment.findUnique({
+        where: { bookingId: booking.id },
+      });
 
-      await db.payment.create({
-        data: {
+      if (existingPayment) {
+        console.log('Payment record already exists for booking:', bookingId);
+        // Update status if needed
+        if (existingPayment.status !== 'SUCCEEDED') {
+          await db.payment.update({
+            where: { bookingId: booking.id },
+            data: { status: 'SUCCEEDED' },
+          });
+        }
+      } else {
+        // Create payment record with payout tracking
+        const amount = Number(booking.totalPrice);
+        const platformFee = Number(paymentIntent.metadata?.platformFee || 0);
+        const creatorAmount = Number(paymentIntent.metadata?.creatorAmount || 0);
+        
+        console.log('Creating payment record with values:', {
           bookingId: booking.id,
           amount,
-          stripePaymentIntentId: paymentIntent.id,
-          status: 'SUCCEEDED',
           platformFee,
           creatorAmount,
-          payoutStatus: 'HELD', // Payment held for 7 days
-          payoutReleaseDate,    // Date when funds can be transferred
-        },
-      });
+          paymentIntentId: paymentIntent.id,
+        });
+        
+        // Calculate payout release date (7 days from now)
+        const paymentDate = new Date();
+        const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
+
+        try {
+          await db.payment.create({
+            data: {
+              bookingId: booking.id,
+              amount,
+              stripePaymentIntentId: paymentIntent.id,
+              status: 'SUCCEEDED',
+              platformFee,
+              creatorAmount,
+              payoutStatus: 'HELD', // Payment held for 7 days
+              payoutReleaseDate,    // Date when funds can be transferred
+            },
+          });
+          console.log('Payment record created successfully for booking:', bookingId);
+        } catch (paymentError) {
+          console.error('ERROR creating payment record:', paymentError);
+          // Continue with rest of webhook processing
+        }
+      }
 
       // Send confirmation email to user
       try {

@@ -127,6 +127,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // CRITICAL: Check if creator has completed Stripe Connect onboarding
+    if (!creator.isStripeOnboarded || !creator.stripeAccountId) {
+      return NextResponse.json(
+        { error: 'Vous devez d\'abord configurer votre compte Stripe Connect dans les paramètres pour créer des offres.' },
+        { status: 400 }
+      );
+    }
+
     // Create call offer
     const callOffer = await db.callOffer.create({
       data: {

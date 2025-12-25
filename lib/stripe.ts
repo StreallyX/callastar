@@ -57,9 +57,8 @@ export async function createPaymentIntent({
       currency,
       metadata: {
         ...metadata,
-        // Store creator account ID in metadata for later transfer
-        stripeAccountId: stripeAccountId || '',
-        creatorAmount: platformFee ? String((amount - platformFee) * 100) : String(amount * 100),
+        // Metadata values are already provided in the metadata object from create-intent
+        // Do not override them here
       },
       automatic_payment_methods: {
         enabled: true,

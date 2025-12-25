@@ -73,6 +73,13 @@ export async function POST(request: NextRequest) {
       where: { id: validatedData.callOfferId },
       include: {
         booking: true,
+        creator: {
+          select: {
+            id: true,
+            stripeAccountId: true,
+            isStripeOnboarded: true,
+          },
+        },
       },
     });
 
@@ -80,6 +87,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Offre introuvable' },
         { status: 404 }
+      );
+    }
+
+    // CRITICAL: Check if creator has completed Stripe Connect onboarding
+    if (!callOffer.creator.isStripeOnboarded || !callOffer.creator.stripeAccountId) {
+      return NextResponse.json(
+        { error: 'Le créateur n\'a pas encore configuré son compte de paiement. Les réservations sont temporairement indisponibles.' },
+        { status: 400 }
       );
     }
 
