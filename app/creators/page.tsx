@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/navbar';
 import { CreatorCard } from '@/components/creator-card';
 import { db } from '@/lib/db';
+import type { CreatorCardData } from '@/types';
 
 async function getCreators() {
   try {
@@ -55,8 +56,8 @@ export default async function CreatorsPage() {
 
         {creators?.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {creators.map((creator: any) => (
-              <CreatorCard key={creator?.id} creator={creator} />
+            {creators.map((creator) => (
+              <CreatorCard key={creator?.id} creator={creator as CreatorCardData} />
             ))}
           </div>
         ) : (

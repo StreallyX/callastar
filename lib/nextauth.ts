@@ -1,8 +1,37 @@
-import { NextAuthOptions } from 'next-auth';
+import { NextAuthOptions, User as NextAuthUser } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import prisma from '@/lib/db';
 import { generateToken } from '@/lib/auth';
+
+// Extend the built-in types
+declare module 'next-auth' {
+  interface User {
+    id: string;
+    email: string;
+    role?: string;
+  }
+  
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      name?: string | null;
+      image?: string | null;
+      role?: string;
+    };
+    customAuthToken?: string;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    userId?: string;
+    email?: string;
+    role?: string;
+    customAuthToken?: string;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -39,14 +68,14 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.userId = user.id;
         token.email = user.email;
-        token.role = (user as any).role || 'USER';
+        token.role = user.role || 'USER';
         
         // Generate our custom JWT token for API authentication
         try {
           const customToken = await generateToken({
             userId: user.id,
             email: user.email!,
-            role: (user as any).role || 'USER'
+            role: user.role || 'USER'
           });
           token.customAuthToken = customToken;
         } catch (error) {
@@ -57,10 +86,10 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
-        (session.user as any).id = token.userId as string;
+        session.user.id = token.userId as string;
         session.user.email = token.email as string;
-        (session.user as any).role = token.role;
-        (session as any).customAuthToken = token.customAuthToken;
+        session.user.role = token.role;
+        session.customAuthToken = token.customAuthToken;
       }
       return session;
     },

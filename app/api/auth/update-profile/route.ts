@@ -51,7 +51,7 @@ export async function PUT(request: NextRequest) {
     });
 
     return NextResponse.json({ user: updatedUser });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: error.issues[0].message },

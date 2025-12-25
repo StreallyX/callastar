@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest) {
     });
 
     return NextResponse.json({ message: 'Mot de passe modifié avec succès' });
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: error.issues[0].message },

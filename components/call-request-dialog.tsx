@@ -73,8 +73,9 @@ export function CallRequestDialog({ creatorId, creatorName }: CallRequestDialogP
       setOpen(false);
       setFormData({ proposedDateTime: '', proposedPrice: '', message: '' });
       router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || 'Une erreur s\'est produite');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur s\'est produite';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

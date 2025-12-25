@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { CallRequestStatus } from '@prisma/client';
 
 // Schema validation
 const createCallRequestSchema = z.object({
@@ -129,7 +130,7 @@ export async function GET(request: NextRequest) {
       callRequests = await prisma.callRequest.findMany({
         where: {
           creatorId: creator.id,
-          ...(status && { status: status as any }),
+          ...(status && { status: status as CallRequestStatus }),
         },
         include: {
           user: {
@@ -149,7 +150,7 @@ export async function GET(request: NextRequest) {
       callRequests = await prisma.callRequest.findMany({
         where: {
           userId: decoded.userId,
-          ...(status && { status: status as any }),
+          ...(status && { status: status as CallRequestStatus }),
         },
         include: {
           creator: {
