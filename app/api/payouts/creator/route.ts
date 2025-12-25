@@ -61,16 +61,16 @@ export async function GET(request: NextRequest) {
 
     // Calculate totals
     const totalEarnings = payments
-      .filter(p => p.payoutStatus === 'PAID')
-      .reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+      .filter((p) => p.payoutStatus === 'PAID')
+      .reduce((sum: number, p) => sum + Number(p.creatorAmount), 0);
     
     const pendingEarnings = payments
-      .filter(p => p.payoutStatus === 'HELD' || p.payoutStatus === 'READY')
-      .reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+      .filter((p) => p.payoutStatus === 'HELD' || p.payoutStatus === 'READY')
+      .reduce((sum: number, p) => sum + Number(p.creatorAmount), 0);
     
     const readyForPayout = payments
-      .filter(p => p.payoutStatus === 'READY')
-      .reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+      .filter((p) => p.payoutStatus === 'READY')
+      .reduce((sum: number, p) => sum + Number(p.creatorAmount), 0);
 
     return NextResponse.json({
       payments,

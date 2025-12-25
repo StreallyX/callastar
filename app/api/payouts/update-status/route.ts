@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     // Update payments to READY status
     const result = await db.payment.updateMany({
       where: {
-        id: { in: paymentsToUpdate.map(p => p.id) },
+        id: { in: paymentsToUpdate.map((p) => p.id) },
       },
       data: {
         payoutStatus: 'READY',
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: `Updated ${result.count} payments to READY status`,
       updatedCount: result.count,
-      paymentIds: paymentsToUpdate.map(p => p.id),
+      paymentIds: paymentsToUpdate.map((p) => p.id),
     });
   } catch (error) {
     console.error('Error updating payment statuses:', error);

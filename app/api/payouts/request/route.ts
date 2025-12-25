@@ -81,14 +81,14 @@ export async function POST(request: NextRequest) {
 
     // Calculate total amount
     const totalAmount = readyPayments.reduce(
-      (sum, p) => sum + Number(p.creatorAmount),
+      (sum: number, p) => sum + Number(p.creatorAmount),
       0
     );
 
     // Mark payments as PROCESSING
     await db.payment.updateMany({
       where: {
-        id: { in: readyPayments.map(p => p.id) },
+        id: { in: readyPayments.map((p) => p.id) },
       },
       data: {
         payoutStatus: 'PROCESSING',
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         stripeAccountId: creator.stripeAccountId,
         metadata: {
           creatorId: creator.id,
-          paymentIds: readyPayments.map(p => p.id).join(','),
+          paymentIds: readyPayments.map((p) => p.id).join(','),
           paymentCount: String(readyPayments.length),
         },
       });
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       // Mark payments as PAID
       await db.payment.updateMany({
         where: {
-          id: { in: readyPayments.map(p => p.id) },
+          id: { in: readyPayments.map((p) => p.id) },
         },
         data: {
           payoutStatus: 'PAID',
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       // Mark payments back as READY on failure
       await db.payment.updateMany({
         where: {
-          id: { in: readyPayments.map(p => p.id) },
+          id: { in: readyPayments.map((p) => p.id) },
         },
         data: {
           payoutStatus: 'READY',

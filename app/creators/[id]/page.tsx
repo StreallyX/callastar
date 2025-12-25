@@ -72,7 +72,7 @@ async function getCreatorReviews(id: string) {
     
     const totalReviews = reviews.length;
     const averageRating = totalReviews > 0
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+      ? reviews.reduce((sum: number, review) => sum + review.rating, 0) / totalReviews
       : 0;
     
     return { reviews, averageRating, totalReviews };
