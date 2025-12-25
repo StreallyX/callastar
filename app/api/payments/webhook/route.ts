@@ -31,8 +31,26 @@ export async function POST(request: NextRequest) {
     // Verify webhook signature
     const event = verifyWebhookSignature(body, signature, webhookSecret);
 
-    // Handle transfer.created event (transfer completed successfully)
-    // Note: Transfers to Stripe Connect accounts are instant and successful when created
+    /**
+     * Handle transfer.created event
+     * 
+     * IMPORTANT: There are TWO types of transfers in this system:
+     * 
+     * 1. AUTOMATIC TRANSFERS (from destination charges):
+     *    - Created automatically by Stripe when a payment succeeds with transfer_data
+     *    - NO custom metadata (created by Stripe, not our code)
+     *    - Linked to payment via payment_intent
+     *    - Should NOT be processed as payout requests
+     *    - These are the creator's earnings from direct bookings
+     * 
+     * 2. MANUAL TRANSFERS (from admin payout requests):
+     *    - Created by our code via /api/admin/payout-requests/[id]/prepare-stripe
+     *    - Include metadata with payoutRequestId
+     *    - Should be processed as payout requests
+     *    - These are batched payouts of held funds
+     * 
+     * This handler distinguishes between the two by checking for metadata.payoutRequestId
+     */
     if (event.type === 'transfer.created') {
       const transfer = event.data.object as any;
       
@@ -53,14 +71,27 @@ export async function POST(request: NextRequest) {
       console.log('Metadata keys:', transfer.metadata ? Object.keys(transfer.metadata).join(', ') : 'N/A');
       console.log('========================================');
 
+      // Check if this is an automatic transfer (no payoutRequestId) or manual transfer
       if (!payoutRequestId) {
-        console.error('❌ CRITICAL: Transfer created without payoutRequestId in metadata!');
-        console.error('Transfer ID:', transfer.id);
-        console.error('This transfer cannot be matched to a database record.');
-        console.error('Manual intervention required - check Stripe dashboard.');
+        // This is an AUTOMATIC TRANSFER from a destination charge
+        // These are created by Stripe when a payment succeeds with transfer_data
+        // They don't need payout request processing
+        console.log('ℹ️  AUTOMATIC TRANSFER (from payment) - No payout request processing needed');
+        console.log('Transfer ID:', transfer.id);
+        console.log('Amount:', transfer.amount, 'cents');
+        console.log('Destination:', transfer.destination);
+        console.log('This transfer was automatically created by Stripe from a payment intent');
+        console.log('The creator\'s payment record was already created during payment_intent.succeeded');
+        console.log('No further action required - this is expected behavior');
         console.log('========================================');
         return NextResponse.json({ received: true }, { status: 200 });
       }
+
+      // This is a MANUAL TRANSFER from a payout request - process it
+      console.log('📋 MANUAL TRANSFER (from payout request) - Processing...');
+      console.log('Transfer ID:', transfer.id);
+      console.log('Payout Request ID:', payoutRequestId);
+      console.log('========================================');
 
       try {
         // Get the payout request
@@ -77,7 +108,10 @@ export async function POST(request: NextRequest) {
         });
 
         if (!payoutRequest) {
-          console.error('PayoutRequest not found:', payoutRequestId);
+          console.error('❌ PayoutRequest not found:', payoutRequestId);
+          console.error('Transfer ID:', transfer.id);
+          console.error('This is a manual transfer but the payout request does not exist in the database');
+          console.error('Manual intervention required - check database and Stripe dashboard');
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
@@ -106,6 +140,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`✅ Transfer completed for PayoutRequest ${payoutRequestId}`);
+        console.log(`✅ Updated ${payoutRequest.payments.length} payment records to PAID status`);
 
         // Send notification to creator
         try {
@@ -167,7 +202,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Handle transfer.updated event (for monitoring status changes)
+    /**
+     * Handle transfer.updated event
+     * 
+     * Similar to other transfer events, this handler distinguishes between:
+     * 1. AUTOMATIC TRANSFER UPDATES - from destination charges (no metadata)
+     * 2. MANUAL TRANSFER UPDATES - from payout requests (has payoutRequestId)
+     * 
+     * Most transfer updates don't require action since transfers are instant.
+     * This is mainly for monitoring and debugging purposes.
+     */
     if (event.type === 'transfer.updated') {
       const transfer = event.data.object as any;
 
@@ -184,13 +228,28 @@ export async function POST(request: NextRequest) {
       
       const payoutRequestId = transfer.metadata?.payoutRequestId;
       console.log('Extracted Payout Request ID:', payoutRequestId);
+      console.log('Transfer Type:', payoutRequestId ? 'MANUAL (payout request)' : 'AUTOMATIC (destination charge)');
       console.log('========================================');
 
       // Log for monitoring purposes - most updates don't require action
       // since transfers are instant and successful when created
+      if (!payoutRequestId) {
+        console.log('ℹ️  AUTOMATIC TRANSFER UPDATE - No action needed');
+      } else {
+        console.log('📋 MANUAL TRANSFER UPDATE - Monitoring only, no action needed');
+      }
+      console.log('========================================');
     }
 
-    // Handle transfer.reversed event (transfer was reversed by Stripe)
+    /**
+     * Handle transfer.reversed event
+     * 
+     * Similar to transfer.created, this handler must distinguish between:
+     * 1. AUTOMATIC TRANSFER REVERSALS - from destination charges (no metadata)
+     * 2. MANUAL TRANSFER REVERSALS - from payout requests (has payoutRequestId)
+     * 
+     * Only manual transfer reversals need payout request processing
+     */
     if (event.type === 'transfer.reversed') {
       const transfer = event.data.object as any;
       const reversal = transfer.reversals?.data?.[0];
@@ -213,15 +272,29 @@ export async function POST(request: NextRequest) {
       console.log('Metadata keys:', transfer.metadata ? Object.keys(transfer.metadata).join(', ') : 'N/A');
       console.log('========================================');
 
+      // Check if this is an automatic transfer reversal (no payoutRequestId) or manual transfer reversal
       if (!payoutRequestId) {
-        console.error('❌ CRITICAL: Transfer reversed without payoutRequestId in metadata!');
-        console.error('Transfer ID:', transfer.id);
-        console.error('Reversal ID:', reversal?.id);
-        console.error('This reversal cannot be matched to a database record.');
-        console.error('Manual intervention required - check Stripe dashboard and update database manually.');
+        // This is an AUTOMATIC TRANSFER REVERSAL
+        // Could happen if a payment is disputed/refunded after the automatic transfer
+        console.log('ℹ️  AUTOMATIC TRANSFER REVERSAL (from payment) - No payout request processing needed');
+        console.log('Transfer ID:', transfer.id);
+        console.log('Reversal ID:', reversal?.id);
+        console.log('Amount:', transfer.amount, 'cents');
+        console.log('Destination:', transfer.destination);
+        console.log('Reversal Reason:', reversal?.metadata?.reason || 'Not specified');
+        console.log('This reversal is for an automatic transfer from a destination charge');
+        console.log('This might indicate a payment dispute or refund - check the related payment intent');
+        console.log('No payout request update needed - this is expected for automatic transfers');
         console.log('========================================');
         return NextResponse.json({ received: true }, { status: 200 });
       }
+
+      // This is a MANUAL TRANSFER REVERSAL from a payout request - process it
+      console.log('📋 MANUAL TRANSFER REVERSAL (from payout request) - Processing...');
+      console.log('Transfer ID:', transfer.id);
+      console.log('Payout Request ID:', payoutRequestId);
+      console.log('Reversal ID:', reversal?.id);
+      console.log('========================================');
 
       try {
         // Get the payout request
@@ -238,7 +311,11 @@ export async function POST(request: NextRequest) {
         });
 
         if (!payoutRequest) {
-          console.error('PayoutRequest not found:', payoutRequestId);
+          console.error('❌ PayoutRequest not found:', payoutRequestId);
+          console.error('Transfer ID:', transfer.id);
+          console.error('Reversal ID:', reversal?.id);
+          console.error('This is a manual transfer reversal but the payout request does not exist in the database');
+          console.error('Manual intervention required - check database and Stripe dashboard');
           return NextResponse.json({ received: true }, { status: 200 });
         }
 
@@ -266,6 +343,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`✅ Transfer reversed for PayoutRequest ${payoutRequestId}`);
+        console.log(`✅ Updated ${payoutRequest.payments.length} payment records to REVERSED status`);
 
         // Send notification to creator
         try {
