@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { createPaymentIntent, calculateFees } from '@/lib/stripe';
+import { getPlatformSettings } from '@/lib/settings';
+import { logPayment } from '@/lib/logger';
+import { TransactionEventType } from '@prisma/client';
 
 const createIntentSchema = z.object({
   bookingId: z.string().cuid(),
@@ -21,6 +24,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = createIntentSchema.parse(body);
+
+    // Get platform settings
+    const settings = await getPlatformSettings();
 
     // Get booking with creator's Stripe Connect info
     const booking = await db.booking.findUnique({
@@ -71,9 +77,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate fees
+    // Calculate fees using platform settings
     const amount = Number(booking.totalPrice);
-    const { platformFee, creatorAmount } = calculateFees(amount);
+    const platformFeePercentage = Number(settings.platformFeePercentage);
+    const platformFeeFixed = settings.platformFeeFixed ? Number(settings.platformFeeFixed) : 0;
+    
+    // Calculate platform fee: percentage + fixed fee (if any)
+    const platformFee = (amount * platformFeePercentage / 100) + platformFeeFixed;
+    const creatorAmount = amount - platformFee;
 
     const creator = booking.callOffer.creator;
     const useStripeConnect = creator.isStripeOnboarded && creator.stripeAccountId;
@@ -81,14 +92,14 @@ export async function POST(request: NextRequest) {
     // Create payment intent (with or without destination charge)
     const paymentIntent = await createPaymentIntent({
       amount,
-      currency: 'eur',
+      currency: settings.currency.toLowerCase(),
       metadata: {
         bookingId: booking.id,
         userId: user.userId,
         creatorId: booking.callOffer.creatorId,
         callOfferId: booking.callOfferId,
-        platformFee: platformFee.toString(),
-        creatorAmount: creatorAmount.toString(),
+        platformFee: platformFee.toFixed(2),
+        creatorAmount: creatorAmount.toFixed(2),
         useStripeConnect: (useStripeConnect ?? false).toString(),
       },
       stripeAccountId: useStripeConnect ? creator.stripeAccountId : null,
@@ -100,6 +111,35 @@ export async function POST(request: NextRequest) {
       where: { id: booking.id },
       data: {
         stripePaymentIntentId: paymentIntent.id,
+      },
+    });
+
+    // Create payment record (for tracking)
+    const payment = await db.payment.create({
+      data: {
+        bookingId: booking.id,
+        amount,
+        stripePaymentIntentId: paymentIntent.id,
+        status: 'PENDING',
+        platformFee,
+        creatorAmount,
+        payoutStatus: 'PENDING',
+      },
+    });
+
+    // Log payment creation
+    await logPayment(TransactionEventType.PAYMENT_CREATED, {
+      paymentId: payment.id,
+      amount,
+      currency: settings.currency,
+      status: 'PENDING',
+      stripePaymentIntentId: paymentIntent.id,
+      metadata: {
+        bookingId: booking.id,
+        userId: user.userId,
+        creatorId: booking.callOffer.creatorId,
+        platformFee,
+        creatorAmount,
       },
     });
 

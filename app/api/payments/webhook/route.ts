@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { db } from '@/lib/db';
+import prisma from '@/lib/db';
 import { verifyWebhookSignature, calculatePayoutReleaseDate } from '@/lib/stripe';
 import { createDailyRoom } from '@/lib/daily';
 import { sendEmail, generateBookingConfirmationEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
+import { logWebhook, logPayment, logPayout, logRefund, logDispute } from '@/lib/logger';
+import { TransactionEventType, EntityType, RefundStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
+import Stripe from 'stripe';
 
+/**
+ * POST /api/payments/webhook
+ * Comprehensive Stripe webhook handler
+ * 
+ * Handles all critical Stripe events with idempotency and proper logging
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
@@ -29,278 +38,44 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify webhook signature
-    const event = verifyWebhookSignature(body, signature, webhookSecret);
+    let event: Stripe.Event;
+    try {
+      event = verifyWebhookSignature(body, signature, webhookSecret);
+    } catch (error) {
+      console.error('Webhook signature verification failed:', error);
+      return NextResponse.json(
+        { error: 'Invalid signature' },
+        { status: 400 }
+      );
+    }
 
-    // Handle payment_intent.succeeded event
-    if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object as any;
-      const bookingId = paymentIntent.metadata?.bookingId;
+    // Check idempotency - have we already processed this event?
+    const existingLog = await prisma.transactionLog.findFirst({
+      where: { stripeEventId: event.id },
+    });
 
-      if (!bookingId) {
-        console.error('No bookingId in payment intent metadata');
-        return NextResponse.json({ received: true }, { status: 200 });
-      }
+    if (existingLog) {
+      console.log(`[Webhook] Event ${event.id} already processed. Skipping.`);
+      return NextResponse.json({ received: true, skipped: true }, { status: 200 });
+    }
 
-      // Get booking
-      const booking = await db.booking.findUnique({
-        where: { id: bookingId },
-        include: {
-          callOffer: {
-            include: {
-              creator: {
-                include: {
-                  user: true,
-                },
-              },
-            },
-          },
-          user: true,
-        },
-      });
+    // Process webhook event
+    console.log(`[Webhook] Processing event: ${event.type} (${event.id})`);
 
-      if (!booking) {
-        console.error('Booking not found:', bookingId);
-        return NextResponse.json({ received: true }, { status: 200 });
-      }
-
-      // Create Daily.co room
-      const roomName = `call-${bookingId}`;
-      try {
-        const room = await createDailyRoom({
-          name: roomName,
-          properties: {
-            exp: Math.floor(new Date(booking.callOffer.dateTime).getTime() / 1000) + 60 * 60 * 24,
-            max_participants: 2,
-          },
-        });
-
-        // Update booking with room info and status
-        await db.booking.update({
-          where: { id: bookingId },
-          data: {
-            status: 'CONFIRMED',
-            dailyRoomUrl: room.url,
-            dailyRoomName: room.name,
-          },
-        });
-      } catch (error) {
-        console.error('Error creating Daily room:', error);
-        // Continue anyway - room can be created later
-      }
-
-      // Create payment record with payout tracking
-      const amount = Number(booking.totalPrice);
-      const platformFee = Number(paymentIntent.metadata?.platformFee || 0);
-      const creatorAmount = Number(paymentIntent.metadata?.creatorAmount || 0);
+    try {
+      await processWebhookEvent(event);
+    } catch (processingError) {
+      // Log the error but return 200 to prevent Stripe retries for non-retryable errors
+      console.error(`[Webhook] Error processing event ${event.type}:`, processingError);
       
-      // Calculate payout release date (7 days from now)
-      const paymentDate = new Date();
-      const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
-
-      await db.payment.create({
-        data: {
-          bookingId: booking.id,
-          amount,
-          stripePaymentIntentId: paymentIntent.id,
-          status: 'SUCCEEDED',
-          platformFee,
-          creatorAmount,
-          payoutStatus: 'HELD', // Payment held for 7 days
-          payoutReleaseDate,    // Date when funds can be transferred
-        },
+      // Log the error to database
+      await logWebhook({
+        stripeEventId: event.id,
+        eventType: event.type,
+        entityType: EntityType.PAYMENT,
+        metadata: { event: event.data.object },
+        errorMessage: processingError instanceof Error ? processingError.message : String(processingError),
       });
-
-      // Send confirmation email to user
-      try {
-        const callUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'}/call/${booking.id}`;
-        
-        const emailHtml = generateBookingConfirmationEmail({
-          userName: booking.user.name,
-          creatorName: booking.callOffer.creator.user.name,
-          callTitle: booking.callOffer.title,
-          callDateTime: booking.callOffer.dateTime,
-          callDuration: booking.callOffer.duration,
-          totalPrice: amount,
-          callUrl,
-        });
-
-        await sendEmail({
-          to: booking.user.email,
-          subject: '✨ Confirmation de réservation - Call a Star',
-          html: emailHtml,
-        });
-
-        // Send payment receipt email to user
-        const receiptHtml = `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                .receipt-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ddd; }
-                .total { font-size: 18px; font-weight: bold; margin-top: 20px; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1>💳 Reçu de paiement</h1>
-                </div>
-                <div class="content">
-                  <p>Bonjour ${booking.user.name},</p>
-                  <p>Votre paiement a été traité avec succès. Voici le détail de votre transaction :</p>
-                  
-                  <div style="margin: 30px 0;">
-                    <div class="receipt-item">
-                      <span>Date de paiement:</span>
-                      <span>${new Date().toLocaleDateString('fr-FR')}</span>
-                    </div>
-                    <div class="receipt-item">
-                      <span>Service:</span>
-                      <span>${booking.callOffer.title}</span>
-                    </div>
-                    <div class="receipt-item">
-                      <span>Créateur:</span>
-                      <span>${booking.callOffer.creator.user.name}</span>
-                    </div>
-                    <div class="receipt-item">
-                      <span>Date de l'appel:</span>
-                      <span>${new Date(booking.callOffer.dateTime).toLocaleDateString('fr-FR', { 
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}</span>
-                    </div>
-                    <div class="receipt-item total">
-                      <span>Montant total:</span>
-                      <span>${amount.toFixed(2)} €</span>
-                    </div>
-                  </div>
-                  
-                  <p>Ce reçu confirme que votre réservation est bien confirmée. Vous recevrez un rappel avant l'appel.</p>
-                  <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px;">
-                    Merci d'avoir utilisé Call a Star !<br>
-                    Pour toute question, n'hésitez pas à nous contacter.
-                  </p>
-                </div>
-              </div>
-            </body>
-          </html>
-        `;
-
-        await sendEmail({
-          to: booking.user.email,
-          subject: '💳 Reçu de paiement - Call a Star',
-          html: receiptHtml,
-        });
-      } catch (error) {
-        console.error('Error sending emails to user:', error);
-        // Continue anyway - email is not critical
-      }
-
-      // Send notification to creator (email + in-app)
-      try {
-        // Create in-app notification for creator
-        await createNotification({
-          userId: booking.callOffer.creator.userId,
-          type: 'BOOKING_CONFIRMED',
-          title: 'Nouvelle réservation !',
-          message: `${booking.user.name} a réservé votre appel "${booking.callOffer.title}" pour le ${new Date(booking.callOffer.dateTime).toLocaleDateString('fr-FR', { 
-            day: 'numeric',
-            month: 'long',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}.`,
-          link: `/dashboard/creator`,
-        });
-
-        // Send email notification to creator
-        const creatorEmailHtml = `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                .booking-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-                .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1>🎉 Nouvelle réservation !</h1>
-                </div>
-                <div class="content">
-                  <p>Bonjour ${booking.callOffer.creator.user.name},</p>
-                  <p>Excellente nouvelle ! Vous avez reçu une nouvelle réservation.</p>
-                  
-                  <div class="booking-details">
-                    <h3 style="margin-top: 0;">Détails de la réservation</h3>
-                    <div class="detail-row">
-                      <span><strong>Participant:</strong></span>
-                      <span>${booking.user.name}</span>
-                    </div>
-                    <div class="detail-row">
-                      <span><strong>Service:</strong></span>
-                      <span>${booking.callOffer.title}</span>
-                    </div>
-                    <div class="detail-row">
-                      <span><strong>Date et heure:</strong></span>
-                      <span>${new Date(booking.callOffer.dateTime).toLocaleDateString('fr-FR', { 
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}</span>
-                    </div>
-                    <div class="detail-row">
-                      <span><strong>Durée:</strong></span>
-                      <span>${booking.callOffer.duration} minutes</span>
-                    </div>
-                    <div class="detail-row" style="border-bottom: none; font-size: 18px; font-weight: bold; color: #667eea;">
-                      <span>Montant:</span>
-                      <span>${creatorAmount.toFixed(2)} €</span>
-                    </div>
-                  </div>
-                  
-                  <p><strong>💰 Paiement sécurisé:</strong> Le montant de <strong>${creatorAmount.toFixed(2)} €</strong> est actuellement sécurisé sur la plateforme. Il sera disponible pour transfert sur votre compte Stripe dans <strong>7 jours</strong> (le ${payoutReleaseDate.toLocaleDateString('fr-FR')}), après la période de protection contre les litiges.</p>
-                  
-                  <div style="text-align: center;">
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'}/dashboard/creator" class="cta-button">
-                      Voir mes réservations
-                    </a>
-                  </div>
-                  
-                  <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px;">
-                    Pensez à vous connecter 5 minutes avant le début de l'appel pour accueillir votre participant.
-                  </p>
-                </div>
-              </div>
-            </body>
-          </html>
-        `;
-
-        await sendEmail({
-          to: booking.callOffer.creator.user.email,
-          subject: '🎉 Nouvelle réservation - Call a Star',
-          html: creatorEmailHtml,
-        });
-      } catch (error) {
-        console.error('Error sending notifications to creator:', error);
-        // Continue anyway - notification is not critical
-      }
     }
 
     // Handle payout.created event
@@ -572,10 +347,873 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('[Webhook] Fatal error:', error);
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 400 }
     );
   }
+}
+
+/**
+ * Process webhook event based on type
+ */
+async function processWebhookEvent(event: Stripe.Event): Promise<void> {
+  switch (event.type) {
+    case 'payment_intent.succeeded':
+      await handlePaymentIntentSucceeded(event);
+      break;
+
+    case 'payment_intent.payment_failed':
+      await handlePaymentIntentFailed(event);
+      break;
+
+    case 'charge.refunded':
+      await handleChargeRefunded(event);
+      break;
+
+    case 'charge.dispute.created':
+      await handleDisputeCreated(event);
+      break;
+
+    case 'charge.dispute.closed':
+      await handleDisputeClosed(event);
+      break;
+
+    case 'charge.dispute.funds_withdrawn':
+      await handleDisputeFundsWithdrawn(event);
+      break;
+
+    case 'charge.dispute.funds_reinstated':
+      await handleDisputeFundsReinstated(event);
+      break;
+
+    case 'payout.paid':
+      await handlePayoutPaid(event);
+      break;
+
+    case 'payout.failed':
+      await handlePayoutFailed(event);
+      break;
+
+    case 'transfer.reversed':
+      await handleTransferReversed(event);
+      break;
+
+    case 'account.updated':
+      await handleAccountUpdated(event);
+      break;
+
+    default:
+      console.log(`[Webhook] Unhandled event type: ${event.type}`);
+  }
+}
+
+/**
+ * Handle payment_intent.succeeded
+ */
+async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> {
+  const paymentIntent = event.data.object as Stripe.PaymentIntent;
+  const bookingId = paymentIntent.metadata?.bookingId;
+
+  if (!bookingId) {
+    console.error('[Webhook] No bookingId in payment intent metadata');
+    return;
+  }
+
+  // Get booking
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      callOffer: {
+        include: {
+          creator: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      },
+      user: true,
+    },
+  });
+
+  if (!booking) {
+    console.error('[Webhook] Booking not found:', bookingId);
+    return;
+  }
+
+  // Create Daily.co room
+  const roomName = `call-${bookingId}`;
+  try {
+    const room = await createDailyRoom({
+      name: roomName,
+      properties: {
+        exp: Math.floor(new Date(booking.callOffer.dateTime).getTime() / 1000) + 60 * 60 * 24,
+        max_participants: 2,
+      },
+    });
+
+    // Update booking with room info and status
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        status: 'CONFIRMED',
+        dailyRoomUrl: room.url,
+        dailyRoomName: room.name,
+      },
+    });
+  } catch (error) {
+    console.error('[Webhook] Error creating Daily room:', error);
+  }
+
+  // Create or update payment record
+  const amount = Number(booking.totalPrice);
+  const platformFee = Number(paymentIntent.metadata?.platformFee || 0);
+  const creatorAmount = Number(paymentIntent.metadata?.creatorAmount || 0);
+  
+  const paymentDate = new Date();
+  const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
+
+  const payment = await prisma.payment.upsert({
+    where: { bookingId: booking.id },
+    update: {
+      status: 'SUCCEEDED',
+    },
+    create: {
+      bookingId: booking.id,
+      amount,
+      stripePaymentIntentId: paymentIntent.id,
+      status: 'SUCCEEDED',
+      platformFee,
+      creatorAmount,
+      payoutStatus: 'HELD',
+      payoutReleaseDate,
+    },
+  });
+
+  // Log payment success
+  await logPayment(TransactionEventType.PAYMENT_SUCCEEDED, {
+    paymentId: payment.id,
+    amount,
+    currency: 'EUR',
+    status: 'SUCCEEDED',
+    stripePaymentIntentId: paymentIntent.id,
+    metadata: {
+      bookingId: booking.id,
+      creatorId: booking.callOffer.creatorId,
+    },
+  });
+
+  // Log webhook received
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.PAYMENT,
+    entityId: payment.id,
+    metadata: { paymentIntentId: paymentIntent.id },
+  });
+
+  // Send confirmation emails
+  try {
+    const callUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'}/call/${booking.id}`;
+    
+    const emailHtml = generateBookingConfirmationEmail({
+      userName: booking.user.name,
+      creatorName: booking.callOffer.creator.user.name,
+      callTitle: booking.callOffer.title,
+      callDateTime: booking.callOffer.dateTime,
+      callDuration: booking.callOffer.duration,
+      totalPrice: amount,
+      callUrl,
+    });
+
+    await sendEmail({
+      to: booking.user.email,
+      subject: '✨ Confirmation de réservation - Call a Star',
+      html: emailHtml,
+    });
+
+    // Send receipt
+    const receiptHtml = generateReceiptEmail(booking, amount);
+    await sendEmail({
+      to: booking.user.email,
+      subject: '💳 Reçu de paiement - Call a Star',
+      html: receiptHtml,
+    });
+  } catch (error) {
+    console.error('[Webhook] Error sending emails to user:', error);
+  }
+
+  // Send notification to creator
+  try {
+    await createNotification({
+      userId: booking.callOffer.creator.userId,
+      type: 'BOOKING_CONFIRMED',
+      title: 'Nouvelle réservation !',
+      message: `${booking.user.name} a réservé votre appel "${booking.callOffer.title}".`,
+      link: `/dashboard/creator`,
+    });
+
+    const creatorEmailHtml = generateCreatorNotificationEmail(booking, creatorAmount, payoutReleaseDate);
+    await sendEmail({
+      to: booking.callOffer.creator.user.email,
+      subject: '🎉 Nouvelle réservation - Call a Star',
+      html: creatorEmailHtml,
+    });
+  } catch (error) {
+    console.error('[Webhook] Error sending notifications to creator:', error);
+  }
+}
+
+/**
+ * Handle payment_intent.payment_failed
+ */
+async function handlePaymentIntentFailed(event: Stripe.Event): Promise<void> {
+  const paymentIntent = event.data.object as Stripe.PaymentIntent;
+  const bookingId = paymentIntent.metadata?.bookingId;
+
+  if (!bookingId) {
+    console.error('[Webhook] No bookingId in payment intent metadata');
+    return;
+  }
+
+  const payment = await prisma.payment.findUnique({
+    where: { bookingId },
+  });
+
+  if (payment) {
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: { status: 'FAILED' },
+    });
+
+    await logPayment(TransactionEventType.PAYMENT_FAILED, {
+      paymentId: payment.id,
+      amount: Number(payment.amount),
+      currency: 'EUR',
+      status: 'FAILED',
+      stripePaymentIntentId: paymentIntent.id,
+      errorMessage: paymentIntent.last_payment_error?.message || 'Payment failed',
+    });
+  }
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.PAYMENT,
+    entityId: payment?.id || bookingId,
+    metadata: { paymentIntentId: paymentIntent.id },
+    errorMessage: paymentIntent.last_payment_error?.message || 'Payment failed',
+  });
+}
+
+/**
+ * Handle charge.refunded
+ */
+async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
+  const charge = event.data.object as Stripe.Charge;
+  
+  // Get the refund objects from the charge
+  const refunds = charge.refunds?.data || [];
+  
+  for (const stripeRefund of refunds) {
+    // Find refund by Stripe refund ID
+    const refund = await prisma.refund.findUnique({
+      where: { stripeRefundId: stripeRefund.id },
+    });
+
+    if (!refund) {
+      console.warn('[Webhook] Refund not found for Stripe refund:', stripeRefund.id);
+      continue;
+    }
+
+    // Update refund status
+    await prisma.refund.update({
+      where: { id: refund.id },
+      data: {
+        status: RefundStatus.SUCCEEDED,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Update payment refundedAmount
+    const payment = await prisma.payment.findUnique({
+      where: { id: refund.paymentId },
+    });
+
+    if (payment) {
+      const newRefundedAmount = Number(payment.refundedAmount) + Number(refund.amount);
+      const isFullyRefunded = newRefundedAmount >= Number(payment.amount);
+
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          refundedAmount: newRefundedAmount,
+          status: isFullyRefunded ? 'FAILED' : payment.status, // Mark as failed if fully refunded
+        },
+      });
+
+      // Log refund success
+      await logRefund(TransactionEventType.REFUND_SUCCEEDED, {
+        refundId: refund.id,
+        paymentId: refund.paymentId,
+        amount: Number(refund.amount),
+        currency: refund.currency,
+        status: RefundStatus.SUCCEEDED,
+        stripeRefundId: stripeRefund.id,
+        metadata: {
+          isFullyRefunded,
+          newRefundedAmount,
+        },
+      });
+    }
+  }
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.REFUND,
+    metadata: { chargeId: charge.id },
+  });
+}
+
+/**
+ * Handle charge.dispute.created
+ */
+async function handleDisputeCreated(event: Stripe.Event): Promise<void> {
+  const dispute = event.data.object as Stripe.Dispute;
+  
+  // Find payment by charge ID
+  const payment = await prisma.payment.findFirst({
+    where: { stripePaymentIntentId: dispute.payment_intent as string },
+  });
+
+  if (!payment) {
+    console.error('[Webhook] Payment not found for dispute:', dispute.id);
+    return;
+  }
+
+  // Create dispute record
+  const createdDispute = await prisma.dispute.create({
+    data: {
+      paymentId: payment.id,
+      stripeDisputeId: dispute.id,
+      amount: dispute.amount / 100, // Convert from cents
+      currency: dispute.currency.toUpperCase(),
+      reason: dispute.reason,
+      status: 'NEEDS_RESPONSE',
+      evidenceDetails: dispute.evidence_details as any,
+    },
+  });
+
+  // Update payment dispute status
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { disputeStatus: 'NEEDS_RESPONSE' },
+  });
+
+  // Log dispute
+  await logDispute(TransactionEventType.DISPUTE_CREATED, {
+    disputeId: createdDispute.id,
+    paymentId: payment.id,
+    amount: Number(createdDispute.amount),
+    currency: createdDispute.currency,
+    status: 'NEEDS_RESPONSE',
+    stripeDisputeId: dispute.id,
+    reason: dispute.reason,
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.DISPUTE,
+    entityId: createdDispute.id,
+    metadata: { disputeId: dispute.id },
+  });
+
+  // TODO: Send critical alert to admin about dispute
+  console.error('[CRITICAL] Dispute created:', {
+    disputeId: createdDispute.id,
+    paymentId: payment.id,
+    amount: createdDispute.amount,
+    reason: dispute.reason,
+  });
+}
+
+/**
+ * Handle charge.dispute.closed
+ */
+async function handleDisputeClosed(event: Stripe.Event): Promise<void> {
+  const dispute = event.data.object as Stripe.Dispute;
+  
+  const existingDispute = await prisma.dispute.findUnique({
+    where: { stripeDisputeId: dispute.id },
+  });
+
+  if (!existingDispute) {
+    console.warn('[Webhook] Dispute not found:', dispute.id);
+    return;
+  }
+
+  const status = dispute.status === 'won' ? 'WON' : 'LOST';
+
+  await prisma.dispute.update({
+    where: { id: existingDispute.id },
+    data: {
+      status: status as any,
+      evidenceDetails: dispute.evidence_details as any,
+    },
+  });
+
+  await prisma.payment.update({
+    where: { id: existingDispute.paymentId },
+    data: { disputeStatus: status },
+  });
+
+  await logDispute(TransactionEventType.DISPUTE_CLOSED, {
+    disputeId: existingDispute.id,
+    paymentId: existingDispute.paymentId,
+    amount: Number(existingDispute.amount),
+    currency: existingDispute.currency,
+    status,
+    stripeDisputeId: dispute.id,
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.DISPUTE,
+    entityId: existingDispute.id,
+    metadata: { disputeId: dispute.id, status },
+  });
+}
+
+/**
+ * Handle charge.dispute.funds_withdrawn
+ */
+async function handleDisputeFundsWithdrawn(event: Stripe.Event): Promise<void> {
+  const dispute = event.data.object as Stripe.Dispute;
+  
+  const existingDispute = await prisma.dispute.findUnique({
+    where: { stripeDisputeId: dispute.id },
+  });
+
+  if (!existingDispute) {
+    console.warn('[Webhook] Dispute not found:', dispute.id);
+    return;
+  }
+
+  await prisma.dispute.update({
+    where: { id: existingDispute.id },
+    data: { status: 'UNDER_REVIEW' },
+  });
+
+  await logDispute(TransactionEventType.DISPUTE_UPDATED, {
+    disputeId: existingDispute.id,
+    paymentId: existingDispute.paymentId,
+    amount: Number(existingDispute.amount),
+    currency: existingDispute.currency,
+    status: 'FUNDS_WITHDRAWN',
+    stripeDisputeId: dispute.id,
+    metadata: { action: 'funds_withdrawn' },
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.DISPUTE,
+    entityId: existingDispute.id,
+  });
+}
+
+/**
+ * Handle charge.dispute.funds_reinstated
+ */
+async function handleDisputeFundsReinstated(event: Stripe.Event): Promise<void> {
+  const dispute = event.data.object as Stripe.Dispute;
+  
+  const existingDispute = await prisma.dispute.findUnique({
+    where: { stripeDisputeId: dispute.id },
+  });
+
+  if (!existingDispute) {
+    console.warn('[Webhook] Dispute not found:', dispute.id);
+    return;
+  }
+
+  await prisma.dispute.update({
+    where: { id: existingDispute.id },
+    data: { status: 'WON' },
+  });
+
+  await prisma.payment.update({
+    where: { id: existingDispute.paymentId },
+    data: { disputeStatus: 'WON' },
+  });
+
+  await logDispute(TransactionEventType.DISPUTE_CLOSED, {
+    disputeId: existingDispute.id,
+    paymentId: existingDispute.paymentId,
+    amount: Number(existingDispute.amount),
+    currency: existingDispute.currency,
+    status: 'WON',
+    stripeDisputeId: dispute.id,
+    metadata: { action: 'funds_reinstated' },
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.DISPUTE,
+    entityId: existingDispute.id,
+  });
+}
+
+/**
+ * Handle payout.paid
+ */
+async function handlePayoutPaid(event: Stripe.Event): Promise<void> {
+  const stripePayout = event.data.object as Stripe.Payout;
+  
+  const payout = await prisma.payout.findFirst({
+    where: { stripePayoutId: stripePayout.id },
+  });
+
+  if (!payout) {
+    console.warn('[Webhook] Payout not found:', stripePayout.id);
+    return;
+  }
+
+  await prisma.payout.update({
+    where: { id: payout.id },
+    data: {
+      status: PayoutStatus.PAID,
+      updatedAt: new Date(),
+    },
+  });
+
+  await logPayout(TransactionEventType.PAYOUT_PAID, {
+    payoutId: payout.id,
+    creatorId: payout.creatorId,
+    amount: Number(payout.amount),
+    status: PayoutStatus.PAID,
+    stripePayoutId: stripePayout.id,
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.PAYOUT,
+    entityId: payout.id,
+    metadata: { stripePayoutId: stripePayout.id },
+  });
+
+  // Send notification to creator
+  try {
+    const creator = await prisma.creator.findUnique({
+      where: { id: payout.creatorId },
+      include: { user: true },
+    });
+
+    if (creator) {
+      await createNotification({
+        userId: creator.userId,
+        type: 'PAYOUT_COMPLETED',
+        title: 'Paiement effectué',
+        message: `Votre paiement de ${Number(payout.amount).toFixed(2)} EUR a été transféré avec succès.`,
+        link: '/dashboard/creator/earnings',
+      });
+    }
+  } catch (error) {
+    console.error('[Webhook] Error sending payout notification:', error);
+  }
+}
+
+/**
+ * Handle payout.failed
+ */
+async function handlePayoutFailed(event: Stripe.Event): Promise<void> {
+  const stripePayout = event.data.object as Stripe.Payout;
+  
+  const payout = await prisma.payout.findFirst({
+    where: { stripePayoutId: stripePayout.id },
+  });
+
+  if (!payout) {
+    console.warn('[Webhook] Payout not found:', stripePayout.id);
+    return;
+  }
+
+  await prisma.payout.update({
+    where: { id: payout.id },
+    data: {
+      status: PayoutStatus.FAILED,
+      failureReason: stripePayout.failure_message || 'Payout failed',
+      retriedCount: payout.retriedCount + 1,
+      updatedAt: new Date(),
+    },
+  });
+
+  await logPayout(TransactionEventType.PAYOUT_FAILED, {
+    payoutId: payout.id,
+    creatorId: payout.creatorId,
+    amount: Number(payout.amount),
+    status: PayoutStatus.FAILED,
+    stripePayoutId: stripePayout.id,
+    errorMessage: stripePayout.failure_message || 'Payout failed',
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.PAYOUT,
+    entityId: payout.id,
+    metadata: { stripePayoutId: stripePayout.id },
+    errorMessage: stripePayout.failure_message || 'Payout failed',
+  });
+
+  // TODO: Send alert to admin about failed payout
+  console.error('[CRITICAL] Payout failed:', {
+    payoutId: payout.id,
+    amount: payout.amount,
+    reason: stripePayout.failure_message,
+  });
+}
+
+/**
+ * Handle transfer.reversed
+ */
+async function handleTransferReversed(event: Stripe.Event): Promise<void> {
+  const transfer = event.data.object as Stripe.Transfer;
+  
+  // Try to find related payment by transfer ID
+  const payment = await prisma.payment.findFirst({
+    where: { stripeTransferId: transfer.id },
+  });
+
+  if (payment) {
+    // Revert payment status
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        payoutStatus: 'HELD',
+        stripeTransferId: null,
+        payoutDate: null,
+      },
+    });
+
+    await logPayment(TransactionEventType.TRANSFER_FAILED, {
+      paymentId: payment.id,
+      amount: Number(payment.amount),
+      currency: 'EUR',
+      status: 'REVERSED',
+      metadata: {
+        transferId: transfer.id,
+        reversalReason: transfer.reversed ? 'Transfer was reversed' : undefined,
+      },
+    });
+  }
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.TRANSFER,
+    entityId: payment?.id || transfer.id,
+    metadata: { transferId: transfer.id },
+  });
+
+  console.error('[CRITICAL] Transfer reversed:', {
+    transferId: transfer.id,
+    amount: transfer.amount / 100,
+  });
+}
+
+/**
+ * Handle account.updated
+ */
+async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
+  const account = event.data.object as Stripe.Account;
+  
+  const creator = await prisma.creator.findFirst({
+    where: { stripeAccountId: account.id },
+  });
+
+  if (!creator) {
+    console.warn('[Webhook] Creator not found for account:', account.id);
+    return;
+  }
+
+  const chargesEnabled = account.charges_enabled ?? false;
+  const payoutsEnabled = account.payouts_enabled ?? false;
+  const requirementsDisabledReason = account.requirements?.disabled_reason;
+
+  await prisma.creator.update({
+    where: { id: creator.id },
+    data: {
+      isStripeOnboarded: chargesEnabled && payoutsEnabled,
+      payoutBlocked: !payoutsEnabled,
+      payoutBlockedReason: requirementsDisabledReason || null,
+    },
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.PAYMENT,
+    entityId: creator.id,
+    metadata: {
+      accountId: account.id,
+      chargesEnabled,
+      payoutsEnabled,
+      requirementsDisabledReason,
+    },
+  });
+
+  console.log('[Webhook] Account updated:', {
+    creatorId: creator.id,
+    chargesEnabled,
+    payoutsEnabled,
+    payoutBlocked: !payoutsEnabled,
+  });
+}
+
+/**
+ * Generate receipt email HTML
+ */
+function generateReceiptEmail(booking: any, amount: number): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .receipt-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #ddd; }
+          .total { font-size: 18px; font-weight: bold; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>💳 Reçu de paiement</h1>
+          </div>
+          <div class="content">
+            <p>Bonjour ${booking.user.name},</p>
+            <p>Votre paiement a été traité avec succès. Voici le détail de votre transaction :</p>
+            
+            <div style="margin: 30px 0;">
+              <div class="receipt-item">
+                <span>Date de paiement:</span>
+                <span>${new Date().toLocaleDateString('fr-FR')}</span>
+              </div>
+              <div class="receipt-item">
+                <span>Service:</span>
+                <span>${booking.callOffer.title}</span>
+              </div>
+              <div class="receipt-item">
+                <span>Créateur:</span>
+                <span>${booking.callOffer.creator.user.name}</span>
+              </div>
+              <div class="receipt-item">
+                <span>Date de l'appel:</span>
+                <span>${new Date(booking.callOffer.dateTime).toLocaleDateString('fr-FR', { 
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</span>
+              </div>
+              <div class="receipt-item total">
+                <span>Montant total:</span>
+                <span>${amount.toFixed(2)} €</span>
+              </div>
+            </div>
+            
+            <p>Ce reçu confirme que votre réservation est bien confirmée. Vous recevrez un rappel avant l'appel.</p>
+            <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px;">
+              Merci d'avoir utilisé Call a Star !<br>
+              Pour toute question, n'hésitez pas à nous contacter.
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+/**
+ * Generate creator notification email HTML
+ */
+function generateCreatorNotificationEmail(booking: any, creatorAmount: number, payoutReleaseDate: Date): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .booking-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+          .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎉 Nouvelle réservation !</h1>
+          </div>
+          <div class="content">
+            <p>Bonjour ${booking.callOffer.creator.user.name},</p>
+            <p>Excellente nouvelle ! Vous avez reçu une nouvelle réservation.</p>
+            
+            <div class="booking-details">
+              <h3 style="margin-top: 0;">Détails de la réservation</h3>
+              <div class="detail-row">
+                <span><strong>Participant:</strong></span>
+                <span>${booking.user.name}</span>
+              </div>
+              <div class="detail-row">
+                <span><strong>Service:</strong></span>
+                <span>${booking.callOffer.title}</span>
+              </div>
+              <div class="detail-row">
+                <span><strong>Date et heure:</strong></span>
+                <span>${new Date(booking.callOffer.dateTime).toLocaleDateString('fr-FR', { 
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</span>
+              </div>
+              <div class="detail-row">
+                <span><strong>Durée:</strong></span>
+                <span>${booking.callOffer.duration} minutes</span>
+              </div>
+              <div class="detail-row" style="border-bottom: none; font-size: 18px; font-weight: bold; color: #667eea;">
+                <span>Montant:</span>
+                <span>${creatorAmount.toFixed(2)} €</span>
+              </div>
+            </div>
+            
+            <p><strong>💰 Paiement sécurisé:</strong> Le montant de <strong>${creatorAmount.toFixed(2)} €</strong> sera disponible pour transfert le ${payoutReleaseDate.toLocaleDateString('fr-FR')}.</p>
+            
+            <div style="text-align: center;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/creator" class="cta-button">
+                Voir mes réservations
+              </a>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
 }

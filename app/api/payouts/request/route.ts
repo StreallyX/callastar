@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
-import { db } from '@/lib/db';
+import prisma from '@/lib/db';
 import { createPayout, getConnectAccountDetails } from '@/lib/stripe';
+import { getPlatformSettings } from '@/lib/settings';
+import { logPayout } from '@/lib/logger';
+import { TransactionEventType, PayoutStatus } from '@prisma/client';
 
 /**
  * POST /api/payouts/request
@@ -17,7 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const creator = await db.creator.findUnique({
+    const creator = await prisma.creator.findUnique({
       where: { userId: jwtUser.userId },
     });
 
@@ -35,6 +38,17 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Check if payout is blocked
+    if (creator.payoutBlocked) {
+      return NextResponse.json(
+        { error: `Les paiements sont bloqués: ${creator.payoutBlockedReason || 'Raison inconnue'}` },
+        { status: 400 }
+      );
+    }
+
+    // Get platform settings
+    const settings = await getPlatformSettings();
 
     // Verify Stripe account is valid and can receive payouts
     try {
@@ -54,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all READY payments for this creator
-    const readyPayments = await db.payment.findMany({
+    const readyPayments = await prisma.payment.findMany({
       where: {
         payoutStatus: 'READY',
         booking: {
@@ -85,8 +99,39 @@ export async function POST(request: NextRequest) {
       0
     );
 
+    // Check minimum payout amount
+    const minimumPayoutAmount = Number(settings.minimumPayoutAmount);
+    if (totalAmount < minimumPayoutAmount) {
+      return NextResponse.json(
+        { error: `Le montant minimum de paiement est de ${minimumPayoutAmount.toFixed(2)} ${settings.currency}. Vous avez actuellement ${totalAmount.toFixed(2)} ${settings.currency}.` },
+        { status: 400 }
+      );
+    }
+
+    // Create payout record
+    const payout = await prisma.payout.create({
+      data: {
+        creatorId: creator.id,
+        amount: totalAmount,
+        status: PayoutStatus.PROCESSING,
+      },
+    });
+
+    // Log payout creation
+    await logPayout(TransactionEventType.PAYOUT_CREATED, {
+      payoutId: payout.id,
+      creatorId: creator.id,
+      amount: totalAmount,
+      currency: settings.currency,
+      status: PayoutStatus.PROCESSING,
+      metadata: {
+        paymentCount: readyPayments.length,
+        paymentIds: readyPayments.map(p => p.id),
+      },
+    });
+
     // Mark payments as PROCESSING
-    await db.payment.updateMany({
+    await prisma.payment.updateMany({
       where: {
         id: { in: readyPayments.map(p => p.id) },
       },
@@ -102,13 +147,23 @@ export async function POST(request: NextRequest) {
         stripeAccountId: creator.stripeAccountId,
         metadata: {
           creatorId: creator.id,
+          payoutId: payout.id,
           paymentIds: readyPayments.map(p => p.id).join(','),
           paymentCount: String(readyPayments.length),
         },
       });
 
+      // Update payout with Stripe transfer ID
+      await prisma.payout.update({
+        where: { id: payout.id },
+        data: {
+          stripePayoutId: transfer.id,
+          status: PayoutStatus.PAID,
+        },
+      });
+
       // Mark payments as PAID
-      await db.payment.updateMany({
+      await prisma.payment.updateMany({
         where: {
           id: { in: readyPayments.map(p => p.id) },
         },
@@ -119,20 +174,60 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Log successful payout
+      await logPayout(TransactionEventType.PAYOUT_PAID, {
+        payoutId: payout.id,
+        creatorId: creator.id,
+        amount: totalAmount,
+        currency: settings.currency,
+        status: PayoutStatus.PAID,
+        stripePayoutId: transfer.id,
+        metadata: {
+          paymentCount: readyPayments.length,
+          paymentIds: readyPayments.map(p => p.id),
+          stripeTransferId: transfer.id,
+        },
+      });
+
       return NextResponse.json({
         success: true,
-        message: `Paiement de ${totalAmount.toFixed(2)} € transféré avec succès`,
-        transfer: {
-          id: transfer.id,
+        message: `Paiement de ${totalAmount.toFixed(2)} ${settings.currency} transféré avec succès`,
+        payout: {
+          id: payout.id,
           amount: totalAmount,
+          currency: settings.currency,
+          stripeTransferId: transfer.id,
           paymentCount: readyPayments.length,
         },
       });
     } catch (error: any) {
       console.error('Error creating payout:', error);
       
+      // Update payout status to failed
+      await prisma.payout.update({
+        where: { id: payout.id },
+        data: {
+          status: PayoutStatus.FAILED,
+          failureReason: error.message || 'Unknown error',
+          retriedCount: 1,
+        },
+      });
+
+      // Log failed payout
+      await logPayout(TransactionEventType.PAYOUT_FAILED, {
+        payoutId: payout.id,
+        creatorId: creator.id,
+        amount: totalAmount,
+        currency: settings.currency,
+        status: PayoutStatus.FAILED,
+        errorMessage: error.message || 'Payout failed',
+        metadata: {
+          paymentCount: readyPayments.length,
+        },
+      });
+
       // Mark payments back as READY on failure
-      await db.payment.updateMany({
+      await prisma.payment.updateMany({
         where: {
           id: { in: readyPayments.map(p => p.id) },
         },
