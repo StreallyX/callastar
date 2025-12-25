@@ -269,16 +269,32 @@ model Notification {
 model Payout {
   id              String       @id @default(cuid())
   creatorId       String
-  amount          Decimal      @db.Decimal(10, 2)
-  stripePayoutId  String?
+  requestedAmount Decimal      @db.Decimal(10, 2) // Amount requested by creator
+  actualAmount    Decimal?     @db.Decimal(10, 2) // Actual amount paid (may differ if fees applied)
+  stripePayoutId  String?      // Stripe payout/transfer ID
+  stripeAccountId String?      // Creator's Stripe account ID at time of payout
   status          PayoutStatus @default(PENDING)
+  
+  // Tracking dates
+  requestedAt     DateTime     @default(now()) // When creator requested the payout
+  processedAt     DateTime?    // When admin marked as processed
+  completedAt     DateTime?    // When Stripe confirmed payout success
+  failedAt        DateTime?    // When payout failed
+  
+  // Additional metadata
+  failureReason   String?      @db.Text // Reason if payout failed
+  notes           String?      @db.Text // Admin notes
+  processedBy     String?      // Admin user ID who processed it
+  
   createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   // Relations
   creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@index([creatorId])
   @@index([status])
+  @@index([requestedAt])
 }
 
 model AdminSettings {
