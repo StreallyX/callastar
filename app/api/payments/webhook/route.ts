@@ -35,18 +35,30 @@ export async function POST(request: NextRequest) {
     // Note: Transfers to Stripe Connect accounts are instant and successful when created
     if (event.type === 'transfer.created') {
       const transfer = event.data.object as any;
-      const payoutRequestId = transfer.metadata?.payoutRequestId;
-
+      
       console.log('========================================');
       console.log('WEBHOOK: transfer.created received');
       console.log('Transfer ID:', transfer.id);
       console.log('Amount:', transfer.amount, 'cents');
       console.log('Destination:', transfer.destination);
-      console.log('Payout Request ID:', payoutRequestId);
+      console.log('Status:', transfer.status);
+      console.log('========================================');
+      console.log('FULL TRANSFER METADATA RECEIVED:');
+      console.log(JSON.stringify(transfer.metadata, null, 2));
+      console.log('========================================');
+      
+      const payoutRequestId = transfer.metadata?.payoutRequestId;
+      console.log('Extracted Payout Request ID:', payoutRequestId);
+      console.log('Metadata exists?', !!transfer.metadata);
+      console.log('Metadata keys:', transfer.metadata ? Object.keys(transfer.metadata).join(', ') : 'N/A');
       console.log('========================================');
 
       if (!payoutRequestId) {
-        console.log('Transfer without payoutRequestId metadata:', transfer.id);
+        console.error('❌ CRITICAL: Transfer created without payoutRequestId in metadata!');
+        console.error('Transfer ID:', transfer.id);
+        console.error('This transfer cannot be matched to a database record.');
+        console.error('Manual intervention required - check Stripe dashboard.');
+        console.log('========================================');
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
@@ -158,14 +170,20 @@ export async function POST(request: NextRequest) {
     // Handle transfer.updated event (for monitoring status changes)
     if (event.type === 'transfer.updated') {
       const transfer = event.data.object as any;
-      const payoutRequestId = transfer.metadata?.payoutRequestId;
 
       console.log('========================================');
       console.log('WEBHOOK: transfer.updated received');
       console.log('Transfer ID:', transfer.id);
       console.log('Amount:', transfer.amount, 'cents');
       console.log('Destination:', transfer.destination);
-      console.log('Payout Request ID:', payoutRequestId);
+      console.log('Status:', transfer.status);
+      console.log('========================================');
+      console.log('FULL TRANSFER METADATA RECEIVED:');
+      console.log(JSON.stringify(transfer.metadata, null, 2));
+      console.log('========================================');
+      
+      const payoutRequestId = transfer.metadata?.payoutRequestId;
+      console.log('Extracted Payout Request ID:', payoutRequestId);
       console.log('========================================');
 
       // Log for monitoring purposes - most updates don't require action
@@ -176,7 +194,6 @@ export async function POST(request: NextRequest) {
     if (event.type === 'transfer.reversed') {
       const transfer = event.data.object as any;
       const reversal = transfer.reversals?.data?.[0];
-      const payoutRequestId = transfer.metadata?.payoutRequestId;
 
       console.log('========================================');
       console.log('WEBHOOK: transfer.reversed received');
@@ -185,11 +202,24 @@ export async function POST(request: NextRequest) {
       console.log('Amount:', transfer.amount, 'cents');
       console.log('Destination:', transfer.destination);
       console.log('Reversal Reason:', reversal?.metadata?.reason || 'Not specified');
-      console.log('Payout Request ID:', payoutRequestId);
+      console.log('========================================');
+      console.log('FULL TRANSFER METADATA RECEIVED:');
+      console.log(JSON.stringify(transfer.metadata, null, 2));
+      console.log('========================================');
+      
+      const payoutRequestId = transfer.metadata?.payoutRequestId;
+      console.log('Extracted Payout Request ID:', payoutRequestId);
+      console.log('Metadata exists?', !!transfer.metadata);
+      console.log('Metadata keys:', transfer.metadata ? Object.keys(transfer.metadata).join(', ') : 'N/A');
       console.log('========================================');
 
       if (!payoutRequestId) {
-        console.log('Transfer reversal without payoutRequestId metadata:', transfer.id);
+        console.error('❌ CRITICAL: Transfer reversed without payoutRequestId in metadata!');
+        console.error('Transfer ID:', transfer.id);
+        console.error('Reversal ID:', reversal?.id);
+        console.error('This reversal cannot be matched to a database record.');
+        console.error('Manual intervention required - check Stripe dashboard and update database manually.');
+        console.log('========================================');
         return NextResponse.json({ received: true }, { status: 200 });
       }
 

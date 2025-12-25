@@ -95,20 +95,47 @@ export async function POST(
 
     // Create Stripe Transfer
     try {
+      // Prepare metadata - CRITICAL: All values must be strings for Stripe
+      const transferMetadata = {
+        payoutRequestId: String(payoutRequest.id),
+        creatorId: String(payoutRequest.creatorId),
+        creatorName: String(payoutRequest.creator.user.name || 'Unknown'),
+        creatorEmail: String(payoutRequest.creator.user.email || 'Unknown'),
+        paymentIds: payoutRequest.payments.map(p => String(p.id)).join(','),
+        paymentCount: String(payoutRequest.payments.length),
+        platform: 'callastar',
+      };
+
+      console.log('========================================');
+      console.log('PREPARING STRIPE TRANSFER');
+      console.log('Payout Request ID:', payoutRequest.id);
+      console.log('Amount:', Number(payoutRequest.totalAmount), 'EUR');
+      console.log('Amount (cents):', Math.round(Number(payoutRequest.totalAmount) * 100));
+      console.log('Currency:', payoutRequest.currency);
+      console.log('Destination Account:', payoutRequest.creator.stripeAccountId);
+      console.log('Payment Count:', payoutRequest.payments.length);
+      console.log('========================================');
+      console.log('TRANSFER METADATA (All values as strings):');
+      console.log(JSON.stringify(transferMetadata, null, 2));
+      console.log('========================================');
+
       const transfer = await stripe.transfers.create({
         amount: Math.round(Number(payoutRequest.totalAmount) * 100), // Convert to cents
         currency: payoutRequest.currency,
         destination: payoutRequest.creator.stripeAccountId,
-        metadata: {
-          payoutRequestId: payoutRequest.id,
-          creatorId: payoutRequest.creatorId,
-          creatorName: payoutRequest.creator.user.name,
-          creatorEmail: payoutRequest.creator.user.email,
-          paymentIds: payoutRequest.payments.map(p => p.id).join(','),
-          paymentCount: String(payoutRequest.payments.length),
-        },
+        metadata: transferMetadata,
         description: `Paiement pour ${payoutRequest.payments.length} appels - ${payoutRequest.creator.user.name}`,
       });
+
+      console.log('========================================');
+      console.log('✅ STRIPE TRANSFER CREATED SUCCESSFULLY');
+      console.log('Transfer ID:', transfer.id);
+      console.log('Amount:', transfer.amount, 'cents');
+      console.log('Destination:', transfer.destination);
+      console.log('========================================');
+      console.log('TRANSFER METADATA SAVED TO STRIPE:');
+      console.log(JSON.stringify(transfer.metadata, null, 2));
+      console.log('========================================');
 
       // Update PayoutRequest status to PROCESSING
       await db.payoutRequest.update({
@@ -119,6 +146,9 @@ export async function POST(
           updatedAt: new Date(),
         },
       });
+
+      console.log('✅ Database updated: PayoutRequest status -> PROCESSING');
+      console.log('========================================');
 
       // Generate Stripe dashboard link
       const stripeDashboardLink = `https://dashboard.stripe.com/transfers/${transfer.id}`;
