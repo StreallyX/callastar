@@ -3,6 +3,7 @@ import { Star, Video, Calendar, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/navbar';
 import { CreatorCard } from '@/components/creator-card';
+import type { CreatorCardData } from '@/types';
 
 async function getCreators() {
   try {
@@ -105,8 +106,8 @@ export default async function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {creators.map((creator: any) => (
-              <CreatorCard key={creator?.id} creator={creator} />
+            {creators.map((creator: CreatorCardData) => (
+              <CreatorCard key={creator?.id} creator={creator as CreatorCardData} />
             ))}
           </div>
 

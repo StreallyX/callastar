@@ -3,12 +3,13 @@ import Image from 'next/image';
 import { Star, Calendar } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Prisma } from '@prisma/client';
 
 interface CreatorCardProps {
   creator: {
     id: string;
-    bio?: string;
-    profileImage?: string;
+    bio?: string | null;
+    profileImage?: string | null;
     user: {
       id: string;
       name: string;
@@ -16,7 +17,8 @@ interface CreatorCardProps {
     callOffers?: Array<{
       id: string;
       title: string;
-      price: number;
+      price: number | Prisma.Decimal;
+      dateTime?: Date;
     }>;
   };
 }

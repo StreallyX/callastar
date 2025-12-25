@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
           paymentCount: readyPayments.length,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating payout:', error);
       
       // Mark payments back as READY on failure
@@ -141,8 +141,9 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       return NextResponse.json(
-        { error: 'Erreur lors du transfert: ' + (error.message || 'Erreur inconnue') },
+        { error: 'Erreur lors du transfert: ' + errorMessage },
         { status: 500 }
       );
     }

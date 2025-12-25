@@ -30,7 +30,7 @@ export async function comparePassword(password: string, hashedPassword: string):
 
 // Generate JWT using jose (Edge Runtime compatible)
 export async function generateToken(payload: JWTPayload): Promise<string> {
-  const token = await new SignJWT(payload as any)
+  const token = await new SignJWT(payload as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
     .setIssuedAt()
