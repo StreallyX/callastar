@@ -35,8 +35,9 @@ export function calculatePayoutReleaseDate(paymentDate: Date): Date {
 }
 
 /**
- * Create a Stripe Payment Intent (separate charges - funds held on platform)
- * This allows us to implement a holding period before transferring to creators
+ * Create a Stripe Payment Intent with Stripe Connect support
+ * When stripeAccountId is provided, uses destination charges with platform fee
+ * Otherwise, uses regular payment intent (funds held on platform)
  */
 export async function createPaymentIntent({
   amount,
@@ -52,8 +53,10 @@ export async function createPaymentIntent({
   platformFee?: number;
 }) {
   try {
+    const amountInCents = Math.round(amount * 100); // Convert to cents
+    
     const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
-      amount: Math.round(amount * 100), // Convert to cents
+      amount: amountInCents,
       currency,
       metadata: {
         ...metadata,
@@ -65,14 +68,43 @@ export async function createPaymentIntent({
       },
     };
 
-    // NOTE: We're using separate charges instead of destination charges
-    // This keeps funds on the platform account, allowing us to:
-    // 1. Hold payments for 7 days (dispute protection)
-    // 2. Handle refunds/cancellations before payout
-    // 3. Give admin control over payouts
-    // The transfer to creator happens separately via createPayout()
+    // If creator has Stripe Connect enabled, use destination charges
+    // This transfers funds directly to creator with platform fee deducted
+    if (stripeAccountId && platformFee !== undefined) {
+      const platformFeeInCents = Math.round(platformFee * 100);
+      
+      console.log('Creating Stripe Connect payment intent:', {
+        amount: amountInCents,
+        platformFee: platformFeeInCents,
+        stripeAccountId,
+        creatorAmount: amountInCents - platformFeeInCents,
+      });
+
+      // Add Stripe Connect parameters for destination charge
+      paymentIntentParams.application_fee_amount = platformFeeInCents;
+      paymentIntentParams.on_behalf_of = stripeAccountId;
+      paymentIntentParams.transfer_data = {
+        destination: stripeAccountId,
+      };
+
+      console.log('Payment intent params with Stripe Connect:', JSON.stringify(paymentIntentParams, null, 2));
+    } else {
+      // Regular payment - funds stay on platform account
+      // Transfer to creator happens separately via createPayout()
+      console.log('Creating regular payment intent (no Stripe Connect):', {
+        amount: amountInCents,
+      });
+    }
 
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
+    
+    console.log('Payment intent created successfully:', {
+      id: paymentIntent.id,
+      amount: paymentIntent.amount,
+      application_fee_amount: paymentIntent.application_fee_amount,
+      on_behalf_of: paymentIntent.on_behalf_of,
+      transfer_data: paymentIntent.transfer_data,
+    });
 
     return paymentIntent;
   } catch (error) {

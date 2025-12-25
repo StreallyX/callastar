@@ -78,6 +78,16 @@ export async function POST(request: NextRequest) {
     const creator = booking.callOffer.creator;
     const useStripeConnect = creator.isStripeOnboarded && creator.stripeAccountId;
 
+    console.log('========================================');
+    console.log('Creating payment intent for booking:', booking.id);
+    console.log('Amount:', amount, 'EUR');
+    console.log('Platform Fee:', platformFee, 'EUR');
+    console.log('Creator Amount:', creatorAmount, 'EUR');
+    console.log('Creator Stripe Account ID:', creator.stripeAccountId);
+    console.log('Is Stripe Onboarded:', creator.isStripeOnboarded);
+    console.log('Use Stripe Connect:', useStripeConnect);
+    console.log('========================================');
+
     // Create payment intent (with or without destination charge)
     const paymentIntent = await createPaymentIntent({
       amount,
@@ -93,6 +103,14 @@ export async function POST(request: NextRequest) {
       },
       stripeAccountId: useStripeConnect ? creator.stripeAccountId : null,
       platformFee: useStripeConnect ? platformFee : undefined,
+    });
+
+    console.log('Payment intent created:', {
+      id: paymentIntent.id,
+      amount: paymentIntent.amount,
+      application_fee_amount: paymentIntent.application_fee_amount,
+      on_behalf_of: paymentIntent.on_behalf_of,
+      transfer_data: paymentIntent.transfer_data,
     });
 
     // Update booking with payment intent ID

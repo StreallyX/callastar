@@ -36,12 +36,25 @@ export async function POST(request: NextRequest) {
       const paymentIntent = event.data.object as any;
       const bookingId = paymentIntent.metadata?.bookingId;
 
+      console.log('========================================');
+      console.log('WEBHOOK: payment_intent.succeeded received');
+      console.log('Payment Intent ID:', paymentIntent.id);
+      console.log('Booking ID:', bookingId);
+      console.log('Amount:', paymentIntent.amount, 'cents');
+      console.log('Status:', paymentIntent.status);
+      console.log('Application Fee Amount:', paymentIntent.application_fee_amount);
+      console.log('On Behalf Of:', paymentIntent.on_behalf_of);
+      console.log('Transfer Data:', JSON.stringify(paymentIntent.transfer_data));
+      console.log('Metadata:', JSON.stringify(paymentIntent.metadata));
+      console.log('========================================');
+
       if (!bookingId) {
         console.error('No bookingId in payment intent metadata');
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
       // Get booking
+      console.log('Fetching booking from database...');
       const booking = await db.booking.findUnique({
         where: { id: bookingId },
         include: {
@@ -63,7 +76,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
+      console.log('Booking found:', {
+        id: booking.id,
+        status: booking.status,
+        totalPrice: booking.totalPrice,
+        creatorId: booking.callOffer.creatorId,
+        stripeAccountId: booking.callOffer.creator.stripeAccountId,
+      });
+
       // Create Daily.co room
+      console.log('Creating Daily.co room...');
       const roomName = `call-${bookingId}`;
       try {
         const room = await createDailyRoom({
@@ -74,6 +96,8 @@ export async function POST(request: NextRequest) {
           },
         });
 
+        console.log('Daily.co room created:', room.url);
+
         // Update booking with room info and status
         await db.booking.update({
           where: { id: bookingId },
@@ -83,45 +107,98 @@ export async function POST(request: NextRequest) {
             dailyRoomName: room.name,
           },
         });
+
+        console.log('Booking status updated to CONFIRMED');
       } catch (error) {
         console.error('Error creating Daily room:', error);
         // Continue anyway - room can be created later
+        // Still update booking status
+        try {
+          await db.booking.update({
+            where: { id: bookingId },
+            data: {
+              status: 'CONFIRMED',
+            },
+          });
+          console.log('Booking status updated to CONFIRMED (without room)');
+        } catch (updateError) {
+          console.error('Error updating booking status:', updateError);
+        }
       }
 
       // Check if payment record already exists
+      console.log('Checking for existing payment record...');
       const existingPayment = await db.payment.findUnique({
         where: { bookingId: booking.id },
       });
 
       if (existingPayment) {
         console.log('Payment record already exists for booking:', bookingId);
+        console.log('Existing payment:', {
+          id: existingPayment.id,
+          status: existingPayment.status,
+          amount: existingPayment.amount,
+          platformFee: existingPayment.platformFee,
+          creatorAmount: existingPayment.creatorAmount,
+        });
+        
         // Update status if needed
         if (existingPayment.status !== 'SUCCEEDED') {
+          console.log('Updating payment status to SUCCEEDED...');
           await db.payment.update({
             where: { bookingId: booking.id },
             data: { status: 'SUCCEEDED' },
           });
+          console.log('Payment status updated to SUCCEEDED');
         }
       } else {
+        console.log('No existing payment record found, creating new one...');
+        
         // Create payment record with payout tracking
         const amount = Number(booking.totalPrice);
         const platformFee = Number(paymentIntent.metadata?.platformFee || 0);
         const creatorAmount = Number(paymentIntent.metadata?.creatorAmount || 0);
         
-        console.log('Creating payment record with values:', {
+        console.log('Payment record values:', {
           bookingId: booking.id,
           amount,
           platformFee,
           creatorAmount,
           paymentIntentId: paymentIntent.id,
+          useStripeConnect: paymentIntent.metadata?.useStripeConnect,
+          hasApplicationFee: !!paymentIntent.application_fee_amount,
+          hasTransferData: !!paymentIntent.transfer_data,
         });
+        
+        // Validate required fields
+        if (!amount || amount <= 0) {
+          console.error('Invalid amount:', amount);
+          console.error('Booking totalPrice:', booking.totalPrice);
+        }
+        
+        if (!platformFee || platformFee < 0) {
+          console.error('Invalid platformFee:', platformFee);
+          console.error('Metadata platformFee:', paymentIntent.metadata?.platformFee);
+        }
+        
+        if (!creatorAmount || creatorAmount <= 0) {
+          console.error('Invalid creatorAmount:', creatorAmount);
+          console.error('Metadata creatorAmount:', paymentIntent.metadata?.creatorAmount);
+        }
         
         // Calculate payout release date (7 days from now)
         const paymentDate = new Date();
         const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
+        
+        console.log('Payout info:', {
+          paymentDate: paymentDate.toISOString(),
+          payoutReleaseDate: payoutReleaseDate.toISOString(),
+          payoutStatus: 'HELD',
+        });
 
         try {
-          await db.payment.create({
+          console.log('Creating payment record in database...');
+          const newPayment = await db.payment.create({
             data: {
               bookingId: booking.id,
               amount,
@@ -133,9 +210,23 @@ export async function POST(request: NextRequest) {
               payoutReleaseDate,    // Date when funds can be transferred
             },
           });
-          console.log('Payment record created successfully for booking:', bookingId);
-        } catch (paymentError) {
-          console.error('ERROR creating payment record:', paymentError);
+          console.log('✅ Payment record created successfully!');
+          console.log('Payment ID:', newPayment.id);
+          console.log('Payment record:', JSON.stringify(newPayment, null, 2));
+        } catch (paymentError: any) {
+          console.error('❌ ERROR creating payment record:');
+          console.error('Error name:', paymentError?.name);
+          console.error('Error message:', paymentError?.message);
+          console.error('Error code:', paymentError?.code);
+          console.error('Error details:', JSON.stringify(paymentError, null, 2));
+          
+          // Check for specific Prisma errors
+          if (paymentError?.code === 'P2002') {
+            console.error('Unique constraint violation - payment may already exist');
+          } else if (paymentError?.code === 'P2003') {
+            console.error('Foreign key constraint failed - booking may not exist');
+          }
+          
           // Continue with rest of webhook processing
         }
       }
@@ -331,11 +422,23 @@ export async function POST(request: NextRequest) {
         console.error('Error sending notifications to creator:', error);
         // Continue anyway - notification is not critical
       }
+
+      console.log('========================================');
+      console.log('✅ Webhook processing completed successfully');
+      console.log('Booking ID:', bookingId);
+      console.log('Booking Status: CONFIRMED');
+      console.log('Payment Record: Created/Updated');
+      console.log('========================================');
     }
 
     return NextResponse.json({ received: true }, { status: 200 });
-  } catch (error) {
-    console.error('Webhook error:', error);
+  } catch (error: any) {
+    console.error('========================================');
+    console.error('❌ WEBHOOK ERROR');
+    console.error('Error name:', error?.name);
+    console.error('Error message:', error?.message);
+    console.error('Error stack:', error?.stack);
+    console.error('========================================');
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 400 }
