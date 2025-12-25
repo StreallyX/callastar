@@ -299,23 +299,27 @@ async function main() {
   const payout1 = await prisma.payout.create({
     data: {
       creatorId: creator1.id,
-      amount: 135.0, // 3 bookings * 50€ * 0.9 (after 10% commission)
+      requestedAmount: 135.0, // 3 bookings * 50€ * 0.9 (after 10% commission)
+      actualAmount: 135.0, // Paid amount matches requested
       status: 'PAID',
+      completedAt: new Date(),
     },
   });
 
   const payout2 = await prisma.payout.create({
     data: {
       creatorId: creator2.id,
-      amount: 90.0, // 2 bookings * 50€ * 0.9
+      requestedAmount: 90.0, // 2 bookings * 50€ * 0.9
+      actualAmount: 90.0, // Processing, will be paid
       status: 'PROCESSING',
+      processedAt: new Date(),
     },
   });
 
   const payout3 = await prisma.payout.create({
     data: {
       creatorId: creator3.id,
-      amount: 45.0, // 1 booking * 50€ * 0.9
+      requestedAmount: 45.0, // 1 booking * 50€ * 0.9
       status: 'PENDING',
     },
   });

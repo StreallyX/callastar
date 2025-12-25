@@ -550,8 +550,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle transfer.paid event (when payout is successfully sent to creator)
-    if (event.type === 'transfer.paid') {
-      const transfer = event.data.object as any;
+    // Note: transfer events are not in the standard Stripe.Event type, so we cast it
+    if ((event as any).type === 'transfer.paid') {
+      const transfer = (event as any).data.object;
       const payoutRequestId = transfer.metadata?.payoutRequestId;
       const paymentIds = transfer.metadata?.paymentIds?.split(',') || [];
 
@@ -670,8 +671,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle transfer.failed event
-    if (event.type === 'transfer.failed') {
-      const transfer = event.data.object as any;
+    // Note: transfer events are not in the standard Stripe.Event type, so we cast it
+    if ((event as any).type === 'transfer.failed') {
+      const transfer = (event as any).data.object;
       const payoutRequestId = transfer.metadata?.payoutRequestId;
       const paymentIds = transfer.metadata?.paymentIds?.split(',') || [];
 

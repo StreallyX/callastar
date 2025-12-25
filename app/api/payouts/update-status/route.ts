@@ -43,13 +43,17 @@ export async function POST(request: NextRequest) {
       include: {
         booking: {
           include: {
-            offer: {
+            callOffer: {
               include: {
                 creator: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                      },
+                    },
                   },
                 },
               },
@@ -79,7 +83,7 @@ export async function POST(request: NextRequest) {
     paymentsToUpdate.forEach((payment, index) => {
       console.log(`  ${index + 1}. Payment ID: ${payment.id}`);
       console.log(`     Amount: €${payment.creatorAmount}`);
-      console.log(`     Creator: ${payment.booking.offer.creator.name} (${payment.booking.offer.creator.email})`);
+      console.log(`     Creator: ${payment.booking.callOffer.creator.user.name} (${payment.booking.callOffer.creator.user.email})`);
       console.log(`     Release Date: ${payment.payoutReleaseDate?.toISOString()}`);
     });
 
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
       payments: paymentsToUpdate.map((p) => ({
         id: p.id,
         amount: p.creatorAmount,
-        creatorName: p.booking.offer.creator.name,
+        creatorName: p.booking.callOffer.creator.user.name,
         releaseDate: p.payoutReleaseDate,
       })),
       timestamp: now.toISOString(),
