@@ -60,6 +60,20 @@ enum NotificationType {
   SYSTEM
 }
 
+enum PayoutSchedule {
+  DAILY
+  WEEKLY
+  MANUAL
+}
+
+enum PayoutAction {
+  TRIGGERED
+  BLOCKED
+  UNBLOCKED
+  COMPLETED
+  FAILED
+}
+
 // Models
 model User {
   id            String    @id @default(cuid())
@@ -123,23 +137,32 @@ model VerificationToken {
 }
 
 model Creator {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  bio                String?  @db.Text
+  id                 String          @id @default(cuid())
+  userId             String          @unique
+  bio                String?         @db.Text
   profileImage       String?
   stripeAccountId    String?
-  isStripeOnboarded  Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  isStripeOnboarded  Boolean         @default(false)
+  
+  // Payout settings
+  payoutSchedule     PayoutSchedule  @default(WEEKLY)
+  payoutMinimum      Decimal         @default(10) @db.Decimal(10, 2)
+  isPayoutBlocked    Boolean         @default(false)
+  payoutBlockReason  String?
+  
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
   // Relations
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  callOffers       CallOffer[]
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  callOffers         CallOffer[]
   callRequestsReceived CallRequest[] @relation("CreatorRequests")
-  reviewsReceived  Review[]        @relation("CreatorReviews")
-  payouts          Payout[]
+  reviewsReceived    Review[]        @relation("CreatorReviews")
+  payouts            Payout[]
+  payoutAuditLogs    PayoutAuditLog[]
 
   @@index([userId])
+  @@index([isPayoutBlocked])
 }
 
 model CallOffer {
@@ -288,4 +311,25 @@ model AdminSettings {
   updatedAt DateTime @updatedAt
 
   @@index([key])
+}
+
+model PayoutAuditLog {
+  id               String        @id @default(cuid())
+  creatorId        String
+  action           PayoutAction
+  amount           Decimal?      @db.Decimal(10, 2)
+  status           PayoutStatus?
+  stripePayoutId   String?
+  adminId          String?
+  reason           String?       @db.Text
+  metadata         String?       @db.Text // JSON string for additional data
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId])
+  @@index([action])
+  @@index([createdAt])
 }
