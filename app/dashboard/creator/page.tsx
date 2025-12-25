@@ -39,6 +39,7 @@ export default function CreatorDashboard() {
   });
   const [payoutData, setPayoutData] = useState<any>(null);
   const [requestingPayout, setRequestingPayout] = useState(false);
+  const [payoutRequests, setPayoutRequests] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -119,6 +120,13 @@ export default function CreatorDashboard() {
       if (payoutResponse.ok) {
         const payoutResponseData = await payoutResponse.json();
         setPayoutData(payoutResponseData);
+      }
+
+      // Get payout requests
+      const payoutRequestsResponse = await fetch('/api/payouts/requests');
+      if (payoutRequestsResponse.ok) {
+        const payoutRequestsData = await payoutRequestsResponse.json();
+        setPayoutRequests(payoutRequestsData?.payoutRequests ?? []);
       }
 
     } catch (error) {
@@ -263,7 +271,7 @@ export default function CreatorDashboard() {
 
     setRequestingPayout(true);
     try {
-      const response = await fetch('/api/payouts/request', {
+      const response = await fetch('/api/payouts/request-withdrawal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -275,7 +283,7 @@ export default function CreatorDashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        toast.success(data.message || 'Paiement demandé avec succès!');
+        toast.success(data.message || 'Demande de paiement créée avec succès!');
         fetchData(); // Refresh data
       } else {
         const error = await response.json();
@@ -791,6 +799,62 @@ export default function CreatorDashboard() {
                         </>
                       )}
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Payout Requests */}
+            {payoutRequests.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Demandes de paiement</CardTitle>
+                  <CardDescription>Vos demandes de transfert et leur statut</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {payoutRequests.map((request: any) => (
+                      <div 
+                        key={request.id} 
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                        onClick={() => router.push(`/dashboard/creator/payouts/${request.id}`)}
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">Demande de paiement</div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(request.createdAt).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {request.paymentCount} paiement{request.paymentCount > 1 ? 's' : ''}
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="font-semibold text-lg">{Number(request.totalAmount).toFixed(2)} €</div>
+                          <Badge variant={
+                            request.status === 'COMPLETED' ? 'default' :
+                            request.status === 'PROCESSING' ? 'secondary' :
+                            request.status === 'FAILED' ? 'destructive' :
+                            'outline'
+                          } className={
+                            request.status === 'COMPLETED' ? 'bg-green-500' :
+                            request.status === 'PROCESSING' ? 'bg-blue-500' :
+                            request.status === 'FAILED' ? 'bg-red-500' :
+                            'bg-yellow-500'
+                          }>
+                            {request.status === 'COMPLETED' && '✓ Terminé'}
+                            {request.status === 'PROCESSING' && '⏳ En cours'}
+                            {request.status === 'PENDING' && '⏳ En attente'}
+                            {request.status === 'FAILED' && '✗ Échoué'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>

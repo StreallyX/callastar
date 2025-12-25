@@ -31,6 +31,107 @@ export async function POST(request: NextRequest) {
     // Verify webhook signature
     const event = verifyWebhookSignature(body, signature, webhookSecret);
 
+    // Handle transfer.paid event (payout completed)
+    if (event.type === 'transfer.paid') {
+      const transfer = event.data.object as any;
+      const payoutRequestId = transfer.metadata?.payoutRequestId;
+
+      if (!payoutRequestId) {
+        console.log('Transfer without payoutRequestId metadata:', transfer.id);
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      try {
+        // Get the payout request
+        const payoutRequest = await db.payoutRequest.findUnique({
+          where: { id: payoutRequestId },
+          include: {
+            payments: true,
+          },
+        });
+
+        if (!payoutRequest) {
+          console.error('PayoutRequest not found:', payoutRequestId);
+          return NextResponse.json({ received: true }, { status: 200 });
+        }
+
+        // Update PayoutRequest status to COMPLETED
+        await db.payoutRequest.update({
+          where: { id: payoutRequestId },
+          data: {
+            status: 'COMPLETED',
+            completedAt: new Date(),
+            stripePayoutId: transfer.destination_payment || null,
+          },
+        });
+
+        // Update all linked payments to PAID status
+        if (payoutRequest.payments.length > 0) {
+          await db.payment.updateMany({
+            where: {
+              id: { in: payoutRequest.payments.map(p => p.id) },
+            },
+            data: {
+              payoutStatus: 'PAID',
+              stripeTransferId: transfer.id,
+              payoutDate: new Date(),
+            },
+          });
+        }
+
+        console.log(`Transfer completed for PayoutRequest ${payoutRequestId}`);
+      } catch (error) {
+        console.error('Error processing transfer.paid event:', error);
+        // Continue anyway - webhook should return 200
+      }
+    }
+
+    // Handle transfer.failed event
+    if (event.type === 'transfer.failed') {
+      const transfer = event.data.object as any;
+      const payoutRequestId = transfer.metadata?.payoutRequestId;
+
+      if (!payoutRequestId) {
+        console.log('Failed transfer without payoutRequestId metadata:', transfer.id);
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
+
+      try {
+        // Update PayoutRequest status to FAILED
+        await db.payoutRequest.update({
+          where: { id: payoutRequestId },
+          data: {
+            status: 'FAILED',
+            updatedAt: new Date(),
+          },
+        });
+
+        // Optionally: reset payment status back to READY so admin can retry
+        const payoutRequest = await db.payoutRequest.findUnique({
+          where: { id: payoutRequestId },
+          include: {
+            payments: true,
+          },
+        });
+
+        if (payoutRequest && payoutRequest.payments.length > 0) {
+          await db.payment.updateMany({
+            where: {
+              id: { in: payoutRequest.payments.map(p => p.id) },
+            },
+            data: {
+              payoutStatus: 'READY', // Reset to READY for retry
+            },
+          });
+        }
+
+        console.error(`Transfer failed for PayoutRequest ${payoutRequestId}:`, transfer.failure_message);
+      } catch (error) {
+        console.error('Error processing transfer.failed event:', error);
+        // Continue anyway - webhook should return 200
+      }
+    }
+
     // Handle payment_intent.succeeded event
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as any;

@@ -60,6 +60,13 @@ enum NotificationType {
   SYSTEM
 }
 
+enum PayoutRequestStatus {
+  PENDING      // Creator requested, awaiting admin review
+  PROCESSING   // Admin prepared Stripe transfer, awaiting confirmation
+  COMPLETED    // Transfer completed successfully
+  FAILED       // Transfer failed
+}
+
 // Models
 model User {
   id            String    @id @default(cuid())
@@ -138,6 +145,7 @@ model Creator {
   callRequestsReceived CallRequest[] @relation("CreatorRequests")
   reviewsReceived  Review[]        @relation("CreatorReviews")
   payouts          Payout[]
+  payoutRequests   PayoutRequest[]
 
   @@index([userId])
 }
@@ -201,12 +209,15 @@ model Payment {
   payoutReleaseDate      DateTime?     // Date when funds can be transferred (payment date + 7 days)
   stripeTransferId       String?       // Stripe transfer ID when payout is completed
   payoutDate             DateTime?     // Date when payout was actually transferred
+  payoutRequestId        String?       // Link to PayoutRequest when included in a request
 
   // Relations
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking        Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  payoutRequest  PayoutRequest? @relation(fields: [payoutRequestId], references: [id], onDelete: SetNull)
 
   @@index([stripePaymentIntentId])
   @@index([payoutStatus])
+  @@index([payoutRequestId])
 }
 
 model CallRequest {
@@ -295,6 +306,27 @@ model Payout {
   @@index([creatorId])
   @@index([status])
   @@index([requestedAt])
+}
+
+model PayoutRequest {
+  id                String              @id @default(cuid())
+  creatorId         String
+  status            PayoutRequestStatus @default(PENDING)
+  totalAmount       Decimal             @db.Decimal(10, 2)
+  currency          String              @default("usd")
+  stripeTransferId  String?             // Stripe transfer ID
+  stripePayoutId    String?             // Stripe payout ID (if applicable)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  completedAt       DateTime?
+
+  // Relations
+  creator  Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([creatorId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model AdminSettings {

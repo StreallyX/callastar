@@ -32,6 +32,7 @@ export default function AdminDashboard() {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [platformCommission, setPlatformCommission] = useState('');
   const [updatingSettings, setUpdatingSettings] = useState(false);
+  const [payoutRequests, setPayoutRequests] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -73,6 +74,13 @@ export default function AdminDashboard() {
       if (payoutsResponse.ok) {
         const data = await payoutsResponse.json();
         setPayouts(data?.payouts ?? []);
+      }
+
+      // Get payout requests
+      const payoutRequestsResponse = await fetch('/api/admin/payout-requests');
+      if (payoutRequestsResponse.ok) {
+        const data = await payoutRequestsResponse.json();
+        setPayoutRequests(data?.payoutRequests ?? []);
       }
 
       // Get settings
@@ -306,8 +314,9 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="payout-requests">Demandes de paiement</TabsTrigger>
             <TabsTrigger value="payouts">Paiements</TabsTrigger>
             <TabsTrigger value="test-calls">Appels de test</TabsTrigger>
           </TabsList>
@@ -360,6 +369,69 @@ export default function AdminDashboard() {
                 ) : (
                   <div className="py-12 text-center text-gray-500">
                     Aucun utilisateur trouvé
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Payout Requests Tab */}
+          <TabsContent value="payout-requests">
+            <Card>
+              <CardHeader>
+                <CardTitle>Demandes de paiement des créateurs</CardTitle>
+                <CardDescription>
+                  Gérer les demandes de transfert vers les comptes Stripe des créateurs
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {payoutRequests.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">Aucune demande de paiement</p>
+                ) : (
+                  <div className="space-y-4">
+                    {payoutRequests.map((request: any) => (
+                      <div
+                        key={request.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                        onClick={() => router.push(`/dashboard/admin/payout-requests/${request.id}`)}
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">{request.creatorName}</div>
+                          <div className="text-sm text-gray-500">{request.creatorEmail}</div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            {new Date(request.createdAt).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {request.paymentCount} paiement{request.paymentCount > 1 ? 's' : ''}
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="font-semibold text-lg">{Number(request.totalAmount).toFixed(2)} €</div>
+                          <Badge variant={
+                            request.status === 'COMPLETED' ? 'default' :
+                            request.status === 'PROCESSING' ? 'secondary' :
+                            request.status === 'FAILED' ? 'destructive' :
+                            'outline'
+                          } className={
+                            request.status === 'COMPLETED' ? 'bg-green-500' :
+                            request.status === 'PROCESSING' ? 'bg-blue-500' :
+                            request.status === 'FAILED' ? 'bg-red-500' :
+                            'bg-yellow-500'
+                          }>
+                            {request.status === 'COMPLETED' && '✓ Terminé'}
+                            {request.status === 'PROCESSING' && '⏳ En cours'}
+                            {request.status === 'PENDING' && '⏳ En attente'}
+                            {request.status === 'FAILED' && '✗ Échoué'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
