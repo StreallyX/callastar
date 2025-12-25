@@ -13,6 +13,7 @@ node_modules/
 .next/
 dist/
 build/
+.build/
 out/
 
 # Logs
@@ -37,3 +38,4 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+.abacus.donotdelete
