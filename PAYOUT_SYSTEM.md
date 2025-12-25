@@ -582,27 +582,248 @@ DATABASE_URL=postgresql://user:pass@host:5432/db
 
 ### Cron Job Setup
 
-Set up daily cron job to update payment statuses:
+The system uses an automated cron job to check and update payment statuses from HELD to READY when the 7-day holding period has passed.
 
-**Vercel Cron** (vercel.json):
-```json
-{
-  "crons": [
-    {
-      "path": "/api/payouts/update-status",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
-```
+#### Vercel Cron Configuration (Recommended)
 
-**Alternative (External Cron)**:
+1. **Create vercel.json** in project root:
+   ```json
+   {
+     "crons": [
+       {
+         "path": "/api/payouts/update-status",
+         "schedule": "0 2 * * *"
+       }
+     ]
+   }
+   ```
+
+2. **Set CRON_SECRET in Vercel**:
+   - Go to your project in Vercel Dashboard
+   - Navigate to Settings → Environment Variables
+   - Add new variable:
+     - Name: `CRON_SECRET`
+     - Value: Generate a secure random string (min 32 characters)
+     - Available to: All environments (or Production only)
+   - Example generation:
+     ```bash
+     # Generate secure random secret
+     openssl rand -base64 32
+     # or
+     node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+     ```
+
+3. **Deploy to Vercel**:
+   ```bash
+   git add vercel.json
+   git commit -m "Add cron job configuration"
+   git push origin main
+   vercel --prod
+   ```
+
+4. **Verify Cron Setup**:
+   - Go to Vercel Dashboard → Your Project → Settings → Cron
+   - You should see the cron job listed with schedule "0 2 * * *"
+   - Check logs after first run to verify success
+
+#### Alternative: External Cron Service
+
+If not using Vercel, you can use an external cron service like:
+- **cron-job.org**
+- **EasyCron**
+- **AWS CloudWatch Events**
+- **Server crontab**
+
+**Setup Example (Server Crontab)**:
 ```bash
-# Call daily at midnight
-0 0 * * * curl -X POST \
+# Edit crontab
+crontab -e
+
+# Add this line (runs daily at 02:00 UTC)
+0 2 * * * curl -X POST \
   -H "Authorization: Bearer YOUR_CRON_SECRET" \
   https://your-domain.com/api/payouts/update-status
 ```
+
+#### Testing the Cron Job
+
+##### Local Testing (Development)
+
+1. **Start development server**:
+   ```bash
+   npm run dev
+   ```
+
+2. **Test via GET request** (development only):
+   ```bash
+   # Simple GET request (no auth needed in dev mode)
+   curl http://localhost:3000/api/payouts/update-status
+   ```
+
+3. **Test via POST request** (production-like):
+   ```bash
+   # With authentication
+   curl -X POST \
+     -H "Authorization: Bearer dev-secret" \
+     http://localhost:3000/api/payouts/update-status
+   ```
+
+4. **Expected Response** (no payments to update):
+   ```json
+   {
+     "success": true,
+     "message": "No payments to update",
+     "updatedCount": 0,
+     "timestamp": "2025-12-25T02:00:00.000Z",
+     "duration": "45ms"
+   }
+   ```
+
+5. **Expected Response** (with payments updated):
+   ```json
+   {
+     "success": true,
+     "message": "Updated 3 payments to READY status",
+     "updatedCount": 3,
+     "paymentIds": ["pay_1", "pay_2", "pay_3"],
+     "payments": [
+       {
+         "id": "pay_1",
+         "amount": 63.00,
+         "creatorName": "John Doe",
+         "releaseDate": "2025-12-18T10:00:00.000Z"
+       }
+     ],
+     "timestamp": "2025-12-25T02:00:00.000Z",
+     "duration": "123ms"
+   }
+   ```
+
+##### Production Testing
+
+1. **Manual Trigger** (for testing only):
+   ```bash
+   # Get your CRON_SECRET from Vercel environment variables
+   CRON_SECRET="your-actual-secret-here"
+   
+   # Call production endpoint
+   curl -X POST \
+     -H "Authorization: Bearer $CRON_SECRET" \
+     https://your-domain.com/api/payouts/update-status
+   ```
+
+2. **Check Vercel Logs**:
+   - Go to Vercel Dashboard → Your Project → Logs
+   - Filter by function: `/api/payouts/update-status`
+   - Look for log entries with `[CRON]` prefix
+
+3. **Expected Log Output**:
+   ```
+   🔄 [CRON] Payout status update job started at: 2025-12-25T02:00:00.000Z
+   ✅ [CRON] Authentication successful
+   🔍 [CRON] Searching for HELD payments with release date <= 2025-12-25T02:00:00.000Z
+   📊 [CRON] Found 3 payments ready to be updated
+   💰 [CRON] Payments to be updated:
+     1. Payment ID: pay_abc123
+        Amount: €63.00
+        Creator: John Doe (john@example.com)
+        Release Date: 2025-12-18T10:00:00.000Z
+   🔄 [CRON] Updating payment statuses from HELD to READY...
+   ✅✅✅ [CRON] Successfully updated 3 payments to READY status
+   ⏱️  [CRON] Total execution time: 234ms
+   📅 [CRON] Next run: Tomorrow at 02:00 UTC
+   ```
+
+##### Monitoring Cron Job Health
+
+1. **Check Execution Logs**:
+   ```bash
+   # View recent cron job executions in Vercel
+   vercel logs --follow /api/payouts/update-status
+   ```
+
+2. **Set Up Alerts** (Optional):
+   - Use a monitoring service like Better Uptime or Cronitor
+   - Configure webhook to receive cron failure alerts
+   - Example with Cronitor:
+     ```bash
+     # Add to your cron endpoint response handling
+     curl https://cronitor.link/YOUR_MONITOR_ID/complete
+     ```
+
+3. **Database Verification**:
+   ```sql
+   -- Check for payments still in HELD status past release date
+   SELECT COUNT(*) as stuck_payments
+   FROM "Payment"
+   WHERE "payoutStatus" = 'HELD'
+     AND "payoutReleaseDate" <= NOW();
+   
+   -- Should return 0 if cron is working properly
+   ```
+
+#### Troubleshooting Cron Issues
+
+##### Issue: Cron Job Not Running
+
+**Symptoms**: Payments stay in HELD status past release date
+
+**Solutions**:
+1. Check vercel.json is committed and deployed
+2. Verify cron appears in Vercel Dashboard → Cron section
+3. Check CRON_SECRET is set in Vercel environment variables
+4. Review Vercel logs for error messages
+5. Manually trigger endpoint to test:
+   ```bash
+   curl -X POST \
+     -H "Authorization: Bearer YOUR_CRON_SECRET" \
+     https://your-domain.com/api/payouts/update-status
+   ```
+
+##### Issue: Authentication Failures
+
+**Symptoms**: 401 Unauthorized in logs
+
+**Solutions**:
+1. Verify CRON_SECRET matches between:
+   - Vercel environment variables
+   - Your local .env file (for testing)
+   - The Authorization header
+2. Ensure no extra spaces in the secret
+3. Check header format: `Bearer YOUR_SECRET` (note the space)
+
+##### Issue: Database Timeout
+
+**Symptoms**: 500 error, "Query timeout" in logs
+
+**Solutions**:
+1. Check database connection pool settings
+2. Optimize query with proper indexes:
+   ```sql
+   CREATE INDEX IF NOT EXISTS "Payment_payoutStatus_releaseDate_idx"
+   ON "Payment" ("payoutStatus", "payoutReleaseDate");
+   ```
+3. Add connection retry logic
+4. Consider pagination for large updates
+
+##### Issue: No Payments Updated But Should Be
+
+**Symptoms**: Returns 0 updated but payments exist
+
+**Solutions**:
+1. Check timezone settings:
+   ```typescript
+   // In route.ts, verify timezone handling
+   const now = new Date();
+   console.log('Current time:', now.toISOString());
+   ```
+2. Verify payoutReleaseDate is set correctly:
+   ```sql
+   SELECT id, "payoutStatus", "payoutReleaseDate", NOW()
+   FROM "Payment"
+   WHERE "payoutStatus" = 'HELD';
+   ```
+3. Check for database query filters
 
 ### Stripe Constants
 
