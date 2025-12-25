@@ -7,21 +7,46 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Save, Settings as SettingsIcon, DollarSign, Shield } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoadingSpinner, DateDisplay } from '@/components/admin';
+import { Save, Settings as SettingsIcon, DollarSign, Calendar, CreditCard, Info } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface PlatformSettings {
+  id: string;
+  platformFeePercentage: number;
+  platformFeeFixed: number | null;
+  minimumPayoutAmount: number;
+  holdingPeriodDays: number;
+  payoutMode: 'AUTOMATIC' | 'MANUAL';
+  payoutFrequencyOptions: string[];
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function AdminSettings() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<PlatformSettings | null>(null);
+  const [formData, setFormData] = useState({
     platformFeePercentage: 10,
-    minBookingPrice: 10,
-    maxBookingPrice: 1000,
-    payoutHoldingDays: 7,
+    platformFeeFixed: 0,
+    minimumPayoutAmount: 50,
+    holdingPeriodDays: 7,
+    payoutMode: 'AUTOMATIC' as 'AUTOMATIC' | 'MANUAL',
+    payoutFrequencyOptions: ['DAILY', 'WEEKLY', 'MONTHLY'],
+    currency: 'EUR',
   });
+
+  // Available frequency options
+  const frequencyOptions = ['DAILY', 'WEEKLY', 'MONTHLY'];
+  const currencyOptions = ['EUR', 'USD', 'GBP', 'CHF'];
 
   useEffect(() => {
     fetchData();
@@ -47,13 +72,17 @@ export default function AdminSettings() {
       // Get platform settings
       const settingsResponse = await fetch('/api/admin/settings');
       if (settingsResponse.ok) {
-        const settingsData = await settingsResponse.json();
-        if (settingsData?.settings) {
-          setSettings({
-            platformFeePercentage: parseFloat(settingsData.settings.platformFeePercentage || '10'),
-            minBookingPrice: parseFloat(settingsData.settings.minBookingPrice || '10'),
-            maxBookingPrice: parseFloat(settingsData.settings.maxBookingPrice || '1000'),
-            payoutHoldingDays: parseInt(settingsData.settings.payoutHoldingDays || '7'),
+        const data = await settingsResponse.json();
+        if (data?.settings) {
+          setSettings(data.settings);
+          setFormData({
+            platformFeePercentage: data.settings.platformFeePercentage || 10,
+            platformFeeFixed: data.settings.platformFeeFixed || 0,
+            minimumPayoutAmount: data.settings.minimumPayoutAmount || 50,
+            holdingPeriodDays: data.settings.holdingPeriodDays || 7,
+            payoutMode: data.settings.payoutMode || 'AUTOMATIC',
+            payoutFrequencyOptions: data.settings.payoutFrequencyOptions || ['DAILY', 'WEEKLY', 'MONTHLY'],
+            currency: data.settings.currency || 'EUR',
           });
         }
       }
@@ -69,16 +98,26 @@ export default function AdminSettings() {
     setSaving(true);
     try {
       const response = await fetch('/api/admin/settings', {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({
+          platformFeePercentage: formData.platformFeePercentage,
+          platformFeeFixed: formData.platformFeeFixed > 0 ? formData.platformFeeFixed : null,
+          minimumPayoutAmount: formData.minimumPayoutAmount,
+          holdingPeriodDays: formData.holdingPeriodDays,
+          payoutMode: formData.payoutMode,
+          payoutFrequencyOptions: formData.payoutFrequencyOptions,
+          currency: formData.currency,
+        }),
       });
+
+      const data = await response.json();
 
       if (response.ok) {
         toast.success('Paramètres enregistrés avec succès');
+        fetchData(); // Refresh data
       } else {
-        const error = await response.json();
-        toast.error(error?.error ?? 'Erreur lors de l\'enregistrement');
+        toast.error(data?.error ?? 'Erreur lors de l\'enregistrement');
       }
     } catch (error) {
       toast.error('Une erreur est survenue');
@@ -87,193 +126,327 @@ export default function AdminSettings() {
     }
   };
 
+  const toggleFrequency = (frequency: string) => {
+    const newFrequencies = formData.payoutFrequencyOptions.includes(frequency)
+      ? formData.payoutFrequencyOptions.filter(f => f !== frequency)
+      : [...formData.payoutFrequencyOptions, frequency];
+    
+    setFormData({ ...formData, payoutFrequencyOptions: newFrequencies });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
-        <div className="container mx-auto max-w-7xl px-4 py-12 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <div className="container mx-auto max-w-7xl px-4 py-12">
+          <LoadingSpinner text="Chargement..." />
         </div>
       </div>
     );
   }
 
+  const stripeMode = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.includes('test') ? 'test' : 'live';
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
       <Navbar />
 
-      <div className="container mx-auto max-w-4xl px-4 py-8">
+      <div className="container mx-auto max-w-5xl px-4 py-8">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <SettingsIcon className="w-8 h-8" />
-            Paramètres Admin
-          </h1>
-          <p className="text-gray-600">Configuration de la plateforme</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+                <SettingsIcon className="w-8 h-8" />
+                Paramètres de la Plateforme
+              </h1>
+              <p className="text-gray-600">Configuration complète des paramètres financiers et opérationnels</p>
+            </div>
+            <Button variant="outline" onClick={() => router.push('/dashboard/admin')}>
+              Retour au tableau de bord
+            </Button>
+          </div>
+
+          {/* Stripe Mode & Last Updated */}
+          <div className="flex items-center gap-4">
+            <Badge className={stripeMode === 'test' ? 'bg-yellow-500' : 'bg-green-500'}>
+              Mode Stripe: {stripeMode === 'test' ? 'Test' : 'Production'}
+            </Badge>
+            {settings?.updatedAt && (
+              <span className="text-sm text-gray-500">
+                Dernière mise à jour: <DateDisplay date={settings.updatedAt} format="datetime" />
+              </span>
+            )}
+          </div>
         </div>
 
-        <Tabs defaultValue="platform" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="platform">Plateforme</TabsTrigger>
-            <TabsTrigger value="payments">Paiements</TabsTrigger>
-            <TabsTrigger value="security">Sécurité</TabsTrigger>
-          </TabsList>
-
-          {/* Platform Settings Tab */}
-          <TabsContent value="platform" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Paramètres de la plateforme</CardTitle>
-                <CardDescription>
-                  Configuration générale de Call a Star
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+        {/* Settings Form */}
+        <div className="space-y-6">
+          {/* Fees Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Frais de la Plateforme
+              </CardTitle>
+              <CardDescription>
+                Configurez les frais prélevés sur les transactions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="platformFee">Commission plateforme (%)</Label>
+                  <Label htmlFor="platformFeePercentage">
+                    Pourcentage de frais (%)
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="platformFeePercentage"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={formData.platformFeePercentage}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        platformFeePercentage: parseFloat(e.target.value) || 0 
+                      })}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    Pourcentage prélevé sur chaque transaction
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="platformFeeFixed">
+                    Frais fixes (optionnel)
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="platformFeeFixed"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.platformFeeFixed}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        platformFeeFixed: parseFloat(e.target.value) || 0 
+                      })}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      {formData.currency}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    Montant fixe ajouté aux frais (laissez 0 si non utilisé)
+                  </p>
+                </div>
+              </div>
+
+              <Alert>
+                <Info className="w-4 h-4" />
+                <AlertDescription>
+                  Les frais totaux seront calculés comme: (Montant × {formData.platformFeePercentage}%) + {formData.platformFeeFixed} {formData.currency}
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          {/* Payouts Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Paramètres de Paiement
+              </CardTitle>
+              <CardDescription>
+                Configurez les paiements aux créateurs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minimumPayoutAmount">
+                    Montant minimum de paiement
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="minimumPayoutAmount"
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={formData.minimumPayoutAmount}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        minimumPayoutAmount: parseFloat(e.target.value) || 0 
+                      })}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      {formData.currency}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    Montant minimum requis pour déclencher un paiement
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="holdingPeriodDays">
+                    Période de rétention (jours)
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
                   <Input
-                    id="platformFee"
+                    id="holdingPeriodDays"
                     type="number"
                     min="0"
-                    max="100"
-                    step="0.1"
-                    value={settings.platformFeePercentage}
-                    onChange={(e) => setSettings({ ...settings, platformFeePercentage: parseFloat(e.target.value) || 0 })}
-                  />
-                  <p className="text-sm text-gray-500">
-                    Pourcentage prélevé sur chaque transaction (actuellement {settings.platformFeePercentage}%)
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="minPrice">Prix minimum de réservation (€)</Label>
-                  <Input
-                    id="minPrice"
-                    type="number"
-                    min="1"
-                    value={settings.minBookingPrice}
-                    onChange={(e) => setSettings({ ...settings, minBookingPrice: parseFloat(e.target.value) || 0 })}
-                  />
-                  <p className="text-sm text-gray-500">
-                    Prix minimum qu'un créateur peut fixer pour un appel
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="maxPrice">Prix maximum de réservation (€)</Label>
-                  <Input
-                    id="maxPrice"
-                    type="number"
-                    min="1"
-                    value={settings.maxBookingPrice}
-                    onChange={(e) => setSettings({ ...settings, maxBookingPrice: parseFloat(e.target.value) || 0 })}
-                  />
-                  <p className="text-sm text-gray-500">
-                    Prix maximum qu'un créateur peut fixer pour un appel
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Payment Settings Tab */}
-          <TabsContent value="payments" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Paramètres de paiement
-                </CardTitle>
-                <CardDescription>
-                  Configuration des paiements et des transferts
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="holdingDays">Période de sécurité (jours)</Label>
-                  <Input
-                    id="holdingDays"
-                    type="number"
-                    min="1"
                     max="30"
-                    value={settings.payoutHoldingDays}
-                    onChange={(e) => setSettings({ ...settings, payoutHoldingDays: parseInt(e.target.value) || 7 })}
+                    value={formData.holdingPeriodDays}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      holdingPeriodDays: parseInt(e.target.value) || 0 
+                    })}
                   />
                   <p className="text-sm text-gray-500">
-                    Nombre de jours pendant lesquels les paiements sont retenus avant d'être disponibles pour transfert (actuellement {settings.payoutHoldingDays} jours)
+                    Nombre de jours avant que les fonds ne soient disponibles
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="payoutMode">
+                    Mode de paiement
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Select
+                    value={formData.payoutMode}
+                    onValueChange={(value: 'AUTOMATIC' | 'MANUAL') => 
+                      setFormData({ ...formData, payoutMode: value })
+                    }
+                  >
+                    <SelectTrigger id="payoutMode">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AUTOMATIC">Automatique</SelectItem>
+                      <SelectItem value="MANUAL">Manuel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-gray-500">
+                    Automatique: paiements déclenchés par cron. Manuel: admin doit approuver
                   </p>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-800 mb-2">ℹ️ Information</h4>
-                  <p className="text-sm text-blue-700">
-                    La période de sécurité protège contre les litiges et les annulations. Une période plus longue offre plus de sécurité mais retarde les paiements aux créateurs.
+                <div className="space-y-2">
+                  <Label htmlFor="currency">
+                    Devise
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <Select
+                    value={formData.currency}
+                    onValueChange={(value) => 
+                      setFormData({ ...formData, currency: value })
+                    }
+                  >
+                    <SelectTrigger id="currency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencyOptions.map(curr => (
+                        <SelectItem key={curr} value={curr}>{curr}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-gray-500">
+                    Devise utilisée pour toutes les transactions
                   </p>
                 </div>
+              </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-yellow-800 mb-2">⚠️ Stripe Configuration</h4>
-                  <p className="text-sm text-yellow-700 mb-2">
-                    Pour configurer les webhooks Stripe et la gestion des paiements :
-                  </p>
-                  <ul className="text-sm text-yellow-700 list-disc list-inside space-y-1">
-                    <li>Accédez au <a href="https://dashboard.stripe.com/webhooks" target="_blank" rel="noopener noreferrer" className="underline font-semibold">Dashboard Stripe</a></li>
-                    <li>Ajoutez l'endpoint webhook: <code className="bg-yellow-100 px-1 rounded">{process.env.NEXT_PUBLIC_APP_URL || 'https://votre-domaine.com'}/api/payments/webhook</code></li>
-                    <li>Écoutez l'événement: <code className="bg-yellow-100 px-1 rounded">payment_intent.succeeded</code></li>
-                  </ul>
+              <div className="space-y-2">
+                <Label>
+                  Fréquences de paiement disponibles
+                  <span className="text-red-500 ml-1">*</span>
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {frequencyOptions.map(freq => (
+                    <Badge
+                      key={freq}
+                      variant={formData.payoutFrequencyOptions.includes(freq) ? 'default' : 'outline'}
+                      className="cursor-pointer"
+                      onClick={() => toggleFrequency(freq)}
+                    >
+                      {freq === 'DAILY' ? 'Quotidien' : freq === 'WEEKLY' ? 'Hebdomadaire' : 'Mensuel'}
+                    </Badge>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <p className="text-sm text-gray-500">
+                  Les créateurs pourront choisir parmi ces options
+                </p>
+              </div>
 
-          {/* Security Settings Tab */}
-          <TabsContent value="security" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  Sécurité et accès
-                </CardTitle>
-                <CardDescription>
-                  Paramètres de sécurité de la plateforme
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-green-800 mb-2">✓ Fonctionnalités de sécurité actives</h4>
-                  <ul className="text-sm text-green-700 space-y-2">
-                    <li>• Authentification JWT sécurisée</li>
-                    <li>• Hachage des mots de passe avec bcrypt</li>
-                    <li>• Protection CSRF</li>
-                    <li>• Validation des paiements par Stripe</li>
-                    <li>• KYC/AML via Stripe Connect</li>
-                    <li>• Période de sécurité de {settings.payoutHoldingDays} jours sur les paiements</li>
-                  </ul>
+              <Alert>
+                <Calendar className="w-4 h-4" />
+                <AlertDescription>
+                  Les paiements automatiques sont traités par le cron job à intervalles réguliers selon la fréquence choisie par chaque créateur.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+
+          {/* General Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations Générales</CardTitle>
+              <CardDescription>
+                Informations sur l'environnement et la configuration
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Mode Stripe</p>
+                  <Badge className={stripeMode === 'test' ? 'bg-yellow-500' : 'bg-green-500'}>
+                    {stripeMode === 'test' ? 'Test' : 'Production'}
+                  </Badge>
                 </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Administrateur</p>
+                  <p className="text-sm">{user?.name} ({user?.email})</p>
+                </div>
+              </div>
 
-                <div className="border rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">Compte administrateur</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Email:</span>
-                      <span className="font-medium">{user?.email}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Nom:</span>
-                      <span className="font-medium">{user?.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Rôle:</span>
-                      <span className="font-medium text-purple-600">ADMIN</span>
-                    </div>
+              {settings && (
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-600">Créé le</p>
+                    <p className="text-sm">
+                      <DateDisplay date={settings.createdAt} format="datetime" />
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-600">Dernière modification</p>
+                    <p className="text-sm">
+                      <DateDisplay date={settings.updatedAt} format="datetime" />
+                    </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Save Button */}
-        <div className="flex justify-end gap-4 mt-6">
+        <div className="flex justify-end gap-4 mt-6 pb-8">
           <Button
             variant="outline"
             onClick={() => router.push('/dashboard/admin')}
@@ -287,7 +460,7 @@ export default function AdminSettings() {
           >
             {saving ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <LoadingSpinner size="sm" className="mr-2" />
                 Enregistrement...
               </>
             ) : (

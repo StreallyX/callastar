@@ -283,6 +283,77 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
+        {/* Quick Actions */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Gestion Administrative</CardTitle>
+            <CardDescription>Accès rapide aux fonctionnalités d'administration</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Button
+                variant="outline"
+                className="h-auto flex flex-col items-start p-4 hover:bg-purple-50"
+                onClick={() => router.push('/dashboard/admin/settings')}
+              >
+                <SettingsIcon className="w-6 h-6 mb-2" />
+                <span className="font-semibold">Paramètres</span>
+                <span className="text-xs text-gray-500 mt-1">Configuration plateforme</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="h-auto flex flex-col items-start p-4 hover:bg-purple-50"
+                onClick={() => router.push('/dashboard/admin/payments')}
+              >
+                <DollarSign className="w-6 h-6 mb-2" />
+                <span className="font-semibold">Paiements</span>
+                <span className="text-xs text-gray-500 mt-1">Historique des transactions</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="h-auto flex flex-col items-start p-4 hover:bg-purple-50"
+                onClick={() => router.push('/dashboard/admin/payouts')}
+              >
+                <Send className="w-6 h-6 mb-2" />
+                <span className="font-semibold">Paiements créateurs</span>
+                <span className="text-xs text-gray-500 mt-1">Gestion des payouts</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="h-auto flex flex-col items-start p-4 hover:bg-purple-50"
+                onClick={() => router.push('/dashboard/admin/payouts/dashboard')}
+              >
+                <TrendingUp className="w-6 h-6 mb-2" />
+                <span className="font-semibold">Tableau de bord</span>
+                <span className="text-xs text-gray-500 mt-1">Vue d'ensemble payouts</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="h-auto flex flex-col items-start p-4 hover:bg-purple-50"
+                onClick={() => router.push('/dashboard/admin/refunds')}
+              >
+                <DollarSign className="w-6 h-6 mb-2" />
+                <span className="font-semibold">Remboursements</span>
+                <span className="text-xs text-gray-500 mt-1">Gestion des refunds</span>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="h-auto flex flex-col items-start p-4 hover:bg-purple-50"
+                onClick={() => router.push('/dashboard/admin/logs')}
+              >
+                <Users className="w-6 h-6 mb-2" />
+                <span className="font-semibold">Logs</span>
+                <span className="text-xs text-gray-500 mt-1">Journal transactions</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Revenue Chart */}
         {revenueData.length > 0 && (
           <Card className="mb-8">
