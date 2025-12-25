@@ -260,9 +260,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse and validate request body
-    const body = await request.json();
-    const { amount } = payoutRequestSchema.parse(body);
+    // Parse and validate request body with error handling
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('JSON parsing error:', jsonError);
+      return NextResponse.json(
+        { 
+          error: 'Corps de la requête invalide. Veuillez envoyer un JSON valide avec le champ "amount".',
+          details: 'Le corps de la requête doit être au format JSON avec un champ "amount" (nombre positif).'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate that body contains required fields
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { 
+          error: 'Corps de la requête invalide',
+          details: 'Le corps de la requête doit être un objet JSON.'
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!body.amount) {
+      return NextResponse.json(
+        { 
+          error: 'Champ "amount" manquant',
+          details: 'Le corps de la requête doit contenir un champ "amount" avec le montant à demander.'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate amount with Zod
+    let amount;
+    try {
+      const validated = payoutRequestSchema.parse(body);
+      amount = validated.amount;
+    } catch (zodError) {
+      if (zodError instanceof z.ZodError) {
+        return NextResponse.json(
+          { 
+            error: 'Validation échouée',
+            details: zodError.issues.map(issue => issue.message).join(', ')
+          },
+          { status: 400 }
+        );
+      }
+      throw zodError;
+    }
 
     // Get all READY payments for this creator
     const readyPayments = await db.payment.findMany({
@@ -340,13 +390,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating payout request:', error);
 
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Données invalides', details: error.issues },
-        { status: 400 }
-      );
-    }
-
+    // Zod errors are already handled above, this is for unexpected errors
     return NextResponse.json(
       { error: 'Erreur lors de la création de la demande de paiement' },
       { status: 500 }

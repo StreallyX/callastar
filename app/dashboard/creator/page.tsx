@@ -265,6 +265,12 @@ export default function CreatorDashboard() {
     try {
       const response = await fetch('/api/payouts/request', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: payoutData.summary.readyForPayout,
+        }),
       });
 
       if (response.ok) {
