@@ -126,6 +126,12 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Variables to store payment amounts (used later in emails)
+      let amount: number;
+      let platformFee: number;
+      let creatorAmount: number;
+      let payoutReleaseDate: Date;
+
       // Check if payment record already exists
       console.log('Checking for existing payment record...');
       const existingPayment = await db.payment.findUnique({
@@ -142,6 +148,12 @@ export async function POST(request: NextRequest) {
           creatorAmount: existingPayment.creatorAmount,
         });
         
+        // Set variables from existing payment for use in emails
+        amount = Number(existingPayment.amount);
+        platformFee = Number(existingPayment.platformFee);
+        creatorAmount = Number(existingPayment.creatorAmount);
+        payoutReleaseDate = existingPayment.payoutReleaseDate || calculatePayoutReleaseDate(new Date());
+        
         // Update status if needed
         if (existingPayment.status !== 'SUCCEEDED') {
           console.log('Updating payment status to SUCCEEDED...');
@@ -153,81 +165,187 @@ export async function POST(request: NextRequest) {
         }
       } else {
         console.log('No existing payment record found, creating new one...');
+        console.log('========================================');
+        console.log('PAYMENT CREATION - Extracting metadata...');
+        console.log('Raw metadata:', JSON.stringify(paymentIntent.metadata, null, 2));
+        console.log('========================================');
         
-        // Create payment record with payout tracking
-        const amount = Number(booking.totalPrice);
-        const platformFee = Number(paymentIntent.metadata?.platformFee || 0);
-        const creatorAmount = Number(paymentIntent.metadata?.creatorAmount || 0);
+        // Extract and parse metadata values
+        // These are stored as EUR strings in metadata (e.g., "7", "63")
+        const metadataPlatformFee = paymentIntent.metadata?.platformFee;
+        const metadataCreatorAmount = paymentIntent.metadata?.creatorAmount;
         
-        console.log('Payment record values:', {
+        console.log('Extracted metadata values (as strings):', {
+          platformFee: metadataPlatformFee,
+          creatorAmount: metadataCreatorAmount,
+          type: `platformFee: ${typeof metadataPlatformFee}, creatorAmount: ${typeof metadataCreatorAmount}`,
+        });
+        
+        // Parse and validate metadata values
+        try {
+          // Parse platform fee from metadata
+          if (!metadataPlatformFee) {
+            throw new Error('platformFee is missing from metadata');
+          }
+          platformFee = parseFloat(metadataPlatformFee);
+          if (isNaN(platformFee) || platformFee < 0) {
+            throw new Error(`Invalid platformFee value: "${metadataPlatformFee}" parsed to ${platformFee}`);
+          }
+          
+          // Parse creator amount from metadata
+          if (!metadataCreatorAmount) {
+            throw new Error('creatorAmount is missing from metadata');
+          }
+          creatorAmount = parseFloat(metadataCreatorAmount);
+          if (isNaN(creatorAmount) || creatorAmount <= 0) {
+            throw new Error(`Invalid creatorAmount value: "${metadataCreatorAmount}" parsed to ${creatorAmount}`);
+          }
+          
+          console.log('✅ Metadata values parsed successfully:', {
+            platformFee: `${platformFee} EUR`,
+            creatorAmount: `${creatorAmount} EUR`,
+          });
+        } catch (metadataError: any) {
+          console.error('❌ METADATA PARSING ERROR:', metadataError.message);
+          console.error('Cannot create payment record without valid metadata');
+          console.error('Skipping payment creation for booking:', bookingId);
+          // Return early - don't try to create payment with invalid data
+          return NextResponse.json({ received: true, error: 'Invalid metadata' }, { status: 200 });
+        }
+        
+        // Get total amount from booking (stored as Decimal in DB, e.g., 70.00 EUR)
+        amount = Number(booking.totalPrice);
+        
+        // Validate amount from booking
+        if (!amount || amount <= 0 || isNaN(amount)) {
+          console.error('❌ VALIDATION ERROR: Invalid amount from booking');
+          console.error('Booking totalPrice:', booking.totalPrice);
+          console.error('Parsed amount:', amount);
+          console.error('Skipping payment creation for booking:', bookingId);
+          return NextResponse.json({ received: true, error: 'Invalid booking amount' }, { status: 200 });
+        }
+        
+        // Verify that fees add up correctly (with small tolerance for floating point)
+        const expectedTotal = platformFee + creatorAmount;
+        const difference = Math.abs(amount - expectedTotal);
+        const tolerance = 0.02; // 2 cents tolerance
+        
+        if (difference > tolerance) {
+          console.warn('⚠️  WARNING: Fee calculation mismatch!');
+          console.warn('Total amount:', amount, 'EUR');
+          console.warn('Platform fee + Creator amount:', expectedTotal, 'EUR');
+          console.warn('Difference:', difference, 'EUR');
+          console.warn('This might indicate a calculation error in the payment intent creation');
+        }
+        
+        console.log('Payment record values to be saved:', {
           bookingId: booking.id,
-          amount,
-          platformFee,
-          creatorAmount,
+          amount: `${amount} EUR`,
+          platformFee: `${platformFee} EUR`,
+          creatorAmount: `${creatorAmount} EUR`,
+          total: `${amount} EUR`,
+          feeBreakdown: `${platformFee} + ${creatorAmount} = ${platformFee + creatorAmount} EUR`,
           paymentIntentId: paymentIntent.id,
+          paymentIntentAmount: `${paymentIntent.amount} cents`,
           useStripeConnect: paymentIntent.metadata?.useStripeConnect,
           hasApplicationFee: !!paymentIntent.application_fee_amount,
           hasTransferData: !!paymentIntent.transfer_data,
         });
         
-        // Validate required fields
-        if (!amount || amount <= 0) {
-          console.error('Invalid amount:', amount);
-          console.error('Booking totalPrice:', booking.totalPrice);
-        }
-        
-        if (!platformFee || platformFee < 0) {
-          console.error('Invalid platformFee:', platformFee);
-          console.error('Metadata platformFee:', paymentIntent.metadata?.platformFee);
-        }
-        
-        if (!creatorAmount || creatorAmount <= 0) {
-          console.error('Invalid creatorAmount:', creatorAmount);
-          console.error('Metadata creatorAmount:', paymentIntent.metadata?.creatorAmount);
-        }
-        
         // Calculate payout release date (7 days from now)
         const paymentDate = new Date();
-        const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
+        payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
         
         console.log('Payout info:', {
           paymentDate: paymentDate.toISOString(),
           payoutReleaseDate: payoutReleaseDate.toISOString(),
+          daysToHold: 7,
           payoutStatus: 'HELD',
         });
 
         try {
+          console.log('========================================');
           console.log('Creating payment record in database...');
+          console.log('Database values (all in EUR):');
+          console.log('  - bookingId:', booking.id);
+          console.log('  - amount:', amount);
+          console.log('  - platformFee:', platformFee);
+          console.log('  - creatorAmount:', creatorAmount);
+          console.log('  - stripePaymentIntentId:', paymentIntent.id);
+          console.log('  - status: SUCCEEDED');
+          console.log('  - payoutStatus: HELD');
+          console.log('  - payoutReleaseDate:', payoutReleaseDate.toISOString());
+          console.log('========================================');
+          
           const newPayment = await db.payment.create({
             data: {
               bookingId: booking.id,
-              amount,
+              amount: amount, // Decimal field, EUR value
               stripePaymentIntentId: paymentIntent.id,
               status: 'SUCCEEDED',
-              platformFee,
-              creatorAmount,
+              platformFee: platformFee, // Decimal field, EUR value
+              creatorAmount: creatorAmount, // Decimal field, EUR value
               payoutStatus: 'HELD', // Payment held for 7 days
-              payoutReleaseDate,    // Date when funds can be transferred
+              payoutReleaseDate: payoutReleaseDate, // Date when funds can be transferred
             },
           });
-          console.log('✅ Payment record created successfully!');
+          
+          console.log('========================================');
+          console.log('✅✅✅ PAYMENT RECORD CREATED SUCCESSFULLY! ✅✅✅');
           console.log('Payment ID:', newPayment.id);
-          console.log('Payment record:', JSON.stringify(newPayment, null, 2));
+          console.log('Payment details:', {
+            id: newPayment.id,
+            bookingId: newPayment.bookingId,
+            amount: `${newPayment.amount} EUR`,
+            platformFee: `${newPayment.platformFee} EUR`,
+            creatorAmount: `${newPayment.creatorAmount} EUR`,
+            status: newPayment.status,
+            payoutStatus: newPayment.payoutStatus,
+            payoutReleaseDate: newPayment.payoutReleaseDate,
+            createdAt: newPayment.createdAt,
+          });
+          console.log('========================================');
         } catch (paymentError: any) {
-          console.error('❌ ERROR creating payment record:');
+          console.error('========================================');
+          console.error('❌❌❌ ERROR CREATING PAYMENT RECORD ❌❌❌');
           console.error('Error name:', paymentError?.name);
           console.error('Error message:', paymentError?.message);
           console.error('Error code:', paymentError?.code);
-          console.error('Error details:', JSON.stringify(paymentError, null, 2));
+          console.error('========================================');
+          console.error('Full error object:', JSON.stringify(paymentError, null, 2));
+          console.error('========================================');
+          console.error('Failed payment data that was attempted:');
+          console.error('  - bookingId:', booking.id);
+          console.error('  - amount:', amount, `(type: ${typeof amount})`);
+          console.error('  - platformFee:', platformFee, `(type: ${typeof platformFee})`);
+          console.error('  - creatorAmount:', creatorAmount, `(type: ${typeof creatorAmount})`);
+          console.error('  - payoutReleaseDate:', payoutReleaseDate, `(type: ${typeof payoutReleaseDate})`);
+          console.error('========================================');
           
           // Check for specific Prisma errors
           if (paymentError?.code === 'P2002') {
-            console.error('Unique constraint violation - payment may already exist');
+            console.error('❌ Unique constraint violation');
+            console.error('   This booking may already have a payment record');
+            console.error('   Check if payment was created in a previous webhook call');
           } else if (paymentError?.code === 'P2003') {
-            console.error('Foreign key constraint failed - booking may not exist');
+            console.error('❌ Foreign key constraint failed');
+            console.error('   The booking may not exist in the database');
+            console.error('   Booking ID:', booking.id);
+          } else if (paymentError?.code === 'P2000') {
+            console.error('❌ Value too long for column');
+            console.error('   One of the values exceeds the database column limit');
+          } else if (paymentError?.code === 'P2001') {
+            console.error('❌ Record not found');
+            console.error('   Required record does not exist');
+          } else {
+            console.error('❌ Unexpected error type');
+            console.error('   This may be a database connection issue or schema mismatch');
           }
+          console.error('========================================');
           
-          // Continue with rest of webhook processing
+          // Don't continue - this is a critical error
+          // Return error status so Stripe will retry the webhook
+          throw new Error(`Failed to create payment record: ${paymentError?.message}`);
         }
       }
 
