@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     const now = new Date();
 
     // 3. Find all creators with automatic payouts due
-    const payoutSchedules = await prisma.payoutSchedule.findMany({
+    const payoutSchedules = await prisma.payoutScheduleNew.findMany({
       where: {
         mode: 'AUTOMATIC',
         isActive: true,
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
 
           // Update next payout date even if not eligible (try again next time)
           const nextPayoutDate = calculateNextPayoutDate(schedule.frequency, now);
-          await prisma.payoutSchedule.update({
+          await prisma.payoutScheduleNew.update({
             where: { id: schedule.id },
             data: { nextPayoutDate },
           });
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
 
           // Update next payout date
           const nextPayoutDate = calculateNextPayoutDate(schedule.frequency, now);
-          await prisma.payoutSchedule.update({
+          await prisma.payoutScheduleNew.update({
             where: { id: schedule.id },
             data: { nextPayoutDate },
           });
@@ -320,7 +320,7 @@ export async function GET(request: NextRequest) {
 
         // 10. Update next payout date
         const nextPayoutDate = calculateNextPayoutDate(schedule.frequency, now);
-        await prisma.payoutSchedule.update({
+        await prisma.payoutScheduleNew.update({
           where: { id: schedule.id },
           data: { nextPayoutDate },
         });
@@ -337,7 +337,7 @@ export async function GET(request: NextRequest) {
         // Still update next payout date to avoid getting stuck
         try {
           const nextPayoutDate = calculateNextPayoutDate(schedule.frequency, now);
-          await prisma.payoutSchedule.update({
+          await prisma.payoutScheduleNew.update({
             where: { id: schedule.id },
             data: { nextPayoutDate },
           });

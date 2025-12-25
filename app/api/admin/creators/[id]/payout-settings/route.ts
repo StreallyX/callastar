@@ -53,13 +53,13 @@ export async function GET(
     }
 
     // Get or create payout schedule
-    let payoutSchedule = await prisma.payoutSchedule.findUnique({
+    let payoutSchedule = await prisma.payoutScheduleNew.findUnique({
       where: { creatorId },
     });
 
     if (!payoutSchedule && creator.stripeAccountId) {
       // Create default schedule if missing
-      payoutSchedule = await prisma.payoutSchedule.create({
+      payoutSchedule = await prisma.payoutScheduleNew.create({
         data: {
           creatorId,
           mode: 'AUTOMATIC',
@@ -190,7 +190,7 @@ export async function PUT(
     if (isActive !== undefined) updateData.isActive = isActive;
 
     // Update or create payout schedule
-    const payoutSchedule = await prisma.payoutSchedule.upsert({
+    const payoutSchedule = await prisma.payoutScheduleNew.upsert({
       where: { creatorId },
       update: updateData,
       create: {

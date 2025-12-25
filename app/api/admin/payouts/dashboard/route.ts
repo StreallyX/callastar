@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // 1. Count pending payouts (scheduled but not executed)
-    const pendingPayoutsCount = await prisma.payoutSchedule.count({
+    const pendingPayoutsCount = await prisma.payoutScheduleNew.count({
       where: {
         mode: 'AUTOMATIC',
         isActive: true,
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
     const creatorsWithIssuesCount = creatorsWithIssues.length;
 
     // 5. Find next scheduled payout date
-    const nextScheduledPayout = await prisma.payoutSchedule.findFirst({
+    const nextScheduledPayout = await prisma.payoutScheduleNew.findFirst({
       where: {
         mode: 'AUTOMATIC',
         isActive: true,
@@ -219,13 +219,13 @@ export async function GET(request: NextRequest) {
     });
 
     // 10. Get active payout schedules summary
-    const activeSchedulesCount = await prisma.payoutSchedule.count({
+    const activeSchedulesCount = await prisma.payoutScheduleNew.count({
       where: {
         isActive: true,
       },
     });
 
-    const automaticSchedulesCount = await prisma.payoutSchedule.count({
+    const automaticSchedulesCount = await prisma.payoutScheduleNew.count({
       where: {
         mode: 'AUTOMATIC',
         isActive: true,

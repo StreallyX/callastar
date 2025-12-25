@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
             email: true,
           },
         },
-        payoutSchedule: true,
+        payoutScheduleNew: true,
       },
     });
 
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
         payoutBlocked: creator.payoutBlocked,
         payoutBlockedReason: creator.payoutBlockedReason,
       },
-      payoutSchedule: creator.payoutSchedule,
+      payoutSchedule: creator.payoutScheduleNew,
       platformSettings: {
         minimumPayoutAmount: settings.minimumPayoutAmount,
         holdingPeriodDays: settings.holdingPeriodDays,

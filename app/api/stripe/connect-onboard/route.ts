@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
-import { db } from '@/lib/db';
+import prisma from '@/lib/db';
 import { stripe } from '@/lib/stripe';
 import { calculateNextPayoutDate } from '@/lib/payout-eligibility';
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get creator
-    const creator = await db.creator.findUnique({
+    const creator = await prisma.creator.findUnique({
       where: { userId: jwtUser.userId },
     });
 
@@ -41,18 +41,18 @@ export async function POST(request: NextRequest) {
       accountId = account.id;
 
       // Save Stripe Connect account ID
-      await db.creator.update({
+      await prisma.creator.update({
         where: { id: creator.id },
         data: { stripeAccountId: accountId },
       });
 
       // Create default PayoutSchedule for new Stripe account
-      const existingSchedule = await db.payoutSchedule.findUnique({
+      const existingSchedule = await prisma.payoutScheduleNew.findUnique({
         where: { creatorId: creator.id },
       });
 
       if (!existingSchedule) {
-        await db.payoutSchedule.create({
+        await prisma.payoutScheduleNew.create({
           data: {
             creatorId: creator.id,
             mode: 'AUTOMATIC',
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const creator = await db.creator.findUnique({
+    const creator = await prisma.creator.findUnique({
       where: { userId: jwtUser.userId },
     });
 
@@ -113,18 +113,18 @@ export async function GET(request: NextRequest) {
 
     // Update database if onboarding is complete
     if (onboarded && !creator.isStripeOnboarded) {
-      await db.creator.update({
+      await prisma.creator.update({
         where: { id: creator.id },
         data: { isStripeOnboarded: true },
       });
 
       // Ensure PayoutSchedule exists when onboarding is complete
-      const existingSchedule = await db.payoutSchedule.findUnique({
+      const existingSchedule = await prisma.payoutScheduleNew.findUnique({
         where: { creatorId: creator.id },
       });
 
       if (!existingSchedule) {
-        await db.payoutSchedule.create({
+        await prisma.payoutScheduleNew.create({
           data: {
             creatorId: creator.id,
             mode: 'AUTOMATIC',

@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Update audit log if exists
-        await db.payoutAuditLog.updateMany({
+        await prisma.payoutAuditLog.updateMany({
           where: {
             creatorId,
             stripePayoutId: payout.id,
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Update audit log status to COMPLETED
-        const updatedLogs = await db.payoutAuditLog.updateMany({
+        const updatedLogs = await prisma.payoutAuditLog.updateMany({
           where: {
             creatorId,
             stripePayoutId: payout.id,
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
 
         // Send notification to creator
         try {
-          const creator = await db.creator.findUnique({
+          const creator = await prisma.creator.findUnique({
             where: { id: creatorId },
             include: { user: true },
           });
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Update audit log status to FAILED
-        await db.payoutAuditLog.updateMany({
+        await prisma.payoutAuditLog.updateMany({
           where: {
             creatorId,
             stripePayoutId: payout.id,
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
 
         // Send notification to creator
         try {
-          const creator = await db.creator.findUnique({
+          const creator = await prisma.creator.findUnique({
             where: { id: creatorId },
             include: { user: true },
           });
@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
       const account = event.data.object as any;
       
       // Find creator with this Stripe account
-      const creator = await db.creator.findFirst({
+      const creator = await prisma.creator.findFirst({
         where: { stripeAccountId: account.id },
       });
 
@@ -314,7 +314,7 @@ export async function POST(request: NextRequest) {
         // Update creator's onboarding status
         const isOnboarded = account.details_submitted && account.charges_enabled;
         
-        await db.creator.update({
+        await prisma.creator.update({
           where: { id: creator.id },
           data: {
             isStripeOnboarded: isOnboarded,
@@ -324,7 +324,7 @@ export async function POST(request: NextRequest) {
         // If payouts were just enabled, send notification
         if (account.payouts_enabled && !creator.isStripeOnboarded) {
           try {
-            const creatorWithUser = await db.creator.findUnique({
+            const creatorWithUser = await prisma.creator.findUnique({
               where: { id: creator.id },
               include: { user: true },
             });
