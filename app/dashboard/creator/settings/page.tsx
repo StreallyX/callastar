@@ -354,19 +354,33 @@ export default function CreatorSettings() {
                   </div>
                 )}
 
-                {/* Stripe Dashboard Link */}
+                {/* Stripe Connect Express Dashboard Link */}
                 {stripeOnboarding.onboarded && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-800 mb-2">📊 Tableau de bord Stripe</h4>
+                    <h4 className="font-semibold text-blue-800 mb-2">📊 Gérer votre compte Stripe</h4>
                     <p className="text-sm text-blue-700 mb-4">
-                      Accédez à votre tableau de bord Stripe pour gérer vos paiements, vos transferts et vos informations bancaires.
+                      Accédez à votre espace Stripe Connect pour gérer vos paiements, vos transferts et vos informations bancaires (IBAN).
                     </p>
                     <Button
-                      onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/stripe/express-dashboard', {
+                            method: 'POST',
+                          });
+                          if (response.ok) {
+                            const data = await response.json();
+                            window.open(data.url, '_blank');
+                          } else {
+                            toast.error('Erreur lors de l\'ouverture du tableau de bord');
+                          }
+                        } catch (error) {
+                          toast.error('Une erreur est survenue');
+                        }
+                      }}
                       variant="outline"
                       className="border-blue-300 text-blue-700 hover:bg-blue-100"
                     >
-                      Ouvrir Stripe Dashboard
+                      Ouvrir Stripe Connect
                       <ExternalLink className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
@@ -376,11 +390,14 @@ export default function CreatorSettings() {
                 <div className="border rounded-lg p-4">
                   <h4 className="font-semibold mb-2">Comment ajouter mon compte bancaire ?</h4>
                   <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-                    <li>Connectez-vous à votre <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="text-purple-600 underline">tableau de bord Stripe</a></li>
-                    <li>Allez dans <strong>Paramètres</strong> &gt; <strong>Informations bancaires</strong></li>
-                    <li>Ajoutez votre IBAN et les informations de votre banque</li>
-                    <li>Configurez la fréquence des transferts (quotidien, hebdomadaire, mensuel)</li>
+                    <li>Cliquez sur le bouton <strong>"Ouvrir Stripe Connect"</strong> ci-dessus</li>
+                    <li>Connectez-vous à votre espace Stripe Connect</li>
+                    <li>Ajoutez votre IBAN et les informations de votre banque dans la section dédiée</li>
+                    <li>Vos virements seront automatiquement envoyés selon votre configuration</li>
                   </ol>
+                  <p className="text-sm text-gray-500 mt-3">
+                    ℹ️ Important : N'utilisez jamais le Dashboard Stripe classique, utilisez toujours le lien Stripe Connect fourni ci-dessus.
+                  </p>
                 </div>
 
                 {/* Payout info */}
