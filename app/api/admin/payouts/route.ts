@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
 
     const payouts = await prisma.payout.findMany({
       where: {
-        ...(status && { status: status as any }),
-        ...(creatorId && { creatorId }),
+        ...(status && status !== 'all' && { status: status as any }),
+        ...(creatorId && creatorId !== 'all' && { creatorId }),
       },
       include: {
         creator: {

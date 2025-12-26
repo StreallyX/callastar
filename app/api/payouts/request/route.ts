@@ -1,18 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import prisma from '@/lib/db';
-import { createPayout, getConnectAccountDetails } from '@/lib/stripe';
+import {
+  createPayout,
+  createConnectPayout,
+  getConnectAccountDetails,
+  getConnectAccountBalance,
+} from '@/lib/stripe';
 import { getPlatformSettings } from '@/lib/settings';
 import { logPayout } from '@/lib/logger';
 import { TransactionEventType, PayoutStatus } from '@prisma/client';
 import { checkPayoutEligibility, clearBalanceCache } from '@/lib/payout-eligibility';
+import { getStripeAccountStatus } from '@/lib/stripe-account-validator';
 
 /**
  * POST /api/payouts/request
- * Request payout for all READY payments
+ * Request payout from Stripe Connect account balance
  * 
- * Optional body parameters:
+ * Body parameters:
+ * - amount: number (optional) - Specific amount to withdraw, defaults to full available balance
  * - adminOverride: boolean (admin only) - Skip eligibility checks
+ * 
+ * Supports OnlyFans-style routing where funds are already in creator's Stripe balance
  */
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json().catch(() => ({}));
-    const { adminOverride = false } = body;
+    const { adminOverride = false, amount: requestedAmount } = body;
 
     // Check if user is admin (for admin override)
     const isAdmin = jwtUser.role === 'ADMIN';
@@ -84,80 +93,92 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check eligibility (unless admin override)
-    if (!adminOverride || !isAdmin) {
-      console.log('🔍 Checking payout eligibility for creator:', creatorId);
-      const eligibility = await checkPayoutEligibility(creatorId);
+    // Get platform settings
+    const settings = await getPlatformSettings();
+    const minimumPayoutAmount = Number(settings.minimumPayoutAmount);
 
-      if (!eligibility.eligible) {
-        console.log('❌ Creator not eligible:', eligibility.reason);
-        console.log('   Requirements:', eligibility.requirements);
-        
+    // Check Stripe account status
+    const accountStatus = await getStripeAccountStatus(creator.stripeAccountId);
+    if (!accountStatus.canReceivePayouts && !adminOverride) {
+      return NextResponse.json(
+        {
+          error: 'Compte Stripe non prêt pour les paiements',
+          issues: accountStatus.issues,
+          requirements: accountStatus.requirements,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Get Stripe Connect account balance
+    let stripeBalance;
+    try {
+      stripeBalance = await getConnectAccountBalance(creator.stripeAccountId);
+    } catch (error: any) {
+      console.error('Error getting Stripe balance:', error);
+      return NextResponse.json(
+        { error: 'Impossible de récupérer le solde Stripe' },
+        { status: 500 }
+      );
+    }
+
+    // Calculate available balance in EUR
+    const availableInCents = stripeBalance.available.reduce((sum, b) => {
+      if (b.currency === 'eur') {
+        return sum + b.amount;
+      }
+      return sum;
+    }, 0);
+
+    const availableBalance = availableInCents / 100; // Convert from cents
+
+    // Check if there's available balance
+    if (availableBalance <= 0) {
+      return NextResponse.json(
+        { error: 'Aucun solde disponible pour le moment' },
+        { status: 400 }
+      );
+    }
+
+    // Determine payout amount
+    let payoutAmount = requestedAmount ? Number(requestedAmount) : availableBalance;
+
+    // Validate requested amount
+    if (requestedAmount) {
+      if (payoutAmount > availableBalance) {
         return NextResponse.json(
           {
-            error: 'Non éligible pour un paiement',
-            reason: eligibility.reason,
-            requirements: eligibility.requirements,
-            details: eligibility.details,
+            error: `Solde disponible insuffisant. Vous avez ${availableBalance.toFixed(2)} ${settings.currency} disponibles.`,
           },
           { status: 400 }
         );
       }
 
-      console.log('✅ Creator eligible for payout. Available balance:', eligibility.availableBalance);
+      if (payoutAmount < minimumPayoutAmount) {
+        return NextResponse.json(
+          {
+            error: `Le montant minimum de paiement est de ${minimumPayoutAmount.toFixed(2)} ${settings.currency}.`,
+          },
+          { status: 400 }
+        );
+      }
     } else {
-      console.log('⚠️  Admin override: Skipping eligibility checks');
-    }
-
-    // Get platform settings
-    const settings = await getPlatformSettings();
-
-    // Get all READY payments for this creator
-    const readyPayments = await prisma.payment.findMany({
-      where: {
-        payoutStatus: 'READY',
-        booking: {
-          callOffer: {
-            creatorId: creator.id,
+      // No specific amount requested, check minimum
+      if (availableBalance < minimumPayoutAmount) {
+        return NextResponse.json(
+          {
+            error: `Le montant minimum de paiement est de ${minimumPayoutAmount.toFixed(2)} ${settings.currency}. Vous avez actuellement ${availableBalance.toFixed(2)} ${settings.currency}.`,
           },
-        },
-      },
-      include: {
-        booking: {
-          include: {
-            callOffer: true,
-          },
-        },
-      },
-    });
-
-    if (readyPayments.length === 0) {
-      return NextResponse.json(
-        { error: 'Aucun paiement disponible pour le moment' },
-        { status: 400 }
-      );
-    }
-
-    // Calculate total amount
-    const totalAmount = readyPayments.reduce(
-      (sum, p) => sum + Number(p.creatorAmount),
-      0
-    );
-
-    // Check minimum payout amount
-    const minimumPayoutAmount = Number(settings.minimumPayoutAmount);
-    if (totalAmount < minimumPayoutAmount) {
-      return NextResponse.json(
-        { error: `Le montant minimum de paiement est de ${minimumPayoutAmount.toFixed(2)} ${settings.currency}. Vous avez actuellement ${totalAmount.toFixed(2)} ${settings.currency}.` },
-        { status: 400 }
-      );
+          { status: 400 }
+        );
+      }
     }
 
     // Create payout record
     const payout = await prisma.payout.create({
       data: {
         creatorId: creator.id,
-        amount: totalAmount,
+        amount: payoutAmount,
         status: PayoutStatus.PROCESSING,
       },
     });
@@ -166,94 +187,98 @@ export async function POST(request: NextRequest) {
     await logPayout(TransactionEventType.PAYOUT_CREATED, {
       payoutId: payout.id,
       creatorId: creator.id,
-      amount: totalAmount,
+      amount: payoutAmount,
       currency: settings.currency,
       status: PayoutStatus.PROCESSING,
       metadata: {
-        paymentCount: readyPayments.length,
-        paymentIds: readyPayments.map(p => p.id),
-      },
-    });
-
-    // Mark payments as PROCESSING
-    await prisma.payment.updateMany({
-      where: {
-        id: { in: readyPayments.map(p => p.id) },
-      },
-      data: {
-        payoutStatus: 'PROCESSING',
+        availableBalance,
+        requestedAmount: requestedAmount || null,
+        fromStripeBalance: true,
       },
     });
 
     try {
-      // Create transfer to creator's Stripe account
-      const transfer = await createPayout({
-        amount: totalAmount,
+      // Create payout from Stripe Connect account to bank account
+      const stripePayout = await createConnectPayout({
+        amount: payoutAmount,
+        currency: settings.currency.toLowerCase(),
         stripeAccountId: creator.stripeAccountId,
         metadata: {
           creatorId: creator.id,
           payoutId: payout.id,
-          paymentIds: readyPayments.map(p => p.id).join(','),
-          paymentCount: String(readyPayments.length),
+          manual: 'true',
+          requestedBy: jwtUser.userId,
+          adminOverride: String(adminOverride && isAdmin),
         },
       });
 
-      // Update payout with Stripe transfer ID
+      // Update payout with Stripe payout ID
       await prisma.payout.update({
         where: { id: payout.id },
         data: {
-          stripePayoutId: transfer.id,
-          status: PayoutStatus.PAID,
+          stripePayoutId: stripePayout.id,
+          status: PayoutStatus.PROCESSING, // Keep as PROCESSING until Stripe confirms
         },
       });
 
-      // Mark payments as PAID
-      await prisma.payment.updateMany({
-        where: {
-          id: { in: readyPayments.map(p => p.id) },
-        },
-        data: {
-          payoutStatus: 'PAID',
-          stripeTransferId: transfer.id,
-          payoutDate: new Date(),
-        },
-      });
-
-      // Log successful payout
-      await logPayout(TransactionEventType.PAYOUT_PAID, {
+      // Log payout initiated
+      await logPayout(TransactionEventType.PAYOUT_CREATED, {
         payoutId: payout.id,
         creatorId: creator.id,
-        amount: totalAmount,
+        amount: payoutAmount,
         currency: settings.currency,
-        status: PayoutStatus.PAID,
-        stripePayoutId: transfer.id,
+        status: PayoutStatus.PROCESSING,
+        stripePayoutId: stripePayout.id,
         metadata: {
-          paymentCount: readyPayments.length,
-          paymentIds: readyPayments.map(p => p.id),
-          stripeTransferId: transfer.id,
+          stripePayoutId: stripePayout.id,
           manual: true,
           adminOverride: adminOverride && isAdmin,
           requestedBy: jwtUser.userId,
+          estimatedArrival: stripePayout.arrival_date
+            ? new Date(stripePayout.arrival_date * 1000).toISOString()
+            : null,
         },
       });
 
-      // Clear balance cache after successful payout
-      clearBalanceCache(creator.id);
+      // Create audit log entry
+      await prisma.payoutAuditLog.create({
+        data: {
+          creatorId: creator.id,
+          action: 'TRIGGERED',
+          amount: payoutAmount,
+          status: PayoutStatus.PROCESSING,
+          stripePayoutId: stripePayout.id,
+          adminId: isAdmin ? jwtUser.userId : null,
+          reason: requestedAmount
+            ? `Paiement manuel de ${payoutAmount.toFixed(2)} ${settings.currency} demandé`
+            : `Paiement complet de ${payoutAmount.toFixed(2)} ${settings.currency} demandé`,
+          metadata: JSON.stringify({
+            availableBalance,
+            requestedAmount: requestedAmount || null,
+            estimatedArrival: stripePayout.arrival_date
+              ? new Date(stripePayout.arrival_date * 1000).toISOString()
+              : null,
+          }),
+        },
+      });
 
       return NextResponse.json({
         success: true,
-        message: `Paiement de ${totalAmount.toFixed(2)} ${settings.currency} transféré avec succès`,
+        message: `Paiement de ${payoutAmount.toFixed(2)} ${settings.currency} en cours de transfert vers votre compte bancaire`,
         payout: {
           id: payout.id,
-          amount: totalAmount,
+          amount: payoutAmount,
           currency: settings.currency,
-          stripeTransferId: transfer.id,
-          paymentCount: readyPayments.length,
+          stripePayoutId: stripePayout.id,
+          status: 'processing',
+          estimatedArrival: stripePayout.arrival_date
+            ? new Date(stripePayout.arrival_date * 1000)
+            : null,
         },
       });
     } catch (error: any) {
       console.error('Error creating payout:', error);
-      
+
       // Update payout status to failed
       await prisma.payout.update({
         where: { id: payout.id },
@@ -268,27 +293,28 @@ export async function POST(request: NextRequest) {
       await logPayout(TransactionEventType.PAYOUT_FAILED, {
         payoutId: payout.id,
         creatorId: creator.id,
-        amount: totalAmount,
+        amount: payoutAmount,
         currency: settings.currency,
         status: PayoutStatus.FAILED,
         errorMessage: error.message || 'Payout failed',
-        metadata: {
-          paymentCount: readyPayments.length,
-        },
       });
 
-      // Mark payments back as READY on failure
-      await prisma.payment.updateMany({
-        where: {
-          id: { in: readyPayments.map(p => p.id) },
-        },
+      // Create audit log for failed payout
+      await prisma.payoutAuditLog.create({
         data: {
-          payoutStatus: 'READY',
+          creatorId: creator.id,
+          action: 'FAILED',
+          amount: payoutAmount,
+          status: PayoutStatus.FAILED,
+          adminId: isAdmin ? jwtUser.userId : null,
+          reason: `Échec du paiement: ${error.message || 'Erreur inconnue'}`,
         },
       });
 
       return NextResponse.json(
-        { error: 'Erreur lors du transfert: ' + (error.message || 'Erreur inconnue') },
+        {
+          error: 'Erreur lors du transfert: ' + (error.message || 'Erreur inconnue'),
+        },
         { status: 500 }
       );
     }

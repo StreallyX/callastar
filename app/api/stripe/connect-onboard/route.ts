@@ -3,6 +3,11 @@ import { getUserFromRequest } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { stripe } from '@/lib/stripe';
 import { calculateNextPayoutDate } from '@/lib/payout-eligibility';
+import {
+  getStripeAccountStatus,
+  getStatusMessage,
+  getRecommendedAction,
+} from '@/lib/stripe-account-validator';
 
 export async function POST(request: NextRequest) {
   try {
@@ -103,44 +108,68 @@ export async function GET(request: NextRequest) {
         onboarded: false,
         detailsSubmitted: false,
         chargesEnabled: false,
+        payoutsEnabled: false,
+        canReceivePayments: false,
+        canReceivePayouts: false,
+        statusMessage: 'Aucun compte Stripe configuré',
+        recommendedAction: 'Complétez votre configuration Stripe Connect',
+        issues: ['Aucun compte Stripe créé'],
+        requirements: {
+          currentlyDue: [],
+          eventuallyDue: [],
+          pastDue: [],
+        },
       });
     }
 
-    // Get account details from Stripe
-    const account = await stripe.accounts.retrieve(creator.stripeAccountId);
+    // Get comprehensive account status
+    const accountStatus = await getStripeAccountStatus(creator.stripeAccountId);
+    const statusMessage = getStatusMessage(accountStatus);
+    const recommendedAction = getRecommendedAction(accountStatus);
 
-    const onboarded = account.details_submitted && account.charges_enabled;
-
-    // Update database if onboarding is complete
-    if (onboarded && !creator.isStripeOnboarded) {
+    // Update database if onboarding status changed
+    if (accountStatus.isFullyOnboarded !== creator.isStripeOnboarded) {
       await prisma.creator.update({
         where: { id: creator.id },
-        data: { isStripeOnboarded: true },
+        data: { isStripeOnboarded: accountStatus.isFullyOnboarded },
       });
 
       // Ensure PayoutSchedule exists when onboarding is complete
-      const existingSchedule = await prisma.payoutScheduleNew.findUnique({
-        where: { creatorId: creator.id },
-      });
-
-      if (!existingSchedule) {
-        await prisma.payoutScheduleNew.create({
-          data: {
-            creatorId: creator.id,
-            mode: 'AUTOMATIC',
-            frequency: 'WEEKLY',
-            isActive: true,
-            nextPayoutDate: null,
-          },
+      if (accountStatus.isFullyOnboarded) {
+        const existingSchedule = await prisma.payoutScheduleNew.findUnique({
+          where: { creatorId: creator.id },
         });
-        console.log(`✅ Created default payout schedule for creator ${creator.id} on onboarding complete`);
+
+        if (!existingSchedule) {
+          await prisma.payoutScheduleNew.create({
+            data: {
+              creatorId: creator.id,
+              mode: 'MANUAL', // Changed to MANUAL as per requirements
+              frequency: 'WEEKLY',
+              isActive: true,
+              nextPayoutDate: null,
+            },
+          });
+          console.log(
+            `✅ Created default payout schedule for creator ${creator.id} on onboarding complete`
+          );
+        }
       }
     }
 
     return NextResponse.json({
-      onboarded,
-      detailsSubmitted: account.details_submitted,
-      chargesEnabled: account.charges_enabled,
+      onboarded: accountStatus.isFullyOnboarded,
+      detailsSubmitted: accountStatus.detailsSubmitted,
+      chargesEnabled: accountStatus.chargesEnabled,
+      payoutsEnabled: accountStatus.payoutsEnabled,
+      canReceivePayments: accountStatus.canReceivePayments,
+      canReceivePayouts: accountStatus.canReceivePayouts,
+      statusMessage,
+      recommendedAction,
+      issues: accountStatus.issues,
+      requirements: accountStatus.requirements,
+      capabilities: accountStatus.capabilities,
+      hasExternalAccount: accountStatus.hasExternalAccount,
     });
   } catch (error) {
     console.error('Error checking Stripe onboarding status:', error);

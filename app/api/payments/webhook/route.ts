@@ -872,19 +872,78 @@ async function handleDisputeFundsReinstated(event: Stripe.Event): Promise<void> 
 
 /**
  * Handle payout.paid
+ * 
+ * When a payout is paid, update the status and notify the creator
  */
 async function handlePayoutPaid(event: Stripe.Event): Promise<void> {
   const stripePayout = event.data.object as Stripe.Payout;
   
+  // Find payout by Stripe payout ID
   const payout = await prisma.payout.findFirst({
     where: { stripePayoutId: stripePayout.id },
   });
 
   if (!payout) {
-    console.warn('[Webhook] Payout not found:', stripePayout.id);
+    // If not found by stripe payout ID, check if it's from metadata
+    const creatorId = stripePayout.metadata?.creatorId;
+    
+    if (creatorId) {
+      console.log('[Webhook] Payout paid but not found in DB. Creating record:', stripePayout.id);
+      
+      // Create payout record from webhook
+      const newPayout = await prisma.payout.create({
+        data: {
+          creatorId,
+          amount: stripePayout.amount / 100,
+          stripePayoutId: stripePayout.id,
+          status: PayoutStatus.PAID,
+        },
+      });
+
+      // Log the payout
+      await logPayout(TransactionEventType.PAYOUT_PAID, {
+        payoutId: newPayout.id,
+        creatorId,
+        amount: stripePayout.amount / 100,
+        status: PayoutStatus.PAID,
+        stripePayoutId: stripePayout.id,
+      });
+
+      // Create audit log
+      await prisma.payoutAuditLog.create({
+        data: {
+          creatorId,
+          action: 'COMPLETED',
+          amount: stripePayout.amount / 100,
+          status: PayoutStatus.PAID,
+          stripePayoutId: stripePayout.id,
+          reason: 'Paiement confirmé par Stripe webhook',
+        },
+      });
+
+      // Send notification
+      const creator = await prisma.creator.findUnique({
+        where: { id: creatorId },
+        include: { user: true },
+      });
+
+      if (creator) {
+        await createNotification({
+          userId: creator.userId,
+          type: 'PAYOUT_COMPLETED',
+          title: 'Paiement effectué',
+          message: `Votre paiement de ${(stripePayout.amount / 100).toFixed(2)} EUR a été transféré avec succès.`,
+          link: '/dashboard/creator/payouts',
+        });
+      }
+    } else {
+      console.warn('[Webhook] Payout paid but not found and no creatorId in metadata:', stripePayout.id);
+    }
+    
     return;
   }
 
+  // Update existing payout
   await prisma.payout.update({
     where: { id: payout.id },
     data: {
@@ -909,6 +968,18 @@ async function handlePayoutPaid(event: Stripe.Event): Promise<void> {
     metadata: { stripePayoutId: stripePayout.id },
   });
 
+  // Create audit log
+  await prisma.payoutAuditLog.create({
+    data: {
+      creatorId: payout.creatorId,
+      action: 'COMPLETED',
+      amount: Number(payout.amount),
+      status: PayoutStatus.PAID,
+      stripePayoutId: stripePayout.id,
+      reason: 'Paiement confirmé par Stripe',
+    },
+  });
+
   // Send notification to creator
   try {
     const creator = await prisma.creator.findUnique({
@@ -922,7 +993,7 @@ async function handlePayoutPaid(event: Stripe.Event): Promise<void> {
         type: 'PAYOUT_COMPLETED',
         title: 'Paiement effectué',
         message: `Votre paiement de ${Number(payout.amount).toFixed(2)} EUR a été transféré avec succès.`,
-        link: '/dashboard/creator/earnings',
+        link: '/dashboard/creator/payouts',
       });
     }
   } catch (error) {
@@ -945,11 +1016,13 @@ async function handlePayoutFailed(event: Stripe.Event): Promise<void> {
     return;
   }
 
+  const failureReason = stripePayout.failure_message || stripePayout.failure_code || 'Payout failed';
+
   await prisma.payout.update({
     where: { id: payout.id },
     data: {
       status: PayoutStatus.FAILED,
-      failureReason: stripePayout.failure_message || 'Payout failed',
+      failureReason,
       retriedCount: payout.retriedCount + 1,
       updatedAt: new Date(),
     },
@@ -961,7 +1034,7 @@ async function handlePayoutFailed(event: Stripe.Event): Promise<void> {
     amount: Number(payout.amount),
     status: PayoutStatus.FAILED,
     stripePayoutId: stripePayout.id,
-    errorMessage: stripePayout.failure_message || 'Payout failed',
+    errorMessage: failureReason,
   });
 
   await logWebhook({
@@ -970,14 +1043,53 @@ async function handlePayoutFailed(event: Stripe.Event): Promise<void> {
     entityType: EntityType.PAYOUT,
     entityId: payout.id,
     metadata: { stripePayoutId: stripePayout.id },
-    errorMessage: stripePayout.failure_message || 'Payout failed',
+    errorMessage: failureReason,
   });
 
-  // TODO: Send alert to admin about failed payout
+  // Create audit log for failed payout
+  await prisma.payoutAuditLog.create({
+    data: {
+      creatorId: payout.creatorId,
+      action: 'FAILED',
+      amount: Number(payout.amount),
+      status: PayoutStatus.FAILED,
+      stripePayoutId: stripePayout.id,
+      reason: `Échec du paiement: ${failureReason}`,
+      metadata: JSON.stringify({
+        failureCode: stripePayout.failure_code,
+        failureMessage: stripePayout.failure_message,
+        failureBalanceTransaction: stripePayout.failure_balance_transaction,
+      }),
+    },
+  });
+
+  // Send notification to creator
+  try {
+    const creator = await prisma.creator.findUnique({
+      where: { id: payout.creatorId },
+      include: { user: true },
+    });
+
+    if (creator) {
+      await createNotification({
+        userId: creator.userId,
+        type: 'SYSTEM',
+        title: 'Échec du paiement',
+        message: `Le paiement de ${Number(payout.amount).toFixed(2)} EUR a échoué. Veuillez vérifier vos informations bancaires.`,
+        link: '/dashboard/creator/payment-setup',
+      });
+    }
+  } catch (error) {
+    console.error('[Webhook] Error sending payout failure notification:', error);
+  }
+
+  // Log critical error
   console.error('[CRITICAL] Payout failed:', {
     payoutId: payout.id,
+    creatorId: payout.creatorId,
     amount: payout.amount,
-    reason: stripePayout.failure_message,
+    reason: failureReason,
+    failureCode: stripePayout.failure_code,
   });
 }
 

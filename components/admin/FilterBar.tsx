@@ -44,7 +44,7 @@ export function FilterBar({ filters, values, onChange, onReset, className }: Fil
                   <SelectValue placeholder={filter.placeholder || 'Sélectionner'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous</SelectItem>
+                  <SelectItem value="all">Tous</SelectItem>
                   {filter.options?.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}

@@ -39,8 +39,13 @@ export function calculatePayoutReleaseDate(paymentDate: Date): Date {
 }
 
 /**
- * Create a Stripe Payment Intent (separate charges - funds held on platform)
- * This allows us to implement a holding period before transferring to creators
+ * Create a Stripe Payment Intent
+ * 
+ * For OnlyFans-style routing:
+ * - Uses destination charges when stripeAccountId is provided
+ * - Platform fee is automatically deducted
+ * - Funds go to creator's Stripe Connect account balance immediately
+ * - Creator can request payouts from their balance (manual or automatic)
  */
 export async function createPaymentIntent({
   amount,
@@ -56,26 +61,44 @@ export async function createPaymentIntent({
   platformFee?: number;
 }) {
   try {
+    const amountInCents = Math.round(amount * 100);
+    const platformFeeInCents = platformFee ? Math.round(platformFee * 100) : 0;
+    const creatorAmountInCents = amountInCents - platformFeeInCents;
+
     const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
-      amount: Math.round(amount * 100), // Convert to cents
+      amount: amountInCents,
       currency,
       metadata: {
         ...metadata,
-        // Store creator account ID in metadata for later transfer
         stripeAccountId: stripeAccountId || '',
-        creatorAmount: platformFee ? String((amount - platformFee) * 100) : String(amount * 100),
+        platformFee: String(platformFee || 0),
+        creatorAmount: String((amountInCents - platformFeeInCents) / 100),
       },
       automatic_payment_methods: {
         enabled: true,
       },
     };
 
-    // NOTE: We're using separate charges instead of destination charges
-    // This keeps funds on the platform account, allowing us to:
-    // 1. Hold payments for 7 days (dispute protection)
-    // 2. Handle refunds/cancellations before payout
-    // 3. Give admin control over payouts
-    // The transfer to creator happens separately via createPayout()
+    // Use destination charges if creator has Stripe account
+    // This automatically routes funds to creator's connected account balance
+    // minus the platform fee (application_fee_amount)
+    if (stripeAccountId && platformFee) {
+      paymentIntentParams.application_fee_amount = platformFeeInCents;
+      paymentIntentParams.transfer_data = {
+        destination: stripeAccountId,
+      };
+
+      console.log('💳 Creating destination charge:', {
+        amount: amount,
+        platformFee: platformFee,
+        creatorAmount: (amountInCents - platformFeeInCents) / 100,
+        destination: stripeAccountId,
+      });
+    } else {
+      // Fallback: separate charges (funds held on platform)
+      // Transfer happens manually via createPayout()
+      console.log('💳 Creating separate charge (no connected account)');
+    }
 
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
 
@@ -136,6 +159,64 @@ export async function retrievePaymentIntent(paymentIntentId: string) {
     return await stripe.paymentIntents.retrieve(paymentIntentId);
   } catch (error) {
     console.error('Error retrieving payment intent:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get balance from a Stripe Connect account
+ * This shows the available and pending balance for the creator
+ */
+export async function getConnectAccountBalance(stripeAccountId: string) {
+  try {
+    const balance = await stripe.balance.retrieve({
+      stripeAccount: stripeAccountId,
+    });
+    return balance;
+  } catch (error) {
+    console.error('Error retrieving account balance:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a payout from creator's Stripe Connect account to their bank account
+ * This is what creators use to withdraw funds from their Stripe balance
+ */
+export async function createConnectPayout({
+  amount,
+  currency = 'eur',
+  stripeAccountId,
+  metadata = {},
+}: {
+  amount: number;
+  currency?: string;
+  stripeAccountId: string;
+  metadata?: Record<string, string>;
+}) {
+  try {
+    // Create payout on the connected account (not a transfer)
+    const payout = await stripe.payouts.create(
+      {
+        amount: Math.round(amount * 100), // Convert to cents
+        currency,
+        metadata,
+      },
+      {
+        stripeAccount: stripeAccountId, // Create on connected account
+      }
+    );
+
+    console.log('💸 Created payout for connected account:', {
+      amount,
+      currency,
+      stripeAccountId,
+      payoutId: payout.id,
+    });
+
+    return payout;
+  } catch (error) {
+    console.error('Error creating connect payout:', error);
     throw error;
   }
 }
