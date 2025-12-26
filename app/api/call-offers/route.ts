@@ -127,6 +127,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ✅ NEW: Use creator's currency for the offer
+    const currency = creator.currency || 'EUR';
+
     // Create call offer
     const callOffer = await db.callOffer.create({
       data: {
@@ -134,6 +137,7 @@ export async function POST(request: NextRequest) {
         title: validatedData.title,
         description: validatedData.description,
         price: validatedData.price,
+        currency: currency, // ✅ NEW: Store currency with offer
         dateTime: validatedData.dateTime,
         duration: validatedData.duration,
       },

@@ -239,6 +239,10 @@ model CallOffer {
   title           String
   description     String          @db.Text
   price           Decimal         @db.Decimal(10, 2)
+  
+  // ✅ NEW: Offer currency (same as creator's currency)
+  currency        String          @default("EUR") // EUR, CHF, USD, GBP, etc.
+  
   dateTime        DateTime
   duration        Int             // in minutes
   status          CallOfferStatus @default(AVAILABLE)
@@ -253,6 +257,7 @@ model CallOffer {
   @@index([creatorId])
   @@index([status])
   @@index([dateTime])
+  @@index([currency])
 }
 
 model Booking {
