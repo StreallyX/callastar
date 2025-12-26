@@ -82,7 +82,8 @@ export async function createPaymentIntent({
     // Use destination charges if creator has Stripe account
     // This automatically routes funds to creator's connected account balance
     // minus the platform fee (application_fee_amount)
-    if (stripeAccountId && platformFee) {
+    // ✅ FIX: Check for platformFee !== undefined to handle 0 fee edge case
+    if (stripeAccountId && platformFee !== undefined) {
       paymentIntentParams.application_fee_amount = platformFeeInCents;
       paymentIntentParams.transfer_data = {
         destination: stripeAccountId,
@@ -97,7 +98,10 @@ export async function createPaymentIntent({
     } else {
       // Fallback: separate charges (funds held on platform)
       // Transfer happens manually via createPayout()
-      console.log('💳 Creating separate charge (no connected account)');
+      console.log('💳 Creating separate charge (no connected account)', {
+        stripeAccountId: stripeAccountId || 'not provided',
+        platformFee: platformFee !== undefined ? platformFee : 'not provided',
+      });
     }
 
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);

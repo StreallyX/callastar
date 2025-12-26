@@ -159,6 +159,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       onboarded: accountStatus.isFullyOnboarded,
+      stripeAccountId: creator.stripeAccountId, // ✅ FIX: Include stripeAccountId for frontend status check
       detailsSubmitted: accountStatus.detailsSubmitted,
       chargesEnabled: accountStatus.chargesEnabled,
       payoutsEnabled: accountStatus.payoutsEnabled,

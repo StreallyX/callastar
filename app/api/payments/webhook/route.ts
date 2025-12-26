@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import prisma from '@/lib/db';
 import { verifyWebhookSignature, calculatePayoutReleaseDate } from '@/lib/stripe';
+import { getStripeAccountStatus } from '@/lib/stripe-account-validator';
 import { createDailyRoom } from '@/lib/daily';
 import { sendEmail, generateBookingConfirmationEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
@@ -311,8 +312,9 @@ export async function POST(request: NextRequest) {
           details_submitted: account.details_submitted,
         });
 
-        // Update creator's onboarding status
-        const isOnboarded = account.details_submitted && account.charges_enabled;
+        // ✅ FIX: Use comprehensive validation instead of simplified check
+        const accountStatus = await getStripeAccountStatus(account.id);
+        const isOnboarded = accountStatus.isFullyOnboarded;
         
         await prisma.creator.update({
           where: { id: creator.id },
@@ -322,7 +324,7 @@ export async function POST(request: NextRequest) {
         });
 
         // If payouts were just enabled, send notification
-        if (account.payouts_enabled && !creator.isStripeOnboarded) {
+        if (account.payouts_enabled && !creator.isStripeOnboarded && isOnboarded) {
           try {
             const creatorWithUser = await prisma.creator.findUnique({
               where: { id: creator.id },
@@ -1144,6 +1146,7 @@ async function handleTransferReversed(event: Stripe.Event): Promise<void> {
 /**
  * Handle account.updated
  * Enhanced to auto-block payouts when KYC requirements are pending
+ * ✅ FIX: Use comprehensive validation for consistent status checks
  */
 async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
   const account = event.data.object as Stripe.Account;
@@ -1157,20 +1160,20 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
     return;
   }
 
-  const chargesEnabled = account.charges_enabled ?? false;
-  const payoutsEnabled = account.payouts_enabled ?? false;
-  const requirementsDisabledReason = account.requirements?.disabled_reason;
-  const currentlyDue = account.requirements?.currently_due || [];
-  const eventuallyDue = account.requirements?.eventually_due || [];
-  const pastDue = account.requirements?.past_due || [];
+  // ✅ FIX: Use comprehensive validator for consistent status determination
+  const accountStatus = await getStripeAccountStatus(account.id);
+  
+  const currentlyDue = accountStatus.requirements.currentlyDue;
+  const eventuallyDue = accountStatus.requirements.eventuallyDue;
+  const pastDue = accountStatus.requirements.pastDue;
 
   // Determine if payout should be blocked
   let shouldBlockPayout = false;
   let blockReason: string | null = null;
 
-  if (!payoutsEnabled) {
+  if (!accountStatus.payoutsEnabled) {
     shouldBlockPayout = true;
-    blockReason = requirementsDisabledReason || 'Payouts not enabled on Stripe account';
+    blockReason = accountStatus.disabledReason || 'Payouts not enabled on Stripe account';
   } else if (currentlyDue.length > 0) {
     shouldBlockPayout = true;
     blockReason = `KYC requirements pending: ${currentlyDue.join(', ')}`;
@@ -1180,7 +1183,7 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
   }
 
   // If previously blocked but now requirements are cleared, unblock
-  if (creator.payoutBlocked && !shouldBlockPayout && chargesEnabled && payoutsEnabled) {
+  if (creator.payoutBlocked && !shouldBlockPayout && accountStatus.canReceivePayments && accountStatus.canReceivePayouts) {
     shouldBlockPayout = false;
     blockReason = null;
     console.log('[Webhook] ✅ Auto-unblocking payouts for creator:', creator.id);
@@ -1189,7 +1192,7 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
   await prisma.creator.update({
     where: { id: creator.id },
     data: {
-      isStripeOnboarded: chargesEnabled && payoutsEnabled && currentlyDue.length === 0,
+      isStripeOnboarded: accountStatus.isFullyOnboarded,
       payoutBlocked: shouldBlockPayout,
       payoutBlockedReason: blockReason,
     },
@@ -1202,9 +1205,10 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
     entityId: creator.id,
     metadata: {
       accountId: account.id,
-      chargesEnabled,
-      payoutsEnabled,
-      requirementsDisabledReason,
+      chargesEnabled: accountStatus.chargesEnabled,
+      payoutsEnabled: accountStatus.payoutsEnabled,
+      isFullyOnboarded: accountStatus.isFullyOnboarded,
+      disabledReason: accountStatus.disabledReason,
       currentlyDue,
       eventuallyDue,
       pastDue,
@@ -1215,8 +1219,9 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
 
   console.log('[Webhook] Account updated:', {
     creatorId: creator.id,
-    chargesEnabled,
-    payoutsEnabled,
+    chargesEnabled: accountStatus.chargesEnabled,
+    payoutsEnabled: accountStatus.payoutsEnabled,
+    isFullyOnboarded: accountStatus.isFullyOnboarded,
     payoutBlocked: shouldBlockPayout,
     payoutBlockedReason: blockReason,
     currentlyDue,
