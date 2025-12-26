@@ -514,10 +514,13 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
   const paymentDate = new Date();
   const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
 
+  // ✅ FIX: Always set payoutReleaseDate, even when updating existing payment
   const payment = await prisma.payment.upsert({
     where: { bookingId: booking.id },
     update: {
       status: 'SUCCEEDED',
+      payoutReleaseDate, // <-- Ensure payoutReleaseDate is set on update too
+      payoutStatus: 'HELD',
     },
     create: {
       bookingId: booking.id,

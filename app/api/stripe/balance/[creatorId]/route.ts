@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { stripe } from '@/lib/stripe';
+import { getStripeAccountStatus } from '@/lib/stripe-account-validator';
 
 /**
  * GET /api/stripe/balance/[creatorId]
@@ -80,31 +81,39 @@ export async function GET(
         stripeAccount: creator.stripeAccountId,
       });
 
-      // Fetch account details to check payout capabilities
-      const account = await stripe.accounts.retrieve(creator.stripeAccountId);
+      // ✅ FIX: Use comprehensive validation logic instead of raw flags
+      const accountStatus = await getStripeAccountStatus(creator.stripeAccountId);
+
+      // Calculate total available and pending amounts (sum all currency balances)
+      const availableTotal = balance.available.reduce((sum, b) => sum + (b.amount / 100), 0);
+      const pendingTotal = balance.pending.reduce((sum, b) => sum + (b.amount / 100), 0);
 
       return NextResponse.json({
-        balance: {
-          available: balance.available.map(b => ({
-            amount: b.amount / 100, // Convert from cents to EUR
-            currency: b.currency,
-          })),
-          pending: balance.pending.map(b => ({
-            amount: b.amount / 100, // Convert from cents to EUR
-            currency: b.currency,
-          })),
-        },
-        account: {
-          charges_enabled: account.charges_enabled,
-          payouts_enabled: account.payouts_enabled,
-          details_submitted: account.details_submitted,
+        available: availableTotal,
+        pending: pendingTotal,
+        currency: 'EUR',
+        // ✅ FIX: Return correct account status using validator
+        detailsSubmitted: accountStatus.detailsSubmitted,
+        requirementsCount: accountStatus.requirements.currentlyDue.length,
+        // Include these for backward compatibility but marked as deprecated
+        payoutsEnabled: accountStatus.payoutsEnabled,
+        chargesEnabled: accountStatus.chargesEnabled,
+        // Include comprehensive status for UI use
+        accountStatus: {
+          isFullyOnboarded: accountStatus.isFullyOnboarded,
+          canReceivePayments: accountStatus.canReceivePayments,
+          canReceivePayouts: accountStatus.canReceivePayouts,
+          detailsSubmitted: accountStatus.detailsSubmitted,
+          requirementsPending: accountStatus.requirements.currentlyDue.length > 0,
+          requirementsCurrentlyDue: accountStatus.requirements.currentlyDue,
+          requirementsPastDue: accountStatus.requirements.pastDue,
         },
         creator: {
           id: creator.id,
           name: creator.user.name,
           email: creator.user.email,
           payoutSchedule: creator.payoutSchedule,
-          payoutMinimum: creator.payoutMinimum,
+          payoutMinimum: Number(creator.payoutMinimum),
           isPayoutBlocked: creator.isPayoutBlocked,
           payoutBlockReason: creator.payoutBlockReason,
         }

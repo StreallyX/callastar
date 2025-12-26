@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { PayoutSchedule } from '@prisma/client';
+import { stripe } from '@/lib/stripe';
 
 /**
  * GET /api/creators/payout-settings
- * Fetch creator's payout settings
+ * Fetch creator's payout settings from both database and Stripe
+ * ✅ FIX: Added reconciliation logic to detect mismatches
  */
 export async function GET(request: NextRequest) {
   try {
@@ -23,6 +25,7 @@ export async function GET(request: NextRequest) {
       where: { userId: jwtUser.userId },
       select: {
         id: true,
+        stripeAccountId: true,
         payoutSchedule: true,
         payoutMinimum: true,
         isPayoutBlocked: true,
@@ -37,13 +40,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      settings: {
-        payoutSchedule: creator.payoutSchedule,
-        payoutMinimum: Number(creator.payoutMinimum),
-        isPayoutBlocked: creator.isPayoutBlocked,
-        payoutBlockReason: creator.payoutBlockReason,
+    // ✅ FIX: Fetch settings from Stripe if account exists
+    let stripeSettings: any = null;
+    let syncStatus: 'synced' | 'out_of_sync' | 'no_stripe_account' = 'no_stripe_account';
+
+    if (creator.stripeAccountId) {
+      try {
+        const account = await stripe.accounts.retrieve(creator.stripeAccountId);
+        
+        // Map Stripe payout schedule to our enum
+        const stripeSchedule = account.settings?.payouts?.schedule?.interval;
+        const mappedSchedule = stripeSchedule === 'daily' ? 'DAILY' 
+                             : stripeSchedule === 'weekly' ? 'WEEKLY' 
+                             : stripeSchedule === 'monthly' ? 'MONTHLY'
+                             : 'MANUAL';
+
+        stripeSettings = {
+          schedule: mappedSchedule,
+          // Note: Stripe doesn't have a "minimum payout amount" setting in the same way
+          // This is typically managed by the platform
+        };
+
+        // Check if settings are in sync
+        syncStatus = stripeSettings.schedule === creator.payoutSchedule ? 'synced' : 'out_of_sync';
+      } catch (error) {
+        console.error('Error fetching Stripe settings:', error);
+        // Continue without Stripe settings - will return only database values
       }
+    }
+
+    return NextResponse.json({
+      payoutSchedule: creator.payoutSchedule,
+      payoutMinimum: Number(creator.payoutMinimum),
+      isPayoutBlocked: creator.isPayoutBlocked,
+      payoutBlockReason: creator.payoutBlockReason,
+      // ✅ FIX: Include sync information
+      syncStatus,
+      stripeSettings,
+      hasStripeAccount: !!creator.stripeAccountId,
     });
   } catch (error) {
     console.error('Error fetching payout settings:', error);
@@ -57,6 +91,7 @@ export async function GET(request: NextRequest) {
 /**
  * PUT /api/creators/payout-settings
  * Update creator's payout settings
+ * ✅ FIX: Now synchronizes with Stripe account settings
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -111,7 +146,43 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update creator settings
+    // ✅ FIX: Update Stripe account settings FIRST before updating database
+    // This ensures atomicity - if Stripe update fails, database is not updated
+    if (creator.stripeAccountId && payoutSchedule) {
+      try {
+        // Map our schedule enum to Stripe's interval format
+        const stripeInterval = payoutSchedule === 'DAILY' ? 'daily'
+                            : payoutSchedule === 'WEEKLY' ? 'weekly'
+                            : 'manual';
+
+        console.log(`[Payout Settings] Updating Stripe account ${creator.stripeAccountId} payout schedule to ${stripeInterval}`);
+
+        await stripe.accounts.update(creator.stripeAccountId, {
+          settings: {
+            payouts: {
+              schedule: {
+                interval: stripeInterval as 'daily' | 'weekly' | 'manual',
+              },
+            },
+          },
+        });
+
+        console.log(`[Payout Settings] ✅ Stripe account updated successfully`);
+      } catch (stripeError: any) {
+        console.error('[Payout Settings] ❌ Error updating Stripe account:', stripeError);
+        
+        // Return error to prevent database update
+        return NextResponse.json(
+          { 
+            error: 'Erreur lors de la synchronisation avec Stripe',
+            details: stripeError.message || 'Impossible de mettre à jour les paramètres Stripe'
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // ✅ FIX: Only update database AFTER successful Stripe update
     const updateData: any = {};
     if (payoutSchedule) {
       updateData.payoutSchedule = payoutSchedule as PayoutSchedule;
@@ -125,6 +196,7 @@ export async function PUT(request: NextRequest) {
       data: updateData,
       select: {
         id: true,
+        stripeAccountId: true,
         payoutSchedule: true,
         payoutMinimum: true,
         isPayoutBlocked: true,
@@ -132,14 +204,15 @@ export async function PUT(request: NextRequest) {
       }
     });
 
+    console.log(`[Payout Settings] ✅ Database updated successfully for creator ${creator.id}`);
+
     return NextResponse.json({
       message: 'Paramètres de paiement mis à jour avec succès',
-      settings: {
-        payoutSchedule: updatedCreator.payoutSchedule,
-        payoutMinimum: Number(updatedCreator.payoutMinimum),
-        isPayoutBlocked: updatedCreator.isPayoutBlocked,
-        payoutBlockReason: updatedCreator.payoutBlockReason,
-      }
+      payoutSchedule: updatedCreator.payoutSchedule,
+      payoutMinimum: Number(updatedCreator.payoutMinimum),
+      isPayoutBlocked: updatedCreator.isPayoutBlocked,
+      payoutBlockReason: updatedCreator.payoutBlockReason,
+      syncStatus: 'synced',
     });
   } catch (error) {
     console.error('Error updating payout settings:', error);

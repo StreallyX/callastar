@@ -38,9 +38,13 @@ interface PayoutSettings {
 }
 
 interface AccountStatus {
-  payoutsEnabled: boolean;
-  chargesEnabled: boolean;
+  isFullyOnboarded: boolean;
+  canReceivePayments: boolean;
+  canReceivePayouts: boolean;
   detailsSubmitted: boolean;
+  requirementsPending: boolean;
+  requirementsCurrentlyDue: string[];
+  requirementsPastDue: string[];
 }
 
 interface PayoutHistoryItem {
@@ -89,7 +93,7 @@ export default function PayoutsPage() {
       const cId = userData?.user?.creator?.id;
       setCreatorId(cId);
 
-      // Fetch balance
+      // Fetch balance - ✅ FIX: Use comprehensive account status from API
       const balanceResponse = await fetch(`/api/stripe/balance/${cId}`);
       if (balanceResponse.ok) {
         const balanceData = await balanceResponse.json();
@@ -98,10 +102,15 @@ export default function PayoutsPage() {
           pending: balanceData.pending || 0,
           currency: balanceData.currency || 'EUR',
         });
-        setAccountStatus({
-          payoutsEnabled: balanceData.payoutsEnabled || false,
-          chargesEnabled: balanceData.chargesEnabled || false,
+        // ✅ FIX: Use comprehensive accountStatus instead of raw flags
+        setAccountStatus(balanceData.accountStatus || {
+          isFullyOnboarded: false,
+          canReceivePayments: false,
+          canReceivePayouts: false,
           detailsSubmitted: balanceData.detailsSubmitted || false,
+          requirementsPending: true,
+          requirementsCurrentlyDue: [],
+          requirementsPastDue: [],
         });
       } else {
         const errorData = await balanceResponse.json();
@@ -205,8 +214,8 @@ export default function PayoutsPage() {
           </Alert>
         )}
 
-        {/* Setup Required Alert */}
-        {!accountStatus?.detailsSubmitted && (
+        {/* Setup Required Alert - ✅ FIX: Use correct validation logic */}
+        {accountStatus && (!accountStatus.detailsSubmitted || accountStatus.requirementsPending) && (
           <Alert className="mb-8 bg-yellow-50 border-yellow-200">
             <AlertCircle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-yellow-700">
@@ -214,6 +223,11 @@ export default function PayoutsPage() {
               <Link href="/dashboard/creator/payment-setup" className="underline font-semibold">
                 Complétez votre configuration
               </Link>
+              {accountStatus.requirementsCurrentlyDue.length > 0 && (
+                <span className="block mt-1 text-sm">
+                  Informations requises : {accountStatus.requirementsCurrentlyDue.length}
+                </span>
+              )}
             </AlertDescription>
           </Alert>
         )}
@@ -275,7 +289,7 @@ export default function PayoutsPage() {
           </Card>
         </div>
 
-        {/* Payout Status */}
+        {/* Payout Status - ✅ FIX: Use correct validation logic */}
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -288,13 +302,14 @@ export default function PayoutsPage() {
                   État actuel de votre compte de paiement
                 </CardDescription>
               </div>
-              {accountStatus?.payoutsEnabled && (
+              {/* ✅ FIX: Use isFullyOnboarded instead of payoutsEnabled */}
+              {accountStatus?.isFullyOnboarded && !accountStatus?.requirementsPending && (
                 <Badge className="bg-green-500 text-white">
                   <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Virements activés
+                  Compte opérationnel
                 </Badge>
               )}
-              {!accountStatus?.payoutsEnabled && accountStatus?.detailsSubmitted && (
+              {accountStatus?.detailsSubmitted && accountStatus?.requirementsPending && (
                 <Badge className="bg-yellow-500 text-white">
                   <Clock className="w-4 h-4 mr-2" />
                   Vérification en cours
@@ -310,47 +325,53 @@ export default function PayoutsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {accountStatus?.payoutsEnabled ? (
+              {/* ✅ FIX: Use correct status checks */}
+              {accountStatus?.isFullyOnboarded && !accountStatus?.requirementsPending ? (
                 <Alert className="bg-green-50 border-green-200">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-700">
-                    Virements activés - Les fonds seront envoyés selon votre calendrier configuré
+                    ✅ Compte opérationnel - Les virements seront envoyés selon votre calendrier configuré
                   </AlertDescription>
                 </Alert>
-              ) : accountStatus?.detailsSubmitted ? (
+              ) : accountStatus?.detailsSubmitted && accountStatus?.requirementsPending ? (
                 <Alert className="bg-yellow-50 border-yellow-200">
                   <Clock className="h-4 w-4 text-yellow-600" />
                   <AlertDescription className="text-yellow-700">
-                    Virements en cours de vérification - Cela peut prendre jusqu'à 48 heures
+                    🔄 Vérification en cours - Certaines informations sont en attente de validation
+                    {accountStatus.requirementsCurrentlyDue.length > 0 && (
+                      <span className="block mt-2 text-sm">
+                        Informations requises : {accountStatus.requirementsCurrentlyDue.join(', ')}
+                      </span>
+                    )}
                   </AlertDescription>
                 </Alert>
               ) : (
                 <Alert className="bg-red-50 border-red-200">
                   <XCircle className="h-4 w-4 text-red-600" />
                   <AlertDescription className="text-red-700">
-                    Virements bloqués - Complétez votre configuration de paiement pour recevoir des fonds
+                    ⚠️ Configuration incomplète - Complétez votre configuration pour recevoir des virements
                   </AlertDescription>
                 </Alert>
               )}
 
-              {/* Account Details */}
+              {/* Account Details - ✅ FIX: Use correct status fields */}
               <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                 <div className="text-center">
-                  <div className="text-sm text-gray-600 mb-1">Vérification KYC</div>
+                  <div className="text-sm text-gray-600 mb-1">Informations soumises</div>
                   <Badge variant={accountStatus?.detailsSubmitted ? 'default' : 'secondary'}>
-                    {accountStatus?.detailsSubmitted ? 'Complété' : 'Requis'}
+                    {accountStatus?.detailsSubmitted ? '✓ Soumises' : '✗ Requises'}
                   </Badge>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm text-gray-600 mb-1">Compte bancaire</div>
-                  <Badge variant={accountStatus?.chargesEnabled ? 'default' : 'secondary'}>
-                    {accountStatus?.chargesEnabled ? 'Validé' : 'En attente'}
+                  <div className="text-sm text-gray-600 mb-1">Vérifications</div>
+                  <Badge variant={!accountStatus?.requirementsPending ? 'default' : 'secondary'}>
+                    {!accountStatus?.requirementsPending ? '✓ Complètes' : `⏳ ${accountStatus?.requirementsCurrentlyDue?.length || 0} en attente`}
                   </Badge>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-gray-600 mb-1">Virements</div>
-                  <Badge variant={accountStatus?.payoutsEnabled ? 'default' : 'secondary'}>
-                    {accountStatus?.payoutsEnabled ? 'Activés' : 'Désactivés'}
+                  <Badge variant={accountStatus?.canReceivePayouts ? 'default' : 'secondary'}>
+                    {accountStatus?.canReceivePayouts ? '✓ Activés' : '✗ Désactivés'}
                   </Badge>
                 </div>
               </div>
@@ -410,8 +431,8 @@ export default function PayoutsPage() {
           </Card>
         )}
 
-        {/* Manual Payout Request - Only shown if schedule is MANUAL */}
-        {settings?.schedule === 'MANUAL' && accountStatus?.payoutsEnabled && balance && balance.available >= (settings?.minimum || 10) && (
+        {/* Manual Payout Request - Only shown if schedule is MANUAL - ✅ FIX: Use correct validation */}
+        {settings?.schedule === 'MANUAL' && accountStatus?.canReceivePayouts && balance && balance.available >= (settings?.minimum || 10) && (
           <Card className="mb-8 border-purple-200 bg-purple-50">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">

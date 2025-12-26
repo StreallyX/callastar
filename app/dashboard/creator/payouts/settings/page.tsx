@@ -16,6 +16,11 @@ import Link from 'next/link';
 interface PayoutSettings {
   payoutSchedule: 'DAILY' | 'WEEKLY' | 'MANUAL';
   payoutMinimum: number;
+  syncStatus?: 'synced' | 'out_of_sync' | 'no_stripe_account';
+  stripeSettings?: {
+    schedule: 'DAILY' | 'WEEKLY' | 'MANUAL';
+  } | null;
+  hasStripeAccount?: boolean;
 }
 
 export default function PayoutSettingsPage() {
@@ -40,9 +45,18 @@ export default function PayoutSettingsPage() {
         const fetchedSettings = {
           payoutSchedule: data.payoutSchedule || 'MANUAL',
           payoutMinimum: data.payoutMinimum || 10,
+          // ✅ FIX: Capture sync status and Stripe settings
+          syncStatus: data.syncStatus || 'no_stripe_account',
+          stripeSettings: data.stripeSettings,
+          hasStripeAccount: data.hasStripeAccount,
         };
         setSettings(fetchedSettings);
         setOriginalSettings(fetchedSettings);
+
+        // Show warning if out of sync
+        if (data.syncStatus === 'out_of_sync') {
+          toast.warning('Les paramètres ne sont pas synchronisés avec Stripe');
+        }
       } else if (response.status === 401) {
         router.push('/auth/login');
       } else {
@@ -205,6 +219,43 @@ export default function PayoutSettingsPage() {
                   une approbation de l'administrateur.
                 </AlertDescription>
               </Alert>
+
+              {/* ✅ FIX: Sync Status Indicator */}
+              {settings.hasStripeAccount && (
+                <Alert className={
+                  settings.syncStatus === 'synced' ? 'bg-green-50 border-green-200' :
+                  settings.syncStatus === 'out_of_sync' ? 'bg-yellow-50 border-yellow-200' :
+                  'bg-gray-50 border-gray-200'
+                }>
+                  {settings.syncStatus === 'synced' ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-yellow-600" />
+                  )}
+                  <AlertDescription className={
+                    settings.syncStatus === 'synced' ? 'text-green-700' : 'text-yellow-700'
+                  }>
+                    {settings.syncStatus === 'synced' ? (
+                      <span>✅ <strong>Synchronisé avec Stripe</strong> - Vos paramètres sont à jour sur Stripe</span>
+                    ) : settings.syncStatus === 'out_of_sync' ? (
+                      <div>
+                        <span>⚠️ <strong>Désynchronisé</strong> - Les paramètres diffèrent entre la base de données et Stripe</span>
+                        {settings.stripeSettings && (
+                          <div className="mt-2 text-sm">
+                            <strong>Base de données:</strong> {settings.payoutSchedule}<br />
+                            <strong>Stripe:</strong> {settings.stripeSettings.schedule}
+                          </div>
+                        )}
+                        <p className="mt-2 text-sm">
+                          Enregistrez vos paramètres pour synchroniser avec Stripe.
+                        </p>
+                      </div>
+                    ) : (
+                      <span>ℹ️ Aucun compte Stripe connecté</span>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
