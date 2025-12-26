@@ -29,7 +29,8 @@ import Link from 'next/link';
 interface BalanceData {
   available: number;
   pending: number;
-  currency: string;
+  currency: string; // Database currency (EUR)
+  stripeCurrency?: string; // Stripe account currency (may differ from database)
 }
 
 interface PayoutSettings {
@@ -101,6 +102,7 @@ export default function PayoutsPage() {
           available: balanceData.available || 0,
           pending: balanceData.pending || 0,
           currency: balanceData.currency || 'EUR',
+          stripeCurrency: balanceData.stripeCurrency || 'EUR',
         });
         // ✅ FIX: Use comprehensive accountStatus instead of raw flags
         setAccountStatus(balanceData.accountStatus || {
@@ -244,8 +246,13 @@ export default function PayoutsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {balance?.available.toFixed(2) || '0.00'} €
+                {balance?.available.toFixed(2) || '0.00'} {balance?.stripeCurrency || 'EUR'}
               </div>
+              {balance?.stripeCurrency !== 'EUR' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  ≈ {balance?.available.toFixed(2)} EUR (base)
+                </p>
+              )}
               <p className="text-xs text-gray-500 mt-2">
                 Peut être versé immédiatement
               </p>
@@ -262,8 +269,13 @@ export default function PayoutsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-yellow-600">
-                {balance?.pending.toFixed(2) || '0.00'} €
+                {balance?.pending.toFixed(2) || '0.00'} {balance?.stripeCurrency || 'EUR'}
               </div>
+              {balance?.stripeCurrency !== 'EUR' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  ≈ {balance?.pending.toFixed(2)} EUR (base)
+                </p>
+              )}
               <p className="text-xs text-gray-500 mt-2">
                 En attente de période de sécurité
               </p>
@@ -280,14 +292,31 @@ export default function PayoutsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-600">
-                {totalBalance.toFixed(2)} €
+                {totalBalance.toFixed(2)} {balance?.stripeCurrency || 'EUR'}
               </div>
+              {balance?.stripeCurrency !== 'EUR' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  ≈ {totalBalance.toFixed(2)} EUR (base)
+                </p>
+              )}
               <p className="text-xs text-gray-500 mt-2">
                 Disponible + En attente
               </p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Currency Information Alert */}
+        {balance?.stripeCurrency && balance.stripeCurrency !== 'EUR' && (
+          <Alert className="mb-8 bg-blue-50 border-blue-200">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-700">
+              <strong>Devise du compte Stripe :</strong> Votre compte Stripe est configuré en {balance.stripeCurrency}.
+              Les montants sont affichés dans votre devise Stripe. Les virements seront effectués dans cette devise.
+              {' '}(Base de calcul : EUR)
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Payout Status - ✅ FIX: Use correct validation logic */}
         <Card className="mb-8">
@@ -439,7 +468,12 @@ export default function PayoutsPage() {
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Demander un virement manuel</h3>
                   <p className="text-sm text-gray-600">
-                    Vous avez <strong>{balance.available.toFixed(2)} €</strong> disponibles pour un virement.
+                    Vous avez <strong>{balance.available.toFixed(2)} {balance.stripeCurrency}</strong> disponibles pour un virement.
+                    {balance.stripeCurrency !== 'EUR' && (
+                      <span className="block text-xs text-gray-500 mt-1">
+                        (≈ {balance.available.toFixed(2)} EUR base)
+                      </span>
+                    )}
                   </p>
                 </div>
                 <Link href="/dashboard/creator/payouts/request">

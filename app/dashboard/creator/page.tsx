@@ -40,7 +40,6 @@ export default function CreatorDashboard() {
     duration: '30',
   });
   const [payoutData, setPayoutData] = useState<any>(null);
-  const [requestingPayout, setRequestingPayout] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -298,37 +297,7 @@ export default function CreatorDashboard() {
     }
   };
 
-  const handleRequestPayout = async () => {
-    if (!stripeOnboarding.onboarded) {
-      toast.error('Vous devez d\'abord configurer votre compte Stripe');
-      return;
-    }
 
-    if (!payoutData?.summary?.readyForPayout || payoutData.summary.readyForPayout <= 0) {
-      toast.error('Aucun paiement disponible pour le moment');
-      return;
-    }
-
-    setRequestingPayout(true);
-    try {
-      const response = await fetch('/api/payouts/request', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(data.message || 'Paiement demandé avec succès!');
-        fetchData(); // Refresh data
-      } else {
-        const error = await response.json();
-        toast.error(error?.error ?? 'Erreur lors de la demande de paiement');
-      }
-    } catch (error) {
-      toast.error('Une erreur est survenue');
-    } finally {
-      setRequestingPayout(false);
-    }
-  };
 
   // Don't render anything until authentication is verified
   if (!authChecked || loading) {
@@ -817,7 +786,7 @@ export default function CreatorDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
-                    {payoutData?.summary?.totalEarnings?.toFixed(2) || '0.00'} €
+                    {payoutData?.summary?.totalEarnings?.toFixed(2) || '0.00'} EUR
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Déjà sur votre compte Stripe</p>
                 </CardContent>
@@ -829,7 +798,7 @@ export default function CreatorDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-yellow-600">
-                    {payoutData?.summary?.pendingEarnings?.toFixed(2) || '0.00'} €
+                    {payoutData?.summary?.pendingEarnings?.toFixed(2) || '0.00'} EUR
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Période de sécurité (7 jours)</p>
                 </CardContent>
@@ -841,45 +810,32 @@ export default function CreatorDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-600">
-                    {payoutData?.summary?.readyForPayout?.toFixed(2) || '0.00'} €
+                    {payoutData?.summary?.readyForPayout?.toFixed(2) || '0.00'} EUR
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Prêt pour transfert</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Request Payout Button */}
-            {stripeOnboarding.onboarded && payoutData?.summary?.readyForPayout > 0 && (
-              <Card className="border-purple-200 bg-purple-50">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg mb-1">Demander un paiement</h3>
-                      <p className="text-sm text-gray-600">
-                        Vous avez <strong>{payoutData.summary.readyForPayout.toFixed(2)} €</strong> disponibles pour transfert vers votre compte Stripe.
-                      </p>
-                    </div>
-                    <Button
-                      onClick={handleRequestPayout}
-                      disabled={requestingPayout}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                    >
-                      {requestingPayout ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Traitement...
-                        </>
-                      ) : (
-                        <>
-                          <DollarSign className="w-4 h-4 mr-2" />
-                          Demander le paiement
-                        </>
-                      )}
-                    </Button>
+            {/* Link to Payouts Page */}
+            <Card className="border-purple-200 bg-purple-50">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">Gérer vos paiements</h3>
+                    <p className="text-sm text-gray-600">
+                      Consultez votre solde disponible et gérez vos virements vers votre compte bancaire.
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  <Link href="/dashboard/creator/payouts">
+                    <Button variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50">
+                      <ArrowRight className="w-4 h-4 mr-2" />
+                      Voir les payouts
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Payment History */}
             <Card>
@@ -909,7 +865,7 @@ export default function CreatorDashboard() {
                           </div>
                         </div>
                         <div className="text-right ml-4">
-                          <div className="font-semibold text-lg">{Number(payment.creatorAmount).toFixed(2)} €</div>
+                          <div className="font-semibold text-lg">{Number(payment.creatorAmount).toFixed(2)} EUR</div>
                           <Badge variant={
                             payment.payoutStatus === 'PAID' ? 'default' :
                             payment.payoutStatus === 'READY' ? 'default' :

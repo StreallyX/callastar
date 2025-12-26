@@ -81,6 +81,10 @@ export async function GET(
         stripeAccount: creator.stripeAccountId,
       });
 
+      // ✅ NEW: Fetch Stripe account details to get default currency
+      const stripeAccount = await stripe.accounts.retrieve(creator.stripeAccountId);
+      const stripeCurrency = (stripeAccount.default_currency || 'eur').toUpperCase();
+
       // ✅ FIX: Use comprehensive validation logic instead of raw flags
       const accountStatus = await getStripeAccountStatus(creator.stripeAccountId);
 
@@ -91,7 +95,8 @@ export async function GET(
       return NextResponse.json({
         available: availableTotal,
         pending: pendingTotal,
-        currency: 'EUR',
+        currency: 'EUR', // Database currency (source of truth)
+        stripeCurrency: stripeCurrency, // Stripe account currency
         // ✅ FIX: Return correct account status using validator
         detailsSubmitted: accountStatus.detailsSubmitted,
         requirementsCount: accountStatus.requirements.currentlyDue.length,

@@ -15,7 +15,8 @@ import Link from 'next/link';
 interface BalanceData {
   available: number;
   pending: number;
-  currency: string;
+  currency: string; // Database currency (EUR)
+  stripeCurrency?: string; // Stripe account currency
   payoutsEnabled: boolean;
 }
 
@@ -63,6 +64,7 @@ export default function RequestPayoutPage() {
           available: balanceData.available || 0,
           pending: balanceData.pending || 0,
           currency: balanceData.currency || 'EUR',
+          stripeCurrency: balanceData.stripeCurrency || 'EUR',
           payoutsEnabled: balanceData.payoutsEnabled || false,
         });
         // Set default request amount to available balance
@@ -193,13 +195,30 @@ export default function RequestPayoutPage() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-green-600 mb-2">
-              {balance?.available.toFixed(2) || '0.00'} €
+              {balance?.available.toFixed(2) || '0.00'} {balance?.stripeCurrency || 'EUR'}
             </div>
+            {balance?.stripeCurrency && balance.stripeCurrency !== 'EUR' && (
+              <p className="text-sm text-gray-500 mb-2">
+                ≈ {balance.available.toFixed(2)} EUR (base)
+              </p>
+            )}
             <p className="text-sm text-gray-600">
               Montant maximum que vous pouvez demander
             </p>
           </CardContent>
         </Card>
+
+        {/* Currency Conversion Info */}
+        {balance?.stripeCurrency && balance.stripeCurrency !== 'EUR' && (
+          <Alert className="mb-6 bg-blue-50 border-blue-200">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-700">
+              <strong>Conversion de devise :</strong> Votre compte Stripe est en {balance.stripeCurrency}.
+              Le montant sera converti automatiquement de EUR (base) vers {balance.stripeCurrency} lors du virement.
+              Le taux de conversion actuel sera appliqué au moment du traitement.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Error States */}
         {!balance?.payoutsEnabled && (

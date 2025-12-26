@@ -12,6 +12,7 @@ import { logPayout } from '@/lib/logger';
 import { TransactionEventType, PayoutStatus } from '@prisma/client';
 import { checkPayoutEligibility, clearBalanceCache } from '@/lib/payout-eligibility';
 import { getStripeAccountStatus } from '@/lib/stripe-account-validator';
+import { getStripeCurrency, convertEurToStripeCurrency } from '@/lib/currency-converter';
 
 /**
  * POST /api/payouts/request
@@ -140,12 +141,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine payout amount
-    let payoutAmount = requestedAmount ? Number(requestedAmount) : availableBalance;
+    // Determine payout amount in EUR (database currency)
+    let payoutAmountEur = requestedAmount ? Number(requestedAmount) : availableBalance;
 
     // Validate requested amount
     if (requestedAmount) {
-      if (payoutAmount > availableBalance) {
+      if (payoutAmountEur > availableBalance) {
         return NextResponse.json(
           {
             error: `Solde disponible insuffisant. Vous avez ${availableBalance.toFixed(2)} ${settings.currency} disponibles.`,
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (payoutAmount < minimumPayoutAmount) {
+      if (payoutAmountEur < minimumPayoutAmount) {
         return NextResponse.json(
           {
             error: `Le montant minimum de paiement est de ${minimumPayoutAmount.toFixed(2)} ${settings.currency}.`,
@@ -174,11 +175,41 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create payout record
+    // ✅ NEW: Get Stripe account currency and handle conversion
+    const stripeCurrency = await getStripeCurrency(creator.stripeAccountId);
+    let payoutAmountInStripeCurrency = payoutAmountEur;
+    let conversionRate: number | null = null;
+    let conversionDate: Date | null = null;
+
+    // Convert if Stripe currency is different from EUR
+    if (stripeCurrency !== 'EUR') {
+      try {
+        const conversion = await convertEurToStripeCurrency(payoutAmountEur, stripeCurrency);
+        payoutAmountInStripeCurrency = conversion.toAmount;
+        conversionRate = conversion.rate;
+        conversionDate = conversion.timestamp;
+
+        console.log(`[Payout] Currency conversion: ${payoutAmountEur} EUR -> ${payoutAmountInStripeCurrency} ${stripeCurrency} (rate: ${conversionRate})`);
+      } catch (error: any) {
+        console.error('[Payout] Currency conversion failed:', error);
+        return NextResponse.json(
+          {
+            error: `Erreur de conversion de devise: ${error.message || 'Erreur inconnue'}`,
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Create payout record with currency tracking
     const payout = await prisma.payout.create({
       data: {
         creatorId: creator.id,
-        amount: payoutAmount,
+        amount: payoutAmountEur, // Original EUR amount
+        amountPaid: stripeCurrency !== 'EUR' ? payoutAmountInStripeCurrency : null,
+        currency: stripeCurrency,
+        conversionRate: conversionRate,
+        conversionDate: conversionDate,
         status: PayoutStatus.PROCESSING,
       },
     });
@@ -187,21 +218,26 @@ export async function POST(request: NextRequest) {
     await logPayout(TransactionEventType.PAYOUT_CREATED, {
       payoutId: payout.id,
       creatorId: creator.id,
-      amount: payoutAmount,
-      currency: settings.currency,
+      amount: payoutAmountEur,
+      currency: 'EUR',
       status: PayoutStatus.PROCESSING,
       metadata: {
         availableBalance,
         requestedAmount: requestedAmount || null,
         fromStripeBalance: true,
+        stripeCurrency: stripeCurrency,
+        amountInStripeCurrency: payoutAmountInStripeCurrency,
+        conversionRate: conversionRate,
+        currencyConverted: stripeCurrency !== 'EUR',
       },
     });
 
     try {
       // Create payout from Stripe Connect account to bank account
+      // ✅ Use converted amount and Stripe account currency
       const stripePayout = await createConnectPayout({
-        amount: payoutAmount,
-        currency: settings.currency.toLowerCase(),
+        amount: payoutAmountInStripeCurrency,
+        currency: stripeCurrency.toLowerCase(),
         stripeAccountId: creator.stripeAccountId,
         metadata: {
           creatorId: creator.id,
@@ -209,6 +245,9 @@ export async function POST(request: NextRequest) {
           manual: 'true',
           requestedBy: jwtUser.userId,
           adminOverride: String(adminOverride && isAdmin),
+          amountEur: String(payoutAmountEur),
+          stripeCurrency: stripeCurrency,
+          ...(conversionRate && { conversionRate: String(conversionRate) }),
         },
       });
 
@@ -225,8 +264,8 @@ export async function POST(request: NextRequest) {
       await logPayout(TransactionEventType.PAYOUT_CREATED, {
         payoutId: payout.id,
         creatorId: creator.id,
-        amount: payoutAmount,
-        currency: settings.currency,
+        amount: payoutAmountEur,
+        currency: 'EUR',
         status: PayoutStatus.PROCESSING,
         stripePayoutId: stripePayout.id,
         metadata: {
@@ -237,6 +276,10 @@ export async function POST(request: NextRequest) {
           estimatedArrival: stripePayout.arrival_date
             ? new Date(stripePayout.arrival_date * 1000).toISOString()
             : null,
+          stripeCurrency: stripeCurrency,
+          amountInStripeCurrency: payoutAmountInStripeCurrency,
+          conversionRate: conversionRate,
+          currencyConverted: stripeCurrency !== 'EUR',
         },
       });
 
@@ -245,30 +288,40 @@ export async function POST(request: NextRequest) {
         data: {
           creatorId: creator.id,
           action: 'TRIGGERED',
-          amount: payoutAmount,
+          amount: payoutAmountEur,
           status: PayoutStatus.PROCESSING,
           stripePayoutId: stripePayout.id,
           adminId: isAdmin ? jwtUser.userId : null,
-          reason: requestedAmount
-            ? `Paiement manuel de ${payoutAmount.toFixed(2)} ${settings.currency} demandé`
-            : `Paiement complet de ${payoutAmount.toFixed(2)} ${settings.currency} demandé`,
+          reason: stripeCurrency !== 'EUR'
+            ? `Paiement manuel de ${payoutAmountEur.toFixed(2)} EUR (${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) demandé`
+            : requestedAmount
+              ? `Paiement manuel de ${payoutAmountEur.toFixed(2)} EUR demandé`
+              : `Paiement complet de ${payoutAmountEur.toFixed(2)} EUR demandé`,
           metadata: JSON.stringify({
             availableBalance,
             requestedAmount: requestedAmount || null,
             estimatedArrival: stripePayout.arrival_date
               ? new Date(stripePayout.arrival_date * 1000).toISOString()
               : null,
+            stripeCurrency: stripeCurrency,
+            amountInStripeCurrency: payoutAmountInStripeCurrency,
+            conversionRate: conversionRate,
+            currencyConverted: stripeCurrency !== 'EUR',
           }),
         },
       });
 
       return NextResponse.json({
         success: true,
-        message: `Paiement de ${payoutAmount.toFixed(2)} ${settings.currency} en cours de transfert vers votre compte bancaire`,
+        message: stripeCurrency !== 'EUR'
+          ? `Paiement de ${payoutAmountEur.toFixed(2)} EUR (≈ ${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) en cours de transfert vers votre compte bancaire`
+          : `Paiement de ${payoutAmountEur.toFixed(2)} EUR en cours de transfert vers votre compte bancaire`,
         payout: {
           id: payout.id,
-          amount: payoutAmount,
-          currency: settings.currency,
+          amountEur: payoutAmountEur,
+          amountPaid: stripeCurrency !== 'EUR' ? payoutAmountInStripeCurrency : payoutAmountEur,
+          currency: stripeCurrency,
+          conversionRate: conversionRate,
           stripePayoutId: stripePayout.id,
           status: 'processing',
           estimatedArrival: stripePayout.arrival_date
@@ -293,8 +346,8 @@ export async function POST(request: NextRequest) {
       await logPayout(TransactionEventType.PAYOUT_FAILED, {
         payoutId: payout.id,
         creatorId: creator.id,
-        amount: payoutAmount,
-        currency: settings.currency,
+        amount: payoutAmountEur,
+        currency: 'EUR',
         status: PayoutStatus.FAILED,
         errorMessage: error.message || 'Payout failed',
       });
@@ -304,7 +357,7 @@ export async function POST(request: NextRequest) {
         data: {
           creatorId: creator.id,
           action: 'FAILED',
-          amount: payoutAmount,
+          amount: payoutAmountEur,
           status: PayoutStatus.FAILED,
           adminId: isAdmin ? jwtUser.userId : null,
           reason: `Échec du paiement: ${error.message || 'Erreur inconnue'}`,

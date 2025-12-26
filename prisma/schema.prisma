@@ -361,11 +361,18 @@ model Notification {
 model Payout {
   id              String       @id @default(cuid())
   creatorId       String
-  amount          Decimal      @db.Decimal(10, 2)
+  amount          Decimal      @db.Decimal(10, 2) // Original amount in EUR (database currency)
   stripePayoutId  String?
   status          PayoutStatus @default(PENDING)
   failureReason   String?      @db.Text
   retriedCount    Int          @default(0)
+  
+  // ✅ NEW: Currency conversion tracking
+  amountPaid      Decimal?     @db.Decimal(10, 2) // Actual amount paid in Stripe currency (if different from EUR)
+  currency        String?      @default("EUR") // Stripe account currency (EUR, CHF, USD, etc.)
+  conversionRate  Decimal?     @db.Decimal(10, 6) // Conversion rate used (if applicable)
+  conversionDate  DateTime?    // When conversion was calculated
+  
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -375,6 +382,7 @@ model Payout {
 
   @@index([creatorId])
   @@index([status])
+  @@index([currency])
 }
 
 model AdminSettings {
