@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import prisma from '@/lib/db';
-import { stripe } from '@/lib/stripe';
+import { stripe, getCreatorCurrency } from '@/lib/stripe';
 import { calculateNextPayoutDate } from '@/lib/payout-eligibility';
 import {
   getStripeAccountStatus,
@@ -127,12 +127,24 @@ export async function GET(request: NextRequest) {
     const statusMessage = getStatusMessage(accountStatus);
     const recommendedAction = getRecommendedAction(accountStatus);
 
-    // Update database if onboarding status changed
-    if (accountStatus.isFullyOnboarded !== creator.isStripeOnboarded) {
+    // ✅ NEW: Retrieve creator's currency from Stripe Connect account
+    const stripeCurrency = await getCreatorCurrency(creator.stripeAccountId);
+
+    // Update database if onboarding status changed OR currency is different
+    const needsUpdate = 
+      accountStatus.isFullyOnboarded !== creator.isStripeOnboarded ||
+      stripeCurrency !== creator.currency;
+
+    if (needsUpdate) {
       await prisma.creator.update({
         where: { id: creator.id },
-        data: { isStripeOnboarded: accountStatus.isFullyOnboarded },
+        data: { 
+          isStripeOnboarded: accountStatus.isFullyOnboarded,
+          currency: stripeCurrency, // ✅ NEW: Update currency
+        },
       });
+
+      console.log(`✅ Updated creator ${creator.id}: onboarded=${accountStatus.isFullyOnboarded}, currency=${stripeCurrency}`);
 
       // Ensure PayoutSchedule exists when onboarding is complete
       if (accountStatus.isFullyOnboarded) {
@@ -160,6 +172,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       onboarded: accountStatus.isFullyOnboarded,
       stripeAccountId: creator.stripeAccountId, // ✅ FIX: Include stripeAccountId for frontend status check
+      currency: stripeCurrency, // ✅ NEW: Return creator's currency
       detailsSubmitted: accountStatus.detailsSubmitted,
       chargesEnabled: accountStatus.chargesEnabled,
       payoutsEnabled: accountStatus.payoutsEnabled,
