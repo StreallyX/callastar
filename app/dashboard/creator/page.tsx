@@ -40,6 +40,7 @@ export default function CreatorDashboard() {
     duration: '30',
   });
   const [payoutData, setPayoutData] = useState<any>(null);
+  const [creatorCurrency, setCreatorCurrency] = useState<string>('EUR'); // ✅ NEW: Creator's currency
 
   useEffect(() => {
     fetchData();
@@ -108,6 +109,11 @@ export default function CreatorDashboard() {
       setUser(userData?.user);
       setAuthChecked(true);
 
+      // ✅ NEW: Set creator's currency from user data
+      if (userData?.user?.creator?.currency) {
+        setCreatorCurrency(userData.user.creator.currency);
+      }
+
       // Get offers
       const offersResponse = await fetch(`/api/call-offers?creatorId=${userData?.user?.creator?.id}`);
       if (offersResponse.ok) {
@@ -157,6 +163,11 @@ export default function CreatorDashboard() {
           onboarded: onboardingData?.onboarded ?? false,
           loading: false,
         });
+        
+        // ✅ NEW: Update currency from onboarding data if available
+        if (onboardingData?.currency) {
+          setCreatorCurrency(onboardingData.currency);
+        }
       } else {
         setStripeOnboarding({ onboarded: false, loading: false });
       }
@@ -417,7 +428,7 @@ export default function CreatorDashboard() {
               <TrendingUp className="w-5 h-5 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{totalRevenue.toFixed(2)} €</div>
+              <div className="text-3xl font-bold">{totalRevenue.toFixed(2)} {creatorCurrency}</div>
             </CardContent>
           </Card>
         </div>
@@ -473,7 +484,7 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="price">Prix (€)</Label>
+                          <Label htmlFor="price">Prix ({creatorCurrency})</Label>
                           <Input
                             id="price"
                             type="number"
@@ -553,7 +564,7 @@ export default function CreatorDashboard() {
                         </div>
                         <div className="flex items-center gap-2 text-sm font-semibold text-purple-600">
                           <DollarSign className="w-4 h-4" />
-                          {Number(offer?.price ?? 0).toFixed(2)} €
+                          {Number(offer?.price ?? 0).toFixed(2)} {offer?.currency || creatorCurrency}
                         </div>
                         {offer?.status === 'AVAILABLE' && (
                           <Button
@@ -661,7 +672,7 @@ export default function CreatorDashboard() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <DollarSign className="w-4 h-4" />
-                                <span>{Number(request.proposedPrice).toFixed(2)} €</span>
+                                <span>{Number(request.proposedPrice).toFixed(2)} {creatorCurrency}</span>
                               </div>
                               {request.message && (
                                 <div className="flex items-start gap-2 mt-2">
@@ -786,7 +797,7 @@ export default function CreatorDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
-                    {payoutData?.summary?.totalEarnings?.toFixed(2) || '0.00'} EUR
+                    {payoutData?.summary?.totalEarnings?.toFixed(2) || '0.00'} {creatorCurrency}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Déjà sur votre compte Stripe</p>
                 </CardContent>
@@ -798,7 +809,7 @@ export default function CreatorDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-yellow-600">
-                    {payoutData?.summary?.pendingEarnings?.toFixed(2) || '0.00'} EUR
+                    {payoutData?.summary?.pendingEarnings?.toFixed(2) || '0.00'} {creatorCurrency}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Période de sécurité (7 jours)</p>
                 </CardContent>
@@ -810,7 +821,7 @@ export default function CreatorDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-600">
-                    {payoutData?.summary?.readyForPayout?.toFixed(2) || '0.00'} EUR
+                    {payoutData?.summary?.readyForPayout?.toFixed(2) || '0.00'} {creatorCurrency}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Prêt pour transfert</p>
                 </CardContent>
@@ -865,7 +876,7 @@ export default function CreatorDashboard() {
                           </div>
                         </div>
                         <div className="text-right ml-4">
-                          <div className="font-semibold text-lg">{Number(payment.creatorAmount).toFixed(2)} EUR</div>
+                          <div className="font-semibold text-lg">{Number(payment.creatorAmount).toFixed(2)} {payment.currency || creatorCurrency}</div>
                           <Badge variant={
                             payment.payoutStatus === 'PAID' ? 'default' :
                             payment.payoutStatus === 'READY' ? 'default' :
