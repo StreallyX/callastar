@@ -12,10 +12,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Settings, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { getCurrencySymbol } from '@/lib/currency-converter';
 
 interface PayoutSettings {
   payoutSchedule: 'DAILY' | 'WEEKLY' | 'MANUAL';
   payoutMinimum: number;
+  currency?: string; // ✅ Creator's currency
   syncStatus?: 'synced' | 'out_of_sync' | 'no_stripe_account';
   stripeSettings?: {
     schedule: 'DAILY' | 'WEEKLY' | 'MANUAL';
@@ -45,6 +47,7 @@ export default function PayoutSettingsPage() {
         const fetchedSettings = {
           payoutSchedule: data.payoutSchedule || 'MANUAL',
           payoutMinimum: data.payoutMinimum || 10,
+          currency: data.currency || 'EUR', // ✅ Include creator's currency
           // ✅ FIX: Capture sync status and Stripe settings
           syncStatus: data.syncStatus || 'no_stripe_account',
           stripeSettings: data.stripeSettings,
@@ -73,14 +76,16 @@ export default function PayoutSettingsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const currency = settings.currency || 'EUR';
+    
     // Validation
     if (settings.payoutMinimum < 10) {
-      toast.error('Le montant minimum doit être au moins 10 €');
+      toast.error(`Le montant minimum doit être au moins 10 ${currency}`);
       return;
     }
 
     if (settings.payoutMinimum > 1000000) {
-      toast.error('Le montant minimum ne peut pas dépasser 1 000 000 €');
+      toast.error(`Le montant minimum ne peut pas dépasser 1 000 000 ${currency}`);
       return;
     }
 
@@ -194,7 +199,7 @@ export default function PayoutSettingsPage() {
 
               {/* Minimum Amount */}
               <div className="space-y-2">
-                <Label htmlFor="minimum">Montant minimum (€)</Label>
+                <Label htmlFor="minimum">Montant minimum ({settings.currency || 'EUR'})</Label>
                 <Input
                   id="minimum"
                   type="number"
@@ -206,7 +211,7 @@ export default function PayoutSettingsPage() {
                   required
                 />
                 <p className="text-sm text-gray-500">
-                  Montant minimum requis pour déclencher un virement (entre 10 € et 1 000 000 €)
+                  Montant minimum requis pour déclencher un virement (entre 10 {settings.currency || 'EUR'} et 1 000 000 {settings.currency || 'EUR'})
                 </p>
               </div>
 

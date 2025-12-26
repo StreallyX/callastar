@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         payoutMinimum: true,
         isPayoutBlocked: true,
         payoutBlockReason: true,
+        currency: true, // ✅ Include creator's currency
       }
     });
 
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
       payoutMinimum: Number(creator.payoutMinimum),
       isPayoutBlocked: creator.isPayoutBlocked,
       payoutBlockReason: creator.payoutBlockReason,
+      currency: creator.currency, // ✅ Include creator's currency
       // ✅ FIX: Include sync information
       syncStatus,
       stripeSettings,

@@ -25,6 +25,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 interface BalanceData {
   available: number;
@@ -450,7 +451,10 @@ export default function PayoutsPage() {
                   <div className="text-sm text-gray-600 mb-2">Montant minimum</div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-base px-3 py-1">
-                      {settings.minimum.toFixed(2)} €
+                      <CurrencyDisplay 
+                        amount={settings.minimum} 
+                        currency={balance?.stripeCurrency || 'EUR'} 
+                      />
                     </Badge>
                     <span className="text-sm text-gray-500">(Minimum requis pour un virement)</span>
                   </div>
@@ -534,7 +538,12 @@ export default function PayoutsPage() {
                           })}
                         </TableCell>
                         <TableCell className="font-semibold">
-                          {item.amount ? `${(item.amount / 100).toFixed(2)} €` : '-'}
+                          {item.amount ? (
+                            <CurrencyDisplay 
+                              amount={item.amount / 100} 
+                              currency={balance?.stripeCurrency || 'EUR'} 
+                            />
+                          ) : '-'}
                         </TableCell>
                         <TableCell>
                           <Badge

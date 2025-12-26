@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, DollarSign, AlertCircle, ArrowLeft, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 interface BalanceData {
   available: number;
@@ -111,7 +112,8 @@ export default function RequestPayoutPage() {
     }
 
     if (amount < (settings?.minimum || 10)) {
-      toast.error(`Le montant doit être au moins ${settings?.minimum || 10} €`);
+      const currency = balance?.stripeCurrency || 'EUR';
+      toast.error(`Le montant doit être au moins ${settings?.minimum || 10} ${currency}`);
       return;
     }
 
@@ -235,7 +237,7 @@ export default function RequestPayoutPage() {
           <Alert className="mb-6 bg-yellow-50 border-yellow-200">
             <AlertCircle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-yellow-700">
-              Votre solde disponible est inférieur au minimum requis ({settings?.minimum || 10} €). 
+              Votre solde disponible est inférieur au minimum requis ({settings?.minimum || 10} {balance?.stripeCurrency || 'EUR'}). 
               Vous ne pouvez pas demander de virement pour le moment.
             </AlertDescription>
           </Alert>
@@ -257,7 +259,7 @@ export default function RequestPayoutPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Amount Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Montant (€)</Label>
+                  <Label htmlFor="amount">Montant ({balance?.stripeCurrency || 'EUR'})</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -269,7 +271,7 @@ export default function RequestPayoutPage() {
                     required
                   />
                   <p className="text-sm text-gray-500">
-                    Minimum: {settings?.minimum || 10} € • Maximum: {balance?.available.toFixed(2) || 0} €
+                    Minimum: {settings?.minimum || 10} {balance?.stripeCurrency || 'EUR'} • Maximum: {balance?.available.toFixed(2) || 0} {balance?.stripeCurrency || 'EUR'}
                   </p>
                 </div>
 
