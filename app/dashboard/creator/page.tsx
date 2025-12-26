@@ -44,6 +44,47 @@ export default function CreatorDashboard() {
 
   useEffect(() => {
     fetchData();
+    
+    // ✅ FIX: Check if returning from Stripe onboarding
+    const params = new URLSearchParams(window.location.search);
+    const onboardingParam = params.get('onboarding');
+    
+    if (onboardingParam === 'success' || onboardingParam === 'refresh') {
+      // User returned from Stripe onboarding - trigger re-verification
+      console.log('[Onboarding Return] Re-verifying account status...');
+      
+      // Show toast notification
+      if (onboardingParam === 'success') {
+        toast.info('Vérification de votre compte Stripe en cours...');
+      }
+      
+      // Wait a moment for Stripe's systems to update, then re-verify
+      setTimeout(async () => {
+        try {
+          const response = await fetch('/api/stripe/connect-onboard');
+          if (response.ok) {
+            const data = await response.json();
+            setStripeOnboarding({
+              onboarded: data?.onboarded ?? false,
+              loading: false,
+            });
+            
+            if (data?.onboarded) {
+              toast.success('✅ Votre compte Stripe est maintenant configuré !');
+            } else if (data?.issues && data.issues.length > 0) {
+              toast.warning(`Configuration incomplète: ${data.issues[0]}`);
+            } else {
+              toast.info('Configuration en cours de vérification...');
+            }
+          }
+        } catch (error) {
+          console.error('[Onboarding Return] Error re-verifying:', error);
+        }
+        
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+      }, 2000); // Wait 2 seconds for Stripe to process
+    }
   }, []);
 
   const fetchData = async () => {

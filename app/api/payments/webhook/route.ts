@@ -60,6 +60,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, skipped: true }, { status: 200 });
     }
 
+    // ✅ FIX: Enhanced webhook logging for debugging
+    const timestamp = new Date().toISOString();
+    console.log(`[Webhook] ============================================`);
+    console.log(`[Webhook] Received at: ${timestamp}`);
+    console.log(`[Webhook] Event Type: ${event.type}`);
+    console.log(`[Webhook] Event ID: ${event.id}`);
+    console.log(`[Webhook] Livemode: ${event.livemode}`);
+    console.log(`[Webhook] API Version: ${event.api_version}`);
+    console.log(`[Webhook] Object Type: ${event.data.object.object}`);
+    
+    // Log relevant object data based on event type
+    if (event.type.startsWith('account.')) {
+      const account = event.data.object as any;
+      console.log(`[Webhook] Account ID: ${account.id}`);
+      console.log(`[Webhook] Charges Enabled: ${account.charges_enabled}`);
+      console.log(`[Webhook] Payouts Enabled: ${account.payouts_enabled}`);
+      console.log(`[Webhook] Details Submitted: ${account.details_submitted}`);
+      if (account.requirements) {
+        console.log(`[Webhook] Currently Due: ${JSON.stringify(account.requirements.currently_due)}`);
+        console.log(`[Webhook] Past Due: ${JSON.stringify(account.requirements.past_due)}`);
+      }
+    }
+    console.log(`[Webhook] ============================================`);
+
     // Process webhook event
     console.log(`[Webhook] Processing event: ${event.type} (${event.id})`);
 
@@ -68,6 +92,7 @@ export async function POST(request: NextRequest) {
     } catch (processingError) {
       // Log the error but return 200 to prevent Stripe retries for non-retryable errors
       console.error(`[Webhook] Error processing event ${event.type}:`, processingError);
+      console.error(`[Webhook] Error stack:`, processingError instanceof Error ? processingError.stack : 'No stack trace');
       
       // Log the error to database
       await logWebhook({
@@ -404,6 +429,18 @@ async function processWebhookEvent(event: Stripe.Event): Promise<void> {
 
     case 'account.updated':
       await handleAccountUpdated(event);
+      break;
+
+    case 'capability.updated':
+      await handleCapabilityUpdated(event);
+      break;
+
+    case 'account.application.authorized':
+      await handleAccountApplicationAuthorized(event);
+      break;
+
+    case 'account.application.deauthorized':
+      await handleAccountApplicationDeauthorized(event);
       break;
 
     default:
@@ -1225,6 +1262,150 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
     payoutBlocked: shouldBlockPayout,
     payoutBlockedReason: blockReason,
     currentlyDue,
+  });
+}
+
+/**
+ * Handle capability.updated
+ * When a capability (like transfers or card_payments) changes status
+ */
+async function handleCapabilityUpdated(event: Stripe.Event): Promise<void> {
+  const capability = event.data.object as any;
+  
+  console.log('[Webhook] Capability updated:', {
+    account: capability.account,
+    capability: capability.id,
+    status: capability.status,
+    requirements: capability.requirements,
+  });
+
+  // Find creator with this Stripe account
+  const creator = await prisma.creator.findFirst({
+    where: { stripeAccountId: capability.account },
+  });
+
+  if (!creator) {
+    console.warn('[Webhook] Creator not found for capability update:', capability.account);
+    return;
+  }
+
+  // Re-verify account status since capabilities changed
+  const accountStatus = await getStripeAccountStatus(capability.account);
+  
+  await prisma.creator.update({
+    where: { id: creator.id },
+    data: {
+      isStripeOnboarded: accountStatus.isFullyOnboarded,
+    },
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.PAYMENT,
+    entityId: creator.id,
+    metadata: {
+      accountId: capability.account,
+      capability: capability.id,
+      status: capability.status,
+      isFullyOnboarded: accountStatus.isFullyOnboarded,
+    },
+  });
+
+  // If transfers capability is now active, send notification
+  if (capability.id === 'transfers' && capability.status === 'active' && accountStatus.isFullyOnboarded) {
+    try {
+      const creatorWithUser = await prisma.creator.findUnique({
+        where: { id: creator.id },
+        include: { user: true },
+      });
+
+      if (creatorWithUser) {
+        await createNotification({
+          userId: creatorWithUser.userId,
+          type: 'SYSTEM',
+          title: '✅ Transferts activés',
+          message: 'Votre capacité de transfert est maintenant active. Vous pouvez recevoir des paiements.',
+          link: '/dashboard/creator',
+        });
+      }
+    } catch (error) {
+      console.error('[Webhook] Error sending capability notification:', error);
+    }
+  }
+}
+
+/**
+ * Handle account.application.authorized
+ * When a user authorizes the Connect application
+ */
+async function handleAccountApplicationAuthorized(event: Stripe.Event): Promise<void> {
+  const account = event.data.object as any;
+  
+  console.log('[Webhook] Account application authorized:', {
+    account: account.id,
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.PAYMENT,
+    metadata: {
+      accountId: account.id,
+      action: 'authorized',
+    },
+  });
+}
+
+/**
+ * Handle account.application.deauthorized
+ * When a user deauthorizes the Connect application
+ */
+async function handleAccountApplicationDeauthorized(event: Stripe.Event): Promise<void> {
+  const account = event.data.object as any;
+  
+  console.log('[Webhook] Account application deauthorized:', {
+    account: account.id,
+  });
+
+  // Find creator and potentially disable their account
+  const creator = await prisma.creator.findFirst({
+    where: { stripeAccountId: account.id },
+  });
+
+  if (creator) {
+    await prisma.creator.update({
+      where: { id: creator.id },
+      data: {
+        isStripeOnboarded: false,
+        payoutBlocked: true,
+        payoutBlockedReason: 'Application Stripe déconnectée',
+      },
+    });
+
+    // Send critical notification
+    try {
+      await createNotification({
+        userId: creator.userId,
+        type: 'SYSTEM',
+        title: '⚠️ Compte Stripe déconnecté',
+        message: 'Votre compte Stripe a été déconnecté. Veuillez le reconnecter pour continuer à recevoir des paiements.',
+        link: '/dashboard/creator/payment-setup',
+      });
+    } catch (error) {
+      console.error('[Webhook] Error sending deauthorization notification:', error);
+    }
+  }
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.PAYMENT,
+    entityId: creator?.id,
+    metadata: {
+      accountId: account.id,
+      action: 'deauthorized',
+    },
   });
 }
 

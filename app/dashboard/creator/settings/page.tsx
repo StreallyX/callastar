@@ -42,6 +42,24 @@ export default function CreatorSettings() {
 
   useEffect(() => {
     fetchData();
+    
+    // ✅ FIX: Check if returning from Stripe onboarding
+    const params = new URLSearchParams(window.location.search);
+    const onboardingParam = params.get('onboarding');
+    
+    if (onboardingParam === 'success' || onboardingParam === 'refresh') {
+      console.log('[Settings] Returned from onboarding, re-verifying...');
+      
+      if (onboardingParam === 'success') {
+        toast.info('Vérification de votre configuration Stripe en cours...');
+      }
+      
+      // Re-verify after delay
+      setTimeout(() => {
+        fetchData();
+        window.history.replaceState({}, '', window.location.pathname);
+      }, 2000);
+    }
   }, []);
 
   const fetchData = async () => {

@@ -18,7 +18,22 @@ interface StripeAccountData {
   detailsSubmitted?: boolean;
   chargesEnabled?: boolean;
   payoutsEnabled?: boolean;
+  canReceivePayments?: boolean;
+  canReceivePayouts?: boolean;
   accountStatus?: string;
+  statusMessage?: string;
+  recommendedAction?: string;
+  issues?: string[];
+  requirements?: {
+    currentlyDue?: string[];
+    eventuallyDue?: string[];
+    pastDue?: string[];
+  };
+  capabilities?: {
+    cardPayments?: string;
+    transfers?: string;
+  };
+  hasExternalAccount?: boolean;
 }
 
 export default function PaymentSetupPage() {
@@ -29,6 +44,24 @@ export default function PaymentSetupPage() {
 
   useEffect(() => {
     fetchAccountStatus();
+    
+    // ✅ FIX: Check if returning from Stripe onboarding
+    const params = new URLSearchParams(window.location.search);
+    const onboardingParam = params.get('onboarding');
+    
+    if (onboardingParam === 'success' || onboardingParam === 'refresh') {
+      console.log('[Payment Setup] Returned from onboarding, re-verifying...');
+      
+      if (onboardingParam === 'success') {
+        toast.info('Vérification de votre configuration en cours...');
+      }
+      
+      // Re-verify after delay to allow Stripe to process
+      setTimeout(() => {
+        fetchAccountStatus();
+        window.history.replaceState({}, '', window.location.pathname);
+      }, 2000);
+    }
   }, []);
 
   const fetchAccountStatus = async () => {
@@ -161,6 +194,46 @@ export default function PaymentSetupPage() {
                 completed={!!accountData?.payoutsEnabled}
               />
             </div>
+
+            {/* ✅ FIX: Show detailed issues and requirements */}
+            {accountData?.issues && accountData.issues.length > 0 && status !== 'complete' && (
+              <div className="pt-4 border-t">
+                <h4 className="font-semibold text-sm mb-2 text-gray-700">Problèmes détectés:</h4>
+                <ul className="space-y-1">
+                  {accountData.issues.map((issue, index) => (
+                    <li key={index} className="text-sm text-red-600 flex items-start gap-2">
+                      <XCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Show missing requirements */}
+            {accountData?.requirements?.currentlyDue && accountData.requirements.currentlyDue.length > 0 && (
+              <div className="pt-4 border-t">
+                <h4 className="font-semibold text-sm mb-2 text-gray-700">Informations requises:</h4>
+                <ul className="space-y-1">
+                  {accountData.requirements.currentlyDue.map((req, index) => (
+                    <li key={index} className="text-sm text-yellow-600 flex items-start gap-2">
+                      <Clock className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span>{req.replace(/_/g, ' ')}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Recommended action */}
+            {accountData?.recommendedAction && status !== 'complete' && (
+              <Alert className="bg-blue-50 border-blue-200 mt-4">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-700">
+                  <strong>Action recommandée:</strong> {accountData.recommendedAction}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Action Button */}
             <div className="pt-4 border-t">
