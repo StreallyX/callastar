@@ -1,6 +1,7 @@
 # Audit des bugs d'affichage de devises - Call a Star
 
 ## Date de l'audit : 26 décembre 2025
+## Statut : ✅ TERMINÉ
 
 ## Fichiers identifiés avec bugs de devises
 
