@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle2, XCircle, Clock, Loader2, AlertCircle, CreditCard, Building2, FileText, Shield } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Loader2, AlertCircle, CreditCard, Building2, FileText, Shield, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 type OnboardingStatus = 'incomplete' | 'in_progress' | 'complete';
@@ -106,12 +106,29 @@ export default function PaymentSetupPage() {
     }
   };
 
+  // IMPORTANT: For Stripe Connect Express accounts, operational status is determined by:
+  // 1. details_submitted === true (user completed onboarding)
+  // 2. requirements.currently_due.length === 0 (no pending requirements)
+  //
+  // DO NOT use charges_enabled or payouts_enabled for validation:
+  // - These can be false in test mode
+  // - These can be false during Stripe processing delays
+  // - These represent immediate technical state, not account readiness
+  //
+  // Stripe Dashboard may show "all capabilities enabled" (authorization)
+  // while charges_enabled is still false (immediate state)
   const getStatus = (): OnboardingStatus => {
     if (!accountData?.stripeAccountId) return 'incomplete';
-    if (accountData.onboarded && accountData.chargesEnabled && accountData.payoutsEnabled) {
+    
+    const isComplete =
+      accountData?.detailsSubmitted === true &&
+      (accountData?.requirements?.currentlyDue?.length ?? 0) === 0;
+    
+    if (isComplete) {
       return 'complete';
     }
-    return 'in_progress';
+    
+    return accountData?.detailsSubmitted ? 'in_progress' : 'incomplete';
   };
 
   const status = getStatus();
@@ -174,7 +191,7 @@ export default function PaymentSetupPage() {
             {/* Status Details */}
             <div className="space-y-3">
               <StatusItem
-                icon={CreditCard}
+                icon={CheckCircle}
                 label="Compte Stripe créé"
                 completed={!!accountData?.stripeAccountId}
               />
@@ -186,12 +203,15 @@ export default function PaymentSetupPage() {
               <StatusItem
                 icon={Shield}
                 label="Vérification complétée"
-                completed={!!accountData?.chargesEnabled}
+                completed={(accountData?.requirements?.currentlyDue?.length ?? 0) === 0}
               />
               <StatusItem
-                icon={Building2}
-                label="Paiements activés"
-                completed={!!accountData?.payoutsEnabled}
+                icon={CheckCircle2}
+                label="Compte opérationnel"
+                completed={
+                  accountData?.detailsSubmitted === true &&
+                  (accountData?.requirements?.currentlyDue?.length ?? 0) === 0
+                }
               />
             </div>
 
