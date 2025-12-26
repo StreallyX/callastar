@@ -171,11 +171,12 @@ export async function POST(request: NextRequest) {
           });
 
           if (creator) {
+            const currency = creator.currency || 'EUR';
             await createNotification({
               userId: creator.userId,
               type: 'PAYOUT_COMPLETED',
               title: 'Paiement effectué',
-              message: `Un paiement de ${(payout.amount / 100).toFixed(2)} € a été transféré sur votre compte bancaire.`,
+              message: `Un paiement de ${(payout.amount / 100).toFixed(2)} ${currency} a été transféré sur votre compte bancaire.`,
               link: '/dashboard/creator',
             });
 
@@ -201,7 +202,7 @@ export async function POST(request: NextRequest) {
                     <div class="content">
                       <p>Bonjour ${creator.user.name},</p>
                       <p>Votre paiement a été transféré avec succès sur votre compte bancaire.</p>
-                      <div class="amount">${(payout.amount / 100).toFixed(2)} €</div>
+                      <div class="amount">${(payout.amount / 100).toFixed(2)} ${currency}</div>
                       <p>Les fonds devraient apparaître sur votre compte dans les prochains jours ouvrables.</p>
                       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px;">
                         Merci d'utiliser Call a Star !
@@ -264,11 +265,12 @@ export async function POST(request: NextRequest) {
           });
 
           if (creator) {
+            const currency = creator.currency || 'EUR';
             await createNotification({
               userId: creator.userId,
               type: 'SYSTEM',
               title: 'Échec du paiement',
-              message: `Le paiement de ${(payout.amount / 100).toFixed(2)} € a échoué. Veuillez vérifier vos informations bancaires.`,
+              message: `Le paiement de ${(payout.amount / 100).toFixed(2)} ${currency} a échoué. Veuillez vérifier vos informations bancaires.`,
               link: '/dashboard/creator',
             });
 
@@ -293,7 +295,7 @@ export async function POST(request: NextRequest) {
                     </div>
                     <div class="content">
                       <p>Bonjour ${creator.user.name},</p>
-                      <p>Nous n'avons pas pu effectuer le transfert de <strong>${(payout.amount / 100).toFixed(2)} €</strong> sur votre compte bancaire.</p>
+                      <p>Nous n'avons pas pu effectuer le transfert de <strong>${(payout.amount / 100).toFixed(2)} ${currency}</strong> sur votre compte bancaire.</p>
                       <div class="alert">
                         <strong>Raison:</strong> ${payout.failure_message || 'Veuillez vérifier vos informations bancaires'}
                       </div>
@@ -467,7 +469,10 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
       callOffer: {
         include: {
           creator: {
-            include: {
+            select: {
+              id: true,
+              userId: true,
+              currency: true, // ✅ Include creator's currency
               user: true,
             },
           },
@@ -577,7 +582,8 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     });
 
     // Send receipt
-    const receiptHtml = generateReceiptEmail(booking, amount);
+    const currency = booking.callOffer.creator.currency || 'EUR';
+    const receiptHtml = generateReceiptEmail(booking, amount, currency);
     await sendEmail({
       to: booking.user.email,
       subject: '💳 Reçu de paiement - Call a Star',
@@ -597,7 +603,8 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
       link: `/dashboard/creator`,
     });
 
-    const creatorEmailHtml = generateCreatorNotificationEmail(booking, creatorAmount, payoutReleaseDate);
+    const currency = booking.callOffer.creator.currency || 'EUR';
+    const creatorEmailHtml = generateCreatorNotificationEmail(booking, creatorAmount, payoutReleaseDate, currency);
     await sendEmail({
       to: booking.callOffer.creator.user.email,
       subject: '🎉 Nouvelle réservation - Call a Star',
@@ -1415,7 +1422,7 @@ async function handleAccountApplicationDeauthorized(event: Stripe.Event): Promis
 /**
  * Generate receipt email HTML
  */
-function generateReceiptEmail(booking: any, amount: number): string {
+function generateReceiptEmail(booking: any, amount: number, currency: string = 'EUR'): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -1464,7 +1471,7 @@ function generateReceiptEmail(booking: any, amount: number): string {
               </div>
               <div class="receipt-item total">
                 <span>Montant total:</span>
-                <span>${amount.toFixed(2)} €</span>
+                <span>${amount.toFixed(2)} ${currency}</span>
               </div>
             </div>
             
@@ -1483,7 +1490,7 @@ function generateReceiptEmail(booking: any, amount: number): string {
 /**
  * Generate creator notification email HTML
  */
-function generateCreatorNotificationEmail(booking: any, creatorAmount: number, payoutReleaseDate: Date): string {
+function generateCreatorNotificationEmail(booking: any, creatorAmount: number, payoutReleaseDate: Date, currency: string = 'EUR'): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -1534,11 +1541,11 @@ function generateCreatorNotificationEmail(booking: any, creatorAmount: number, p
               </div>
               <div class="detail-row" style="border-bottom: none; font-size: 18px; font-weight: bold; color: #667eea;">
                 <span>Montant:</span>
-                <span>${creatorAmount.toFixed(2)} €</span>
+                <span>${creatorAmount.toFixed(2)} ${currency}</span>
               </div>
             </div>
             
-            <p><strong>💰 Paiement sécurisé:</strong> Le montant de <strong>${creatorAmount.toFixed(2)} €</strong> sera disponible pour transfert le ${payoutReleaseDate.toLocaleDateString('fr-FR')}.</p>
+            <p><strong>💰 Paiement sécurisé:</strong> Le montant de <strong>${creatorAmount.toFixed(2)} ${currency}</strong> sera disponible pour transfert le ${payoutReleaseDate.toLocaleDateString('fr-FR')}.</p>
             
             <div style="text-align: center;">
               <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/creator" class="cta-button">
