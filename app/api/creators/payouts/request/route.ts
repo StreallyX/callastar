@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { amount, currency = 'eur' } = body;
+    const { amount } = body;
 
     // Get creator with account details
     const creator = await db.creator.findUnique({
@@ -32,6 +32,9 @@ export async function POST(request: NextRequest) {
         }
       }
     });
+
+    // ✅ NEW: Use creator's currency instead of hardcoded 'eur'
+    const currency = (creator?.currency || 'EUR').toLowerCase();
 
     if (!creator) {
       return NextResponse.json(
@@ -61,13 +64,12 @@ export async function POST(request: NextRequest) {
       const minimumAmount = Number(creator.payoutMinimum);
       
       if (requestedAmount < minimumAmount) {
-        errors.push(`Le montant minimum de paiement est de ${minimumAmount}€`);
+        // ✅ MODIFIED: Use currency symbol in message
+        errors.push(`Le montant minimum de paiement est de ${minimumAmount} ${currency.toUpperCase()}`);
       }
     }
 
-    if (currency !== 'eur') {
-      errors.push('Seule la devise EUR est supportée actuellement');
-    }
+    // ✅ REMOVED: Currency validation - now supports all currencies
 
     if (errors.length > 0) {
       return NextResponse.json(
@@ -146,17 +148,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if sufficient balance (in the main currency)
+    // ✅ MODIFIED: Check balance in creator's currency
     const availableBalance = balance.available.find(b => b.currency === currency);
     const requestedAmountInCents = Math.round(Number(amount) * 100);
     
-    if (!availableBalance || availableBalance.amount < requestedAmountInCents) {
-      const availableAmount = availableBalance ? (availableBalance.amount / 100).toFixed(2) : '0.00';
+    if (!availableBalance) {
+      return NextResponse.json(
+        { 
+          error: 'Solde non trouvé',
+          message: `Aucun solde trouvé dans la devise ${currency.toUpperCase()}. Votre compte Stripe est peut-être configuré dans une autre devise.`,
+          availableCurrencies: balance.available.map(b => b.currency.toUpperCase())
+        },
+        { status: 400 }
+      );
+    }
+
+    if (availableBalance.amount < requestedAmountInCents) {
+      const availableAmount = (availableBalance.amount / 100).toFixed(2);
       return NextResponse.json(
         { 
           error: 'Solde insuffisant',
-          message: `Solde disponible: ${availableAmount}€, Montant demandé: ${amount}€`,
-          availableBalance: Number(availableAmount)
+          message: `Solde disponible: ${availableAmount} ${currency.toUpperCase()}, Montant demandé: ${amount} ${currency.toUpperCase()}`,
+          availableBalance: Number(availableAmount),
+          currency: currency.toUpperCase()
         },
         { status: 400 }
       );
@@ -228,12 +242,13 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // ✅ MODIFIED: Return currency in uppercase for consistency
     return NextResponse.json({
       message: 'Demande de paiement créée avec succès',
       payout: {
         id: stripePayout.id,
         amount: Number(amount),
-        currency: currency,
+        currency: currency.toUpperCase(), // ✅ MODIFIED: Return uppercase currency
         status: stripePayout.status,
         arrivalDate: new Date(stripePayout.arrival_date * 1000),
       },

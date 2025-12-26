@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        // ✅ NEW: Use creator's currency instead of hardcoded 'eur'
+        const currency = (creator.currency || 'EUR').toLowerCase();
+
         // Get last payout for this creator
         const lastPayout = await db.payoutAuditLog.findFirst({
           where: {
@@ -124,36 +127,47 @@ export async function GET(request: NextRequest) {
           stripeAccount: creator.stripeAccountId,
         });
 
-        // Check if balance meets minimum
-        const availableBalance = balance.available.find(b => b.currency === 'eur');
+        // ✅ MODIFIED: Check balance in creator's currency
+        const availableBalance = balance.available.find(b => b.currency === currency);
         const minimumAmount = Number(creator.payoutMinimum);
         
-        if (!availableBalance || availableBalance.amount / 100 < minimumAmount) {
+        if (!availableBalance) {
+          results.skipped.push({
+            creatorId: creator.id,
+            reason: `No balance in currency ${currency.toUpperCase()}`,
+            availableCurrencies: balance.available.map(b => b.currency.toUpperCase()),
+          });
+          continue;
+        }
+
+        if (availableBalance.amount / 100 < minimumAmount) {
           results.skipped.push({
             creatorId: creator.id,
             reason: 'Balance below minimum',
-            available: availableBalance ? availableBalance.amount / 100 : 0,
+            available: availableBalance.amount / 100,
             minimum: minimumAmount,
+            currency: currency.toUpperCase(),
           });
           continue;
         }
 
         // Calculate payout amount (entire available balance)
         const payoutAmount = availableBalance.amount;
-        const payoutAmountEur = payoutAmount / 100;
+        const payoutAmountInCurrency = payoutAmount / 100;
 
-        // Create payout via Stripe
+        // ✅ MODIFIED: Create payout in creator's currency
         let stripePayout;
         try {
           stripePayout = await stripe.payouts.create(
             {
               amount: payoutAmount,
-              currency: 'eur',
+              currency: currency, // ✅ MODIFIED: Use creator's currency
               metadata: {
                 creatorId: creator.id,
                 creatorEmail: creator.user.email,
                 triggeredBy: 'automatic',
                 schedule: creator.payoutSchedule,
+                currency: currency.toUpperCase(),
                 platform: 'callastar',
               }
             },
@@ -169,7 +183,7 @@ export async function GET(request: NextRequest) {
             data: {
               creatorId: creator.id,
               action: PayoutAction.FAILED,
-              amount: payoutAmountEur,
+              amount: payoutAmountInCurrency, // ✅ MODIFIED
               status: PayoutStatus.FAILED,
               reason: `Échec de création du paiement automatique: ${stripeError.message}`,
               metadata: JSON.stringify({
@@ -177,6 +191,7 @@ export async function GET(request: NextRequest) {
                 stripeErrorCode: stripeError.code,
                 triggeredBy: 'automatic',
                 schedule: creator.payoutSchedule,
+                currency: currency.toUpperCase(),
               })
             }
           });
@@ -184,17 +199,18 @@ export async function GET(request: NextRequest) {
           results.failed.push({
             creatorId: creator.id,
             reason: stripeError.message,
-            amount: payoutAmountEur,
+            amount: payoutAmountInCurrency, // ✅ MODIFIED
+            currency: currency.toUpperCase(),
           });
           continue;
         }
 
-        // Create audit log entry
+        // ✅ MODIFIED: Create audit log entry with currency
         await db.payoutAuditLog.create({
           data: {
             creatorId: creator.id,
             action: PayoutAction.TRIGGERED,
-            amount: payoutAmountEur,
+            amount: payoutAmountInCurrency, // ✅ MODIFIED
             status: PayoutStatus.PROCESSING,
             stripePayoutId: stripePayout.id,
             reason: `Paiement automatique (${creator.payoutSchedule})`,
@@ -203,9 +219,11 @@ export async function GET(request: NextRequest) {
                 id: stripePayout.id,
                 status: stripePayout.status,
                 arrival_date: stripePayout.arrival_date,
+                currency: currency.toUpperCase(),
               },
               triggeredBy: 'automatic',
               schedule: creator.payoutSchedule,
+              currency: currency.toUpperCase(),
             })
           }
         });
@@ -213,12 +231,13 @@ export async function GET(request: NextRequest) {
         results.processed.push({
           creatorId: creator.id,
           creatorName: creator.user.name,
-          amount: payoutAmountEur,
+          amount: payoutAmountInCurrency, // ✅ MODIFIED
+          currency: currency.toUpperCase(), // ✅ NEW
           stripePayoutId: stripePayout.id,
           schedule: creator.payoutSchedule,
         });
 
-        console.log(`✓ Created payout for creator ${creator.id}: ${payoutAmountEur} €`);
+        console.log(`✓ Created payout for creator ${creator.id}: ${payoutAmountInCurrency} ${currency.toUpperCase()}`);
       } catch (error) {
         console.error(`Error processing creator ${creator.id}:`, error);
         results.failed.push({
