@@ -281,6 +281,10 @@ model Payment {
   id                     String        @id @default(cuid())
   bookingId              String        @unique
   amount                 Decimal       @db.Decimal(10, 2)
+  
+  // ✅ NEW: Payment currency (same as creator's currency)
+  currency               String        @default("EUR") // EUR, CHF, USD, GBP, etc.
+  
   stripePaymentIntentId  String
   status                 PaymentStatus @default(PENDING)
   platformFee            Decimal       @db.Decimal(10, 2)
@@ -303,6 +307,7 @@ model Payment {
 
   @@index([stripePaymentIntentId])
   @@index([payoutStatus])
+  @@index([currency])
 }
 
 model CallRequest {

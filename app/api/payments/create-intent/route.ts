@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
                 userId: true,
                 stripeAccountId: true,
                 isStripeOnboarded: true,
+                currency: true, // ✅ NEW: Include creator's currency
                 user: {
                   select: {
                     id: true,
@@ -89,15 +90,19 @@ export async function POST(request: NextRequest) {
     const creator = booking.callOffer.creator;
     const useStripeConnect = creator.isStripeOnboarded && creator.stripeAccountId;
 
+    // ✅ NEW: Use creator's currency instead of platform currency
+    const creatorCurrency = (creator.currency || 'EUR').toUpperCase();
+
     // Create payment intent (with or without destination charge)
     const paymentIntent = await createPaymentIntent({
       amount,
-      currency: settings.currency.toLowerCase(),
+      currency: creatorCurrency.toLowerCase(), // ✅ MODIFIED: Use creator's currency
       metadata: {
         bookingId: booking.id,
         userId: user.userId,
         creatorId: booking.callOffer.creatorId,
         callOfferId: booking.callOfferId,
+        currency: creatorCurrency, // ✅ NEW: Store currency in metadata
         platformFee: platformFee.toFixed(2),
         creatorAmount: creatorAmount.toFixed(2),
         useStripeConnect: (useStripeConnect ?? false).toString(),
@@ -119,6 +124,7 @@ export async function POST(request: NextRequest) {
       data: {
         bookingId: booking.id,
         amount,
+        currency: creatorCurrency, // ✅ NEW: Store currency
         stripePaymentIntentId: paymentIntent.id,
         status: 'PENDING',
         platformFee,
@@ -131,7 +137,7 @@ export async function POST(request: NextRequest) {
     await logPayment(TransactionEventType.PAYMENT_CREATED, {
       paymentId: payment.id,
       amount,
-      currency: settings.currency,
+      currency: creatorCurrency, // ✅ MODIFIED: Use creator's currency
       status: 'PENDING',
       stripePaymentIntentId: paymentIntent.id,
       metadata: {
@@ -140,6 +146,7 @@ export async function POST(request: NextRequest) {
         creatorId: booking.callOffer.creatorId,
         platformFee,
         creatorAmount,
+        currency: creatorCurrency, // ✅ NEW: Include currency in metadata
       },
     });
 
@@ -147,6 +154,8 @@ export async function POST(request: NextRequest) {
       {
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
+        currency: creatorCurrency, // ✅ NEW: Return currency to frontend
+        amount: amount,
       },
       { status: 200 }
     );
