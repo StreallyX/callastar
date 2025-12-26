@@ -9,7 +9,7 @@ const createOfferSchema = z.object({
   title: z.string().min(3, 'Le titre doit contenir au moins 3 caractères'),
   description: z.string().min(10, 'La description doit contenir au moins 10 caractères'),
   price: z.number().positive('Le prix doit être positif'),
-  dateTime: z.string().datetime(),
+  dateTime: z.coerce.date(),
   duration: z.number().positive('La durée doit être positive'),
 });
 
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
         title: validatedData.title,
         description: validatedData.description,
         price: validatedData.price,
-        dateTime: new Date(validatedData.dateTime),
+        dateTime: validatedData.dateTime,
         duration: validatedData.duration,
       },
       include: {
