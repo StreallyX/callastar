@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
             id: true,
             bio: true,
             profileImage: true,
+            currency: true, // ✅ Include creator's currency
             user: {
               select: {
                 name: true,
@@ -157,6 +158,7 @@ export async function GET(request: NextRequest) {
               id: true,
               bio: true,
               profileImage: true,
+              currency: true, // ✅ Include creator's currency
               user: {
                 select: {
                   name: true,

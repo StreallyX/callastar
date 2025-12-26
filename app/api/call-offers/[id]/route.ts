@@ -25,7 +25,11 @@ export async function GET(
       where: { id },
       include: {
         creator: {
-          include: {
+          select: {
+            id: true,
+            bio: true,
+            profileImage: true,
+            currency: true, // ✅ Include creator's currency
             user: {
               select: {
                 id: true,

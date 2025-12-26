@@ -9,6 +9,7 @@ import { Calendar, Clock, DollarSign, Loader2, CreditCard } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useToast } from '@/hooks/use-toast';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -231,7 +232,12 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <DollarSign className="w-4 h-4 text-purple-600" />
-                    <span className="font-medium">{Number(offer?.price ?? 0).toFixed(2)} €</span>
+                    <span className="font-medium">
+                      <CurrencyDisplay 
+                        amount={Number(offer?.price ?? 0)} 
+                        currency={offer?.creator?.currency || 'EUR'} 
+                      />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -360,7 +366,10 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
                   <span>Total</span>
                   <div className="flex items-center gap-1 text-purple-600">
                     <DollarSign className="w-5 h-5" />
-                    <span>{Number(offer?.price ?? 0).toFixed(2)} €</span>
+                    <CurrencyDisplay 
+                      amount={Number(offer?.price ?? 0)} 
+                      currency={offer?.creator?.currency || 'EUR'} 
+                    />
                   </div>
                 </div>
               </div>

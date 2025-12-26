@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Calendar, Clock, Video, Loader2, CheckCircle, MessageSquare, Star, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 export default function UserDashboard() {
   const router = useRouter();
@@ -339,7 +340,10 @@ export default function UserDashboard() {
                                     <span>{request.duration} min</span>
                                   </div>
                                   <span>•</span>
-                                  <span>{Number(request.proposedPrice).toFixed(2)} €</span>
+                                  <CurrencyDisplay 
+                                    amount={Number(request.proposedPrice)} 
+                                    currency={request?.creator?.currency || 'EUR'} 
+                                  />
                                 </div>
                                 {request.message && (
                                   <div className="flex items-start gap-2 mt-2">

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { CallRequestDialog } from '@/components/call-request-dialog';
 import Link from 'next/link';
 import { db } from '@/lib/db';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 async function getCreator(id: string) {
   try {
@@ -208,7 +209,10 @@ export default async function CreatorProfilePage({
 
                         <div className="flex items-center gap-2 text-sm font-semibold text-purple-600">
                           <DollarSign className="w-4 h-4" />
-                          <span>{Number(offer?.price ?? 0).toFixed(2)} €</span>
+                          <CurrencyDisplay 
+                            amount={Number(offer?.price ?? 0)} 
+                            currency={creator?.currency || 'EUR'} 
+                          />
                         </div>
                       </div>
                     </CardContent>
