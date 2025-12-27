@@ -540,18 +540,23 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
   
   const paymentDate = new Date();
   const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
+  
+  // ✅ Get currency from metadata or booking
+  const currency = paymentIntent.metadata?.currency || booking.callOffer.creator.currency || 'EUR';
 
   // ✅ FIX: Always set payoutReleaseDate, even when updating existing payment
   const payment = await prisma.payment.upsert({
     where: { bookingId: booking.id },
     update: {
       status: 'SUCCEEDED',
+      currency: currency,
       payoutReleaseDate, // <-- Ensure payoutReleaseDate is set on update too
       payoutStatus: 'HELD',
     },
     create: {
       bookingId: booking.id,
       amount,
+      currency: currency,
       stripePaymentIntentId: paymentIntent.id,
       status: 'SUCCEEDED',
       platformFee,
@@ -560,6 +565,104 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
       payoutReleaseDate,
     },
   });
+
+  // ✅ PHASE 1.1: Create Transfer to creator (Separate Charges and Transfers)
+  // Transfer happens immediately after payment succeeds
+  const stripeAccountId = paymentIntent.metadata?.stripeAccountId;
+  const creatorAmountCents = parseInt(paymentIntent.metadata?.creatorAmount || '0');
+  
+  if (stripeAccountId && creatorAmountCents > 0) {
+    try {
+      console.log('💸 Creating transfer to creator:', {
+        destination: stripeAccountId,
+        amount: creatorAmountCents,
+        currency: currency,
+        paymentIntentId: paymentIntent.id,
+      });
+
+      // Create Transfer using Stripe API
+      const { stripe: stripeClient } = await import('@/lib/stripe');
+      const transfer = await stripeClient.transfers.create({
+        amount: creatorAmountCents,
+        currency: currency.toLowerCase(),
+        destination: stripeAccountId,
+        transfer_group: paymentIntent.id,
+        metadata: {
+          paymentId: payment.id,
+          offerId: paymentIntent.metadata?.offerId || '',
+          bookingId: booking.id,
+          creatorId: booking.callOffer.creatorId,
+        },
+      });
+
+      console.log('✅ Transfer created successfully:', {
+        transferId: transfer.id,
+        amount: transfer.amount / 100,
+        destination: transfer.destination,
+      });
+
+      // Update payment with transfer info
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          transferId: transfer.id,
+          transferStatus: 'SUCCEEDED',
+          stripeTransferId: transfer.id, // Also update legacy field for compatibility
+        },
+      });
+
+      // Log transfer success
+      await logPayment(TransactionEventType.TRANSFER_SUCCEEDED, {
+        paymentId: payment.id,
+        amount: transfer.amount / 100,
+        currency: currency,
+        status: 'SUCCEEDED',
+        metadata: {
+          transferId: transfer.id,
+          destination: stripeAccountId,
+          creatorId: booking.callOffer.creatorId,
+        },
+      });
+    } catch (transferError) {
+      // ❌ Transfer failed - log but don't block webhook
+      console.error('❌ CRITICAL: Transfer creation failed:', {
+        error: transferError,
+        paymentId: payment.id,
+        destination: stripeAccountId,
+        amount: creatorAmountCents,
+      });
+
+      // Update payment with failed transfer status
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          transferStatus: 'FAILED',
+        },
+      });
+
+      // Log transfer failure
+      await logPayment(TransactionEventType.TRANSFER_FAILED, {
+        paymentId: payment.id,
+        amount: creatorAmountCents / 100,
+        currency: currency,
+        status: 'FAILED',
+        errorMessage: transferError instanceof Error ? transferError.message : String(transferError),
+        metadata: {
+          destination: stripeAccountId,
+          creatorId: booking.callOffer.creatorId,
+        },
+      });
+
+      // TODO: Create admin notification for failed transfer
+      // This requires manual intervention to retry the transfer
+    }
+  } else {
+    console.warn('⚠️  No transfer created - missing stripeAccountId or amount:', {
+      stripeAccountId,
+      creatorAmountCents,
+      paymentId: payment.id,
+    });
+  }
 
   // Log payment success
   await logPayment(TransactionEventType.PAYMENT_SUCCEEDED, {

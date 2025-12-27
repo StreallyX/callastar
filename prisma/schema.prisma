@@ -306,6 +306,10 @@ model Payment {
   payoutReleaseDate      DateTime?     // Date when funds can be transferred (payment date + 7 days)
   stripeTransferId       String?       // Stripe transfer ID when payout is completed
   payoutDate             DateTime?     // Date when payout was actually transferred
+  
+  // ✅ NEW: Separate Charges and Transfers fields
+  transferId             String?       // Stripe Transfer ID (from stripe.transfers.create)
+  transferStatus         String?       // Transfer status: "PENDING", "SUCCEEDED", "FAILED"
 
   // Relations
   booking        Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
@@ -316,6 +320,7 @@ model Payment {
   @@index([stripePaymentIntentId])
   @@index([payoutStatus])
   @@index([currency])
+  @@index([transferId])
 }
 
 model CallRequest {

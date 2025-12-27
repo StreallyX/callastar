@@ -93,22 +93,23 @@ export async function POST(request: NextRequest) {
     // ✅ NEW: Use creator's currency instead of platform currency
     const creatorCurrency = (creator.currency || 'EUR').toUpperCase();
 
-    // Create payment intent (with or without destination charge)
+    // ✅ PHASE 1.1: Create payment intent using Separate Charges and Transfers
+    // No destination charge, transfer will be created in webhook
     const paymentIntent = await createPaymentIntent({
       amount,
-      currency: creatorCurrency.toLowerCase(), // ✅ MODIFIED: Use creator's currency
+      currency: creatorCurrency.toLowerCase(), // ✅ Use creator's currency
       metadata: {
         bookingId: booking.id,
         userId: user.userId,
         creatorId: booking.callOffer.creatorId,
-        callOfferId: booking.callOfferId,
-        currency: creatorCurrency, // ✅ NEW: Store currency in metadata
+        offerId: booking.callOfferId, // ✅ Required for webhook transfer
+        currency: creatorCurrency,
         platformFee: platformFee.toFixed(2),
         creatorAmount: creatorAmount.toFixed(2),
         useStripeConnect: (useStripeConnect ?? false).toString(),
       },
       stripeAccountId: useStripeConnect ? creator.stripeAccountId : null,
-      platformFee: useStripeConnect ? platformFee : undefined,
+      platformFeePercentage: platformFeePercentage, // ✅ NEW: Pass percentage instead of amount
     });
 
     // Update booking with payment intent ID

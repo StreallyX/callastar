@@ -29,104 +29,93 @@ export function calculatePayoutReleaseDate(paymentDate: Date): Date {
 }
 
 /**
- * Create a Stripe Payment Intent
+ * Create a Stripe Payment Intent using Separate Charges and Transfers
  * 
- * For OnlyFans-style routing with Stripe fee absorption:
- * - Uses destination charges when stripeAccountId is provided
- * - Platform absorbs Stripe processing fees (~2.9% + €0.30)
- * - Creator receives exact promised amount (amount - platform commission)
- * - Funds go to creator's Stripe Connect account balance immediately
- * - Creator can request payouts from their balance (manual or automatic)
+ * ✅ NEW ARCHITECTURE (Phase 1.1 - Separate Charges and Transfers):
+ * - Charge is created on platform account (no destination)
+ * - Transfer happens in webhook after payment_intent.succeeded
+ * - Creator receives EXACTLY 85% of total (85 EUR for 100 EUR payment)
+ * - Platform absorbs Stripe fees (~2.9% + €0.30)
  * 
  * Example calculation for 100 EUR payment with 15% commission:
- * - Client pays: 100.00 EUR
- * - Platform commission: 15.00 EUR (15%)
- * - Stripe fees: ~3.20 EUR (2.9% + 0.30)
- * - application_fee_amount: 18.20 EUR (commission + Stripe fees)
- * - Creator receives: 81.80 EUR (100 - 18.20)
+ * 1. Client pays: 100.00 EUR → Platform account
+ * 2. Stripe deducts fees: ~3.20 EUR from platform
+ * 3. Platform keeps: 15.00 EUR commission
+ * 4. Transfer to creator: 85.00 EUR (guaranteed via Transfer API)
+ * 5. Net platform: 15.00 - 3.20 = 11.80 EUR
  * 
- * Note: Stripe fees are estimated. Actual fees may vary slightly based on
- * card type, country, and currency conversion rates.
+ * Benefits:
+ * - Creator always receives exact expected amount (85 EUR, not 81.80)
+ * - Platform absorbs all Stripe fees
+ * - Better control over fund flow
+ * - Same currency for charge and transfer (no conversion issues)
  */
 export async function createPaymentIntent({
   amount,
   currency = 'eur',
   metadata = {},
   stripeAccountId,
-  platformFee,
+  platformFeePercentage,
 }: {
   amount: number;
   currency?: string;
   metadata?: Record<string, string>;
   stripeAccountId?: string | null;
-  platformFee?: number;
+  platformFeePercentage?: number;
 }) {
   try {
     const amountInCents = Math.round(amount * 100);
-    const platformFeeInCents = platformFee ? Math.round(platformFee * 100) : 0;
+    
+    // Calculate creator amount (85% of total for 15% commission)
+    const feePercentage = platformFeePercentage || 15; // Default 15%
+    const creatorAmount = amount * (1 - feePercentage / 100);
+    const creatorAmountInCents = Math.round(creatorAmount * 100);
+    const platformFeeAmount = amount - creatorAmount;
 
-    // ✅ CORRECTION CRITIQUE #1: Calculer les frais Stripe pour que la plateforme les absorbe
-    // Stripe prélève ~2.9% + €0.30 par transaction
-    // Ces frais sont inclus dans application_fee_amount pour que le créateur ne les paie pas
-    const stripeFees = (amount * 0.029) + 0.30; // Frais Stripe estimés en EUR
-    const stripeFeesInCents = Math.round(stripeFees * 100);
-
-    // La plateforme absorbe les frais Stripe en les incluant dans application_fee_amount
-    // application_fee_amount = commission plateforme + frais Stripe
-    const totalApplicationFeeInCents = platformFeeInCents + stripeFeesInCents;
-
-    // Montant que le créateur recevra effectivement
-    // Note: Le créateur reçoit amount - application_fee_amount
-    const creatorAmountInCents = amountInCents - totalApplicationFeeInCents;
-
+    // ✅ NEW: Separate Charges and Transfers
+    // Create a simple PaymentIntent on platform account (no destination, no application_fee)
+    // Transfer will be created in webhook after payment_intent.succeeded
     const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
       amount: amountInCents,
-      currency,
+      currency: currency.toLowerCase(),
       metadata: {
         ...metadata,
+        // ✅ Store creator info for webhook transfer
+        creatorId: metadata.creatorId || '',
+        offerId: metadata.offerId || '',
         stripeAccountId: stripeAccountId || '',
-        platformFee: String(platformFee || 0),
-        stripeFees: stripeFees.toFixed(2), // ✅ Ajout : tracker les frais Stripe
-        totalApplicationFee: (totalApplicationFeeInCents / 100).toFixed(2),
-        creatorAmount: (creatorAmountInCents / 100).toFixed(2),
+        // ✅ Store amounts for transfer calculation
+        creatorAmount: String(creatorAmountInCents), // Amount in cents for transfer
+        platformFeePercentage: String(feePercentage),
+        platformFeeAmount: platformFeeAmount.toFixed(2),
       },
       automatic_payment_methods: {
         enabled: true,
       },
     };
 
-    // Use destination charges if creator has Stripe account
-    // This automatically routes funds to creator's connected account balance
-    // minus the platform fee (application_fee_amount)
-    // ✅ FIX: Check for platformFee !== undefined to handle 0 fee edge case
-    if (stripeAccountId && platformFee !== undefined) {
-      paymentIntentParams.application_fee_amount = totalApplicationFeeInCents; // ✅ Inclut commission + frais Stripe
-      paymentIntentParams.transfer_data = {
-        destination: stripeAccountId,
-      };
-
-      console.log('💳 Creating destination charge with Stripe fee absorption:', {
-        amount: amount,
-        platformFee: platformFee,
-        stripeFees: stripeFees.toFixed(2),
-        totalApplicationFee: (totalApplicationFeeInCents / 100).toFixed(2),
-        creatorAmount: (creatorAmountInCents / 100).toFixed(2),
-        destination: stripeAccountId,
-      });
-    } else {
-      // Fallback: separate charges (funds held on platform)
-      // Transfer happens manually via createPayout()
-      console.log('💳 Creating separate charge (no connected account)', {
-        stripeAccountId: stripeAccountId || 'not provided',
-        platformFee: platformFee !== undefined ? platformFee : 'not provided',
-      });
-    }
+    console.log('💳 Creating payment intent with Separate Charges and Transfers:', {
+      amount: amount,
+      currency: currency,
+      platformFeePercentage: feePercentage,
+      platformFeeAmount: platformFeeAmount.toFixed(2),
+      creatorAmount: creatorAmount.toFixed(2),
+      creatorAmountCents: creatorAmountInCents,
+      destination: stripeAccountId || 'none (transfer in webhook)',
+    });
 
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
 
+    console.log('✅ Payment Intent created:', {
+      id: paymentIntent.id,
+      amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
+      status: paymentIntent.status,
+    });
+
     return paymentIntent;
   } catch (error) {
-    console.error('Error creating payment intent:', error);
+    console.error('❌ Error creating payment intent:', error);
     throw error;
   }
 }
