@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { PayoutStatus } from '@prisma/client';
 
 /**
  * GET /api/payouts/creator
- * Get all payouts for the authenticated creator
+ * ✅ PHASE 3: Get all PAYOUTS (not payments) for the authenticated creator
  */
 export async function GET(request: NextRequest) {
   try {
@@ -27,57 +28,60 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all payments for this creator's bookings
-    const payments = await db.payment.findMany({
+    // ✅ PHASE 3: Get all PAYOUTS for this creator (not payments)
+    const payouts = await db.payout.findMany({
       where: {
-        booking: {
-          callOffer: {
-            creatorId: creator.id,
-          },
-        },
+        creatorId: creator.id,
       },
       include: {
-        booking: {
-          include: {
-            callOffer: {
-              select: {
-                title: true,
-                dateTime: true,
-              },
-            },
-            user: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
+        approvedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
           },
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        requestedAt: 'desc',
       },
     });
 
-    // Calculate totals
-    const totalEarnings = payments
-      .filter(p => p.payoutStatus === 'PAID')
-      .reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+    // Parse query params for filtering
+    const { searchParams } = new URL(request.url);
+    const statusFilter = searchParams.get('status');
+
+    // Filter by status if provided
+    let filteredPayouts = payouts;
+    if (statusFilter && statusFilter !== 'all') {
+      filteredPayouts = payouts.filter(p => p.status === statusFilter);
+    }
+
+    // Calculate totals based on payout statuses
+    const totalPaid = payouts
+      .filter(p => p.status === PayoutStatus.PAID)
+      .reduce((sum, p) => sum + Number(p.amount), 0);
     
-    const pendingEarnings = payments
-      .filter(p => p.payoutStatus === 'HELD' || p.payoutStatus === 'READY')
-      .reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+    const totalRequested = payouts
+      .filter(p => p.status === PayoutStatus.REQUESTED)
+      .reduce((sum, p) => sum + Number(p.amount), 0);
     
-    const readyForPayout = payments
-      .filter(p => p.payoutStatus === 'READY')
-      .reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+    const totalApproved = payouts
+      .filter(p => p.status === PayoutStatus.APPROVED || p.status === PayoutStatus.PROCESSING)
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+
+    const totalRejected = payouts
+      .filter(p => p.status === PayoutStatus.REJECTED || p.status === PayoutStatus.FAILED)
+      .reduce((sum, p) => sum + Number(p.amount), 0);
 
     return NextResponse.json({
-      payments,
+      payouts: filteredPayouts,
       summary: {
-        totalEarnings,
-        pendingEarnings,
-        readyForPayout,
+        totalPaid,
+        totalRequested,
+        totalApproved,
+        totalRejected,
+        totalPayouts: payouts.length,
       },
     });
   } catch (error) {

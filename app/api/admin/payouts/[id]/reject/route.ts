@@ -61,8 +61,8 @@ export async function POST(
       );
     }
 
-    // Verify status
-    if (payout.status !== PayoutStatus.PENDING_APPROVAL) {
+    // ✅ PHASE 3: Verify status is REQUESTED
+    if (payout.status !== PayoutStatus.REQUESTED) {
       return NextResponse.json(
         { error: `Ce paiement ne peut pas être rejeté. Statut actuel: ${payout.status}` },
         { status: 400 }
@@ -72,14 +72,14 @@ export async function POST(
     const payoutAmountEur = Number(payout.amount);
     const stripeCurrency = payout.currency || 'EUR';
 
-    // Update payout to REJECTED
+    // ✅ PHASE 3: Update payout to REJECTED with rejectedAt
     await prisma.payout.update({
       where: { id: payout.id },
       data: {
         status: PayoutStatus.REJECTED,
         rejectionReason: reason,
-        approvedById: jwtUser.userId,
-        approvedAt: new Date(),
+        approvedById: jwtUser.userId, // Admin who rejected
+        rejectedAt: new Date(), // ✅ PHASE 3: New field
       },
     });
 
@@ -98,10 +98,11 @@ export async function POST(
       },
     });
 
-    // Create audit log entry
+    // ✅ PHASE 3: Create audit log entry with payoutId
     await prisma.payoutAuditLog.create({
       data: {
         creatorId: payout.creator.id,
+        payoutId: payout.id,
         action: 'FAILED',
         amount: payoutAmountEur,
         status: PayoutStatus.REJECTED,

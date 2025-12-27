@@ -52,8 +52,8 @@ export async function POST(
       );
     }
 
-    // Verify status
-    if (payout.status !== PayoutStatus.PENDING_APPROVAL) {
+    // ✅ PHASE 3: Verify status is REQUESTED
+    if (payout.status !== PayoutStatus.REQUESTED) {
       return NextResponse.json(
         { error: `Ce paiement ne peut pas être approuvé. Statut actuel: ${payout.status}` },
         { status: 400 }
@@ -143,10 +143,11 @@ export async function POST(
         },
       });
 
-      // Create audit log entry
+      // ✅ PHASE 3: Create audit log entry with payoutId
       await prisma.payoutAuditLog.create({
         data: {
           creatorId: payout.creator.id,
+          payoutId: payout.id,
           action: 'TRIGGERED',
           amount: payoutAmountEur,
           status: PayoutStatus.PROCESSING,
@@ -248,11 +249,11 @@ export async function POST(
     } catch (error: any) {
       console.error('Error creating Stripe payout:', error);
 
-      // Revert payout status to PENDING_APPROVAL
+      // ✅ PHASE 3: Revert payout status to REQUESTED
       await prisma.payout.update({
         where: { id: payout.id },
         data: {
-          status: PayoutStatus.PENDING_APPROVAL,
+          status: PayoutStatus.REQUESTED,
           approvedById: null,
           approvedAt: null,
         },
@@ -268,10 +269,11 @@ export async function POST(
         errorMessage: error.message || 'Payout failed',
       });
 
-      // Create audit log for failed approval
+      // ✅ PHASE 3: Create audit log for failed approval with payoutId
       await prisma.payoutAuditLog.create({
         data: {
           creatorId: payout.creator.id,
+          payoutId: payout.id,
           action: 'FAILED',
           amount: payoutAmountEur,
           status: PayoutStatus.FAILED,

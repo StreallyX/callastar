@@ -1424,10 +1424,11 @@ async function handlePayoutPaid(event: Stripe.Event): Promise<void> {
         stripePayoutId: stripePayout.id,
       });
 
-      // Create audit log
+      // ✅ PHASE 3: Create audit log with payoutId
       await prisma.payoutAuditLog.create({
         data: {
           creatorId,
+          payoutId: newPayout.id,
           action: 'COMPLETED',
           amount: stripePayout.amount / 100,
           status: PayoutStatus.PAID,
@@ -1458,11 +1459,12 @@ async function handlePayoutPaid(event: Stripe.Event): Promise<void> {
     return;
   }
 
-  // Update existing payout
+  // ✅ PHASE 3: Update existing payout with paidAt
   await prisma.payout.update({
     where: { id: payout.id },
     data: {
       status: PayoutStatus.PAID,
+      paidAt: new Date(),
       updatedAt: new Date(),
     },
   });
@@ -1483,10 +1485,11 @@ async function handlePayoutPaid(event: Stripe.Event): Promise<void> {
     metadata: { stripePayoutId: stripePayout.id },
   });
 
-  // Create audit log
+  // ✅ PHASE 3: Create audit log with payoutId
   await prisma.payoutAuditLog.create({
     data: {
       creatorId: payout.creatorId,
+      payoutId: payout.id,
       action: 'COMPLETED',
       amount: Number(payout.amount),
       status: PayoutStatus.PAID,
@@ -1533,12 +1536,13 @@ async function handlePayoutFailed(event: Stripe.Event): Promise<void> {
 
   const failureReason = stripePayout.failure_message || stripePayout.failure_code || 'Payout failed';
 
+  // ✅ PHASE 3: Update payout with failedAt
   await prisma.payout.update({
     where: { id: payout.id },
     data: {
       status: PayoutStatus.FAILED,
       failureReason,
-      retriedCount: payout.retriedCount + 1,
+      failedAt: new Date(),
       updatedAt: new Date(),
     },
   });
@@ -1561,10 +1565,11 @@ async function handlePayoutFailed(event: Stripe.Event): Promise<void> {
     errorMessage: failureReason,
   });
 
-  // Create audit log for failed payout
+  // ✅ PHASE 3: Create audit log for failed payout with payoutId
   await prisma.payoutAuditLog.create({
     data: {
       creatorId: payout.creatorId,
+      payoutId: payout.id,
       action: 'FAILED',
       amount: Number(payout.amount),
       status: PayoutStatus.FAILED,

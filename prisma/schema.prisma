@@ -42,16 +42,13 @@ enum CallRequestStatus {
 }
 
 enum PayoutStatus {
-  PENDING           // Initial state, awaiting payment
-  HELD              // Payment succeeded, funds held for 7 days
-  READY             // Holding period passed, ready for transfer
-  PENDING_APPROVAL  // Awaiting admin approval
-  APPROVED          // Approved by admin, ready for Stripe processing
-  REJECTED          // Rejected by admin
-  PROCESSING        // Transfer in progress
-  PAID              // Successfully transferred to creator (formerly PAID)
-  FAILED            // Transfer failed
-  CANCELLED         // Cancelled (refund/dispute)
+  REQUESTED   // Demande créée par le créateur
+  APPROVED    // Approuvée par l'admin
+  PROCESSING  // Payout Stripe en cours
+  PAID        // Payout réussi
+  FAILED      // Payout échoué
+  REJECTED    // Refusée par l'admin
+  CANCELED    // Annulée
 }
 
 enum NotificationType {
@@ -157,13 +154,14 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  creator       Creator?
-  bookings      Booking[]
-  callRequests  CallRequest[]
-  reviews       Review[]
-  notifications Notification[]
-  accounts      Account[]
-  sessions      Session[]
+  creator         Creator?
+  bookings        Booking[]
+  callRequests    CallRequest[]
+  reviews         Review[]
+  notifications   Notification[]
+  accounts        Account[]
+  sessions        Session[]
+  payoutsApproved Payout[]     @relation("PayoutApprovedBy")
 
   @@index([email])
 }
@@ -311,7 +309,7 @@ model Payment {
   createdAt              DateTime      @default(now())
   
   // Payout tracking fields
-  payoutStatus           PayoutStatus  @default(HELD)
+  payoutStatus           PayoutStatus  @default(REQUESTED)
   payoutReleaseDate      DateTime?     // Date when funds can be transferred (payment date + 7 days)
   stripeTransferId       String?       // Stripe transfer ID when payout is completed
   payoutDate             DateTime?     // Date when payout was actually transferred
@@ -394,31 +392,44 @@ model Notification {
 model Payout {
   id              String       @id @default(cuid())
   creatorId       String
-  amount          Decimal      @db.Decimal(10, 2) // Original amount in EUR (database currency)
-  stripePayoutId  String?
-  status          PayoutStatus @default(PENDING)
+  amount          Decimal      @db.Decimal(10, 2)
+  currency        String       @default("EUR")
+  status          PayoutStatus @default(REQUESTED)
+  
+  // Stripe
+  stripePayoutId  String?      @unique
+  
+  // Dates
+  requestedAt     DateTime     @default(now())
+  approvedAt      DateTime?
+  paidAt          DateTime?
+  failedAt        DateTime?
+  rejectedAt      DateTime?
+  
+  // Relations
+  approvedById    String?
+  approvedBy      User?        @relation("PayoutApprovedBy", fields: [approvedById], references: [id])
+  
+  // Raisons
+  rejectionReason String?      @db.Text
   failureReason   String?      @db.Text
-  rejectionReason String?      @db.Text // Reason for admin rejection
-  approvedById    String?      // Admin user ID who approved/rejected
-  approvedAt      DateTime?    // When approved/rejected
-  retriedCount    Int          @default(0)
   
-  // ✅ NEW: Currency conversion tracking
-  amountPaid      Decimal?     @db.Decimal(10, 2) // Actual amount paid in Stripe currency (if different from EUR)
-  currency        String?      @default("EUR") // Stripe account currency (EUR, CHF, USD, etc.)
-  conversionRate  Decimal?     @db.Decimal(10, 6) // Conversion rate used (if applicable)
-  conversionDate  DateTime?    // When conversion was calculated
+  // Metadata
+  metadata        Json?
   
+  // Audit
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
-
+  
   // Relations
   creator         Creator          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  auditLogs       PayoutAuditLog[]
   transactionLogs TransactionLog[] @relation("PayoutLogs")
 
   @@index([creatorId])
   @@index([status])
   @@index([currency])
+  @@index([stripePayoutId])
 }
 
 model AdminSettings {
@@ -434,6 +445,7 @@ model AdminSettings {
 model PayoutAuditLog {
   id               String        @id @default(cuid())
   creatorId        String
+  payoutId         String?       // Reference to the Payout entity
   action           PayoutAction
   amount           Decimal?      @db.Decimal(10, 2)
   status           PayoutStatus?
@@ -446,8 +458,10 @@ model PayoutAuditLog {
 
   // Relations
   creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  payout  Payout? @relation(fields: [payoutId], references: [id], onDelete: Cascade)
 
   @@index([creatorId])
+  @@index([payoutId])
   @@index([action])
   @@index([createdAt])
 }

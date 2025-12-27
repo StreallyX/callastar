@@ -300,17 +300,23 @@ export async function POST(request: NextRequest) {
       await checkAndUnblockPayouts(creator.id);
     }
 
-    // ✅ NEW: Create payout record with PENDING_APPROVAL status (NO Stripe payout yet)
+    // ✅ PHASE 3: Create payout record with REQUESTED status (NO Stripe payout yet)
     // Use the amount after debt deduction
     const payout = await prisma.payout.create({
       data: {
         creatorId: creator.id,
         amount: payoutAmountAfterDebt, // Amount after debt deduction
-        amountPaid: stripeCurrency !== 'EUR' ? payoutAmountInStripeCurrency * (payoutAmountAfterDebt / payoutAmountEur) : null,
         currency: stripeCurrency,
-        conversionRate: conversionRate,
-        conversionDate: conversionDate,
-        status: PayoutStatus.PENDING_APPROVAL, // ✅ Wait for admin approval
+        status: PayoutStatus.REQUESTED, // ✅ Wait for admin approval
+        metadata: {
+          originalAmount: payoutAmountEur,
+          debtDeducted: debtDeducted > 0 ? debtDeducted : 0,
+          debtDeductions: debtDeductions,
+          availableBalance,
+          requestedAmount: requestedAmount || null,
+          stripeCurrency: stripeCurrency,
+          currencyConverted: stripeCurrency !== 'EUR',
+        },
       },
     });
 
@@ -318,16 +324,16 @@ export async function POST(request: NextRequest) {
     await logPayout(TransactionEventType.PAYOUT_CREATED, {
       payoutId: payout.id,
       creatorId: creator.id,
-      amount: payoutAmountEur,
-      currency: 'EUR',
-      status: PayoutStatus.PENDING_APPROVAL,
+      amount: payoutAmountAfterDebt,
+      currency: stripeCurrency,
+      status: PayoutStatus.REQUESTED,
       metadata: {
+        originalAmount: payoutAmountEur,
+        debtDeducted: debtDeducted > 0 ? debtDeducted : 0,
         availableBalance,
         requestedAmount: requestedAmount || null,
         fromStripeBalance: true,
         stripeCurrency: stripeCurrency,
-        amountInStripeCurrency: payoutAmountInStripeCurrency,
-        conversionRate: conversionRate,
         currencyConverted: stripeCurrency !== 'EUR',
         awaitingAdminApproval: true,
       },
@@ -337,21 +343,21 @@ export async function POST(request: NextRequest) {
     await prisma.payoutAuditLog.create({
       data: {
         creatorId: creator.id,
+        payoutId: payout.id, // ✅ PHASE 3: Link to Payout entity
         action: 'TRIGGERED',
-        amount: payoutAmountEur,
-        status: PayoutStatus.PENDING_APPROVAL,
+        amount: payoutAmountAfterDebt,
+        status: PayoutStatus.REQUESTED,
         adminId: isAdmin ? jwtUser.userId : null,
-        reason: stripeCurrency !== 'EUR'
-          ? `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR (${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) en attente d'approbation`
-          : requestedAmount
-            ? `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR en attente d'approbation`
-            : `Demande de paiement complet de ${payoutAmountEur.toFixed(2)} EUR en attente d'approbation`,
+        reason: debtDeducted > 0
+          ? `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR. Dette déduite: ${debtDeducted.toFixed(2)} EUR. Montant final: ${payoutAmountAfterDebt.toFixed(2)} EUR. En attente d'approbation.`
+          : `Demande de paiement de ${payoutAmountAfterDebt.toFixed(2)} ${stripeCurrency} en attente d'approbation`,
         metadata: JSON.stringify({
+          originalAmount: payoutAmountEur,
+          debtDeducted: debtDeducted > 0 ? debtDeducted : 0,
+          debtDeductions,
           availableBalance,
           requestedAmount: requestedAmount || null,
           stripeCurrency: stripeCurrency,
-          amountInStripeCurrency: payoutAmountInStripeCurrency,
-          conversionRate: conversionRate,
           currencyConverted: stripeCurrency !== 'EUR',
           awaitingAdminApproval: true,
         }),

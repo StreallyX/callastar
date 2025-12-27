@@ -201,19 +201,20 @@ export default function AdminPayouts() {
     }
   };
 
+  // ✅ PHASE 3: Updated statuses to match new enum
   const filterConfigs = [
     {
       key: 'status',
       label: 'Statut',
       type: 'select' as const,
       options: [
-        { label: 'En attente d\'approbation', value: 'PENDING_APPROVAL' },
+        { label: 'Demandé', value: 'REQUESTED' },
         { label: 'Approuvé', value: 'APPROVED' },
-        { label: 'Rejeté', value: 'REJECTED' },
         { label: 'En cours', value: 'PROCESSING' },
         { label: 'Payé', value: 'PAID' },
         { label: 'Échoué', value: 'FAILED' },
-        { label: 'En attente', value: 'PENDING' },
+        { label: 'Rejeté', value: 'REJECTED' },
+        { label: 'Annulé', value: 'CANCELED' },
       ],
     },
   ];
@@ -347,7 +348,8 @@ export default function AdminPayouts() {
                         </td>
                         <td className="py-3 px-2">
                           <div className="flex gap-1">
-                            {payout.status === 'PENDING_APPROVAL' ? (
+                            {/* ✅ PHASE 3: Changed from PENDING_APPROVAL to REQUESTED */}
+                            {payout.status === 'REQUESTED' ? (
                               <>
                                 <Button
                                   size="sm"
