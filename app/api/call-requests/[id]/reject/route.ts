@@ -70,6 +70,19 @@ export async function PUT(
       );
     }
 
+    // Get reject reason from request body
+    const body = await request.json();
+    const { reason, customMessage } = body;
+
+    // Map reason to user-friendly message
+    const reasonMessages: Record<string, string> = {
+      NOT_AVAILABLE: 'Le créateur n\'est pas disponible pour cette date/heure.',
+      PRICE_TOO_LOW: 'Le prix proposé est trop bas.',
+      OTHER: customMessage || 'Autre raison.',
+    };
+
+    const rejectMessage = reasonMessages[reason] || 'Aucune raison spécifiée.';
+
     // Update the call request status
     const updatedCallRequest = await prisma.callRequest.update({
       where: { id: params.id },
@@ -86,7 +99,7 @@ export async function PUT(
       },
     });
 
-    // Send email notification to the user
+    // Send email notification to the user with reason
     try {
       await sendEmail({
         to: callRequest.user.email,
@@ -95,6 +108,7 @@ export async function PUT(
           <h1>Demande d'appel</h1>
           <p>Bonjour ${callRequest.user.name},</p>
           <p><strong>${callRequest.creator.user.name}</strong> ne peut malheureusement pas accepter votre demande d'appel pour le moment.</p>
+          <p><strong>Raison :</strong> ${rejectMessage}</p>
           <p>N'hésitez pas à consulter les autres offres disponibles sur Call a Star.</p>
         `,
       });
