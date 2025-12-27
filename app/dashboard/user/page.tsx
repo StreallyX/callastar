@@ -59,7 +59,8 @@ export default function UserDashboard() {
       const requestsResponse = await fetch('/api/call-requests?type=sent');
       if (requestsResponse.ok) {
         const requestsData = await requestsResponse.json();
-        setCallRequests(requestsData?.callRequests ?? []);
+        // L'API retourne directement le tableau, pas un objet avec une propriété callRequests
+        setCallRequests(Array.isArray(requestsData) ? requestsData : []);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -337,7 +338,7 @@ export default function UserDashboard() {
                                 <div className="flex items-center gap-4 text-sm text-gray-600">
                                   <div className="flex items-center gap-1">
                                     <Clock className="w-4 h-4" />
-                                    <span>{request.duration} min</span>
+                                    <span>{new Date(request.proposedDateTime).toLocaleString('fr-FR')}</span>
                                   </div>
                                   <span>•</span>
                                   <CurrencyDisplay 

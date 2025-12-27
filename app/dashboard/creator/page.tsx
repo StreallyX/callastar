@@ -127,7 +127,9 @@ export default function CreatorDashboard() {
       const requestsResponse = await fetch('/api/call-requests?type=received');
       if (requestsResponse.ok) {
         const requestsData = await requestsResponse.json();
-        const pendingRequests = requestsData?.callRequests?.filter((r: any) => r?.status === 'PENDING').length ?? 0;
+        // L'API retourne directement le tableau, pas un objet avec une propriété callRequests
+        const requests = Array.isArray(requestsData) ? requestsData : [];
+        const pendingRequests = requests.filter((r: any) => r?.status === 'PENDING').length;
         setStats((prev) => ({ ...prev, pendingRequests }));
       }
 

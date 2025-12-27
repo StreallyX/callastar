@@ -62,7 +62,8 @@ export default function RequestsPage() {
       const requestsResponse = await fetch('/api/call-requests?type=received');
       if (requestsResponse.ok) {
         const requestsData = await requestsResponse.json();
-        setRequests(requestsData?.callRequests ?? []);
+        // L'API retourne directement le tableau, pas un objet avec une propriété callRequests
+        setRequests(Array.isArray(requestsData) ? requestsData : []);
       }
 
     } catch (error) {
@@ -229,7 +230,7 @@ export default function RequestsPage() {
                         <div className="space-y-1 text-sm text-gray-700 ml-14">
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            <span>{request.duration} minutes</span>
+                            <span>{new Date(request.proposedDateTime).toLocaleString('fr-FR')}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4" />
@@ -291,7 +292,7 @@ export default function RequestsPage() {
                         <div className="space-y-1 text-sm text-gray-600 ml-14">
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            <span>{request.duration} minutes</span>
+                            <span>{new Date(request.proposedDateTime).toLocaleString('fr-FR')}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4" />
@@ -336,7 +337,7 @@ export default function RequestsPage() {
                         <div className="space-y-1 text-sm text-gray-600 ml-14">
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            <span>{request.duration} minutes</span>
+                            <span>{new Date(request.proposedDateTime).toLocaleString('fr-FR')}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4" />
@@ -375,7 +376,7 @@ export default function RequestsPage() {
           {selectedRequest && (
             <div className="space-y-2 py-4">
               <p><strong>Utilisateur:</strong> {selectedRequest.user?.name}</p>
-              <p><strong>Durée:</strong> {selectedRequest.duration} minutes</p>
+              <p><strong>Date/Heure:</strong> {new Date(selectedRequest.proposedDateTime).toLocaleString('fr-FR')}</p>
               <p><strong>Prix proposé:</strong> {Number(selectedRequest.proposedPrice).toFixed(2)} {creatorCurrency}</p>
               {selectedRequest.message && (
                 <p><strong>Message:</strong> {selectedRequest.message}</p>
