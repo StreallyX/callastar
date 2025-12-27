@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, DollarSign, Loader2, Plus, Video, TrendingUp, Trash2, MessageSquare, Star, Check, X, CreditCard, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 export default function CreatorDashboard() {
   const router = useRouter();
@@ -428,7 +429,9 @@ export default function CreatorDashboard() {
               <TrendingUp className="w-5 h-5 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{totalRevenue.toFixed(2)} {creatorCurrency}</div>
+              <div className="text-3xl font-bold">
+                <CurrencyDisplay amount={totalRevenue} currency={creatorCurrency} />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -564,7 +567,10 @@ export default function CreatorDashboard() {
                         </div>
                         <div className="flex items-center gap-2 text-sm font-semibold text-purple-600">
                           <DollarSign className="w-4 h-4" />
-                          {Number(offer?.price ?? 0).toFixed(2)} {offer?.currency || creatorCurrency}
+                          <CurrencyDisplay 
+                            amount={Number(offer?.price ?? 0)} 
+                            currency={offer?.currency || creatorCurrency} 
+                          />
                         </div>
                         {offer?.status === 'AVAILABLE' && (
                           <Button
