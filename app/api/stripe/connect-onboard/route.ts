@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import prisma from '@/lib/db';
-import { stripe, getCreatorCurrency } from '@/lib/stripe';
+import { stripe, getCreatorCurrencyByStripeAccount } from '@/lib/stripe';
 import { calculateNextPayoutDate } from '@/lib/payout-eligibility';
 import {
   getStripeAccountStatus,
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     const recommendedAction = getRecommendedAction(accountStatus);
 
     // ✅ NEW: Retrieve creator's currency from Stripe Connect account
-    const stripeCurrency = await getCreatorCurrency(creator.stripeAccountId);
+    const stripeCurrency = await getCreatorCurrencyByStripeAccount(creator.stripeAccountId);
 
     // Update database if onboarding status changed OR currency is different
     const needsUpdate = 

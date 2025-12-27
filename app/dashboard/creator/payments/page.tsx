@@ -40,8 +40,16 @@ export default function PaymentsPage() {
       }
       
       setUser(userData?.user);
-      if (userData?.user?.creator?.currency) {
-        setCreatorCurrency(userData.user.creator.currency);
+      
+      const creatorId = userData?.user?.creator?.id;
+
+      // ✅ FIX: Get real Stripe currency from balance API (like payouts page)
+      if (creatorId) {
+        const balanceResponse = await fetch(`/api/stripe/balance/${creatorId}`);
+        if (balanceResponse.ok) {
+          const balanceData = await balanceResponse.json();
+          setCreatorCurrency(balanceData.stripeCurrency || balanceData.currency || 'EUR');
+        }
       }
 
       // ✅ FIX: Get payments from earnings endpoint

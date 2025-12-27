@@ -113,7 +113,7 @@ export function formatStripeAmount(
   locale: string = 'fr-FR'
 ): string {
   const amountInUnits = stripeAmountToUnits(amountInCents);
-  return formatCurrency(amountInUnits, currency, locale);
+  return formatCurrency(amountInUnits, currency);
 }
 
 /**

@@ -231,7 +231,6 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
                     <span className="font-medium">{formattedTime} ({offer?.duration} minutes)</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="w-4 h-4 text-purple-600" />
                     <span className="font-medium">
                       <CurrencyDisplay 
                         amount={Number(offer?.price ?? 0)} 
@@ -364,8 +363,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
               <div className="pt-4 border-t">
                 <div className="flex items-center justify-between text-lg font-semibold">
                   <span>Total</span>
-                  <div className="flex items-center gap-1 text-purple-600">
-                    <DollarSign className="w-5 h-5" />
+                  <div className="text-purple-600">
                     <CurrencyDisplay 
                       amount={Number(offer?.price ?? 0)} 
                       currency={offer?.creator?.currency || 'EUR'} 

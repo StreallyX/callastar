@@ -54,8 +54,16 @@ export default function RequestsPage() {
       }
       
       setUser(userData?.user);
-      if (userData?.user?.creator?.currency) {
-        setCreatorCurrency(userData.user.creator.currency);
+      
+      const creatorId = userData?.user?.creator?.id;
+
+      // ✅ FIX: Get real Stripe currency from balance API
+      if (creatorId) {
+        const balanceResponse = await fetch(`/api/stripe/balance/${creatorId}`);
+        if (balanceResponse.ok) {
+          const balanceData = await balanceResponse.json();
+          setCreatorCurrency(balanceData.stripeCurrency || balanceData.currency || 'EUR');
+        }
       }
 
       // Get call requests

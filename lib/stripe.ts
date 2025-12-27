@@ -323,23 +323,6 @@ export async function createConnectPayout({
 }
 
 /**
- * Get creator's Stripe account currency
- * Retrieves the default currency from their Stripe Connect account
- * @param stripeAccountId - Stripe Connect account ID
- * @returns Currency code (EUR, CHF, USD, GBP, etc.) in uppercase
- */
-export async function getCreatorCurrency(stripeAccountId: string): Promise<string> {
-  try {
-    const account = await stripe.accounts.retrieve(stripeAccountId);
-    const currency = account.default_currency || 'eur';
-    return currency.toUpperCase();
-  } catch (error) {
-    console.error('Error fetching creator currency:', error);
-    return 'EUR'; // Fallback to EUR
-  }
-}
-
-/**
  * Verify webhook signature
  */
 export function verifyWebhookSignature(

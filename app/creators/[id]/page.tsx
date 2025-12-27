@@ -8,6 +8,7 @@ import { CallRequestDialog } from '@/components/call-request-dialog';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { getCreatorCurrency } from '@/lib/stripe';
 
 async function getCreator(id: string) {
   try {
@@ -105,6 +106,9 @@ export default async function CreatorProfilePage({
       </div>
     );
   }
+
+  // ✅ FIX: Get real Stripe currency for the creator
+  const creatorCurrency = await getCreatorCurrency(id);
 
   const availableOffers = creator?.callOffers ?? [];
   const { reviews, averageRating, totalReviews } = reviewsData;
@@ -211,7 +215,7 @@ export default async function CreatorProfilePage({
                           <DollarSign className="w-4 h-4" />
                           <CurrencyDisplay 
                             amount={Number(offer?.price ?? 0)} 
-                            currency={creator?.currency || 'EUR'} 
+                            currency={creatorCurrency} 
                           />
                         </div>
                       </div>
