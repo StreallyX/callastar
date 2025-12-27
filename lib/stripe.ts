@@ -13,21 +13,11 @@ export const stripe = new Stripe(stripeSecretKey, {
   typescript: true,
 });
 
-export const PLATFORM_FEE_PERCENTAGE = 10; // 10% platform fee
 export const PAYOUT_HOLDING_DAYS = 7; // Hold payments for 7 days before allowing payout
 
-/**
- * Calculate platform fee and creator amount
- */
-export function calculateFees(totalAmount: number) {
-  const platformFee = (totalAmount * PLATFORM_FEE_PERCENTAGE) / 100;
-  const creatorAmount = totalAmount - platformFee;
-  
-  return {
-    platformFee: Number(platformFee.toFixed(2)),
-    creatorAmount: Number(creatorAmount.toFixed(2)),
-  };
-}
+// ❌ OBSOLÈTE : PLATFORM_FEE_PERCENTAGE et calculateFees() supprimés
+// ✅ NOUVEAU : La commission est maintenant gérée dynamiquement via PlatformSettings
+// Pour obtenir la commission: utilisez getPlatformSettings().platformFeePercentage
 
 /**
  * Calculate payout release date (7 days from payment)
@@ -41,11 +31,22 @@ export function calculatePayoutReleaseDate(paymentDate: Date): Date {
 /**
  * Create a Stripe Payment Intent
  * 
- * For OnlyFans-style routing:
+ * For OnlyFans-style routing with Stripe fee absorption:
  * - Uses destination charges when stripeAccountId is provided
- * - Platform fee is automatically deducted
+ * - Platform absorbs Stripe processing fees (~2.9% + €0.30)
+ * - Creator receives exact promised amount (amount - platform commission)
  * - Funds go to creator's Stripe Connect account balance immediately
  * - Creator can request payouts from their balance (manual or automatic)
+ * 
+ * Example calculation for 100 EUR payment with 15% commission:
+ * - Client pays: 100.00 EUR
+ * - Platform commission: 15.00 EUR (15%)
+ * - Stripe fees: ~3.20 EUR (2.9% + 0.30)
+ * - application_fee_amount: 18.20 EUR (commission + Stripe fees)
+ * - Creator receives: 81.80 EUR (100 - 18.20)
+ * 
+ * Note: Stripe fees are estimated. Actual fees may vary slightly based on
+ * card type, country, and currency conversion rates.
  */
 export async function createPaymentIntent({
   amount,
@@ -63,7 +64,20 @@ export async function createPaymentIntent({
   try {
     const amountInCents = Math.round(amount * 100);
     const platformFeeInCents = platformFee ? Math.round(platformFee * 100) : 0;
-    const creatorAmountInCents = amountInCents - platformFeeInCents;
+
+    // ✅ CORRECTION CRITIQUE #1: Calculer les frais Stripe pour que la plateforme les absorbe
+    // Stripe prélève ~2.9% + €0.30 par transaction
+    // Ces frais sont inclus dans application_fee_amount pour que le créateur ne les paie pas
+    const stripeFees = (amount * 0.029) + 0.30; // Frais Stripe estimés en EUR
+    const stripeFeesInCents = Math.round(stripeFees * 100);
+
+    // La plateforme absorbe les frais Stripe en les incluant dans application_fee_amount
+    // application_fee_amount = commission plateforme + frais Stripe
+    const totalApplicationFeeInCents = platformFeeInCents + stripeFeesInCents;
+
+    // Montant que le créateur recevra effectivement
+    // Note: Le créateur reçoit amount - application_fee_amount
+    const creatorAmountInCents = amountInCents - totalApplicationFeeInCents;
 
     const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
       amount: amountInCents,
@@ -72,7 +86,9 @@ export async function createPaymentIntent({
         ...metadata,
         stripeAccountId: stripeAccountId || '',
         platformFee: String(platformFee || 0),
-        creatorAmount: String((amountInCents - platformFeeInCents) / 100),
+        stripeFees: stripeFees.toFixed(2), // ✅ Ajout : tracker les frais Stripe
+        totalApplicationFee: (totalApplicationFeeInCents / 100).toFixed(2),
+        creatorAmount: (creatorAmountInCents / 100).toFixed(2),
       },
       automatic_payment_methods: {
         enabled: true,
@@ -84,15 +100,17 @@ export async function createPaymentIntent({
     // minus the platform fee (application_fee_amount)
     // ✅ FIX: Check for platformFee !== undefined to handle 0 fee edge case
     if (stripeAccountId && platformFee !== undefined) {
-      paymentIntentParams.application_fee_amount = platformFeeInCents;
+      paymentIntentParams.application_fee_amount = totalApplicationFeeInCents; // ✅ Inclut commission + frais Stripe
       paymentIntentParams.transfer_data = {
         destination: stripeAccountId,
       };
 
-      console.log('💳 Creating destination charge:', {
+      console.log('💳 Creating destination charge with Stripe fee absorption:', {
         amount: amount,
         platformFee: platformFee,
-        creatorAmount: (amountInCents - platformFeeInCents) / 100,
+        stripeFees: stripeFees.toFixed(2),
+        totalApplicationFee: (totalApplicationFeeInCents / 100).toFixed(2),
+        creatorAmount: (creatorAmountInCents / 100).toFixed(2),
         destination: stripeAccountId,
       });
     } else {

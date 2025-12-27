@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { createPaymentIntent, calculateFees } from '@/lib/stripe';
+import { createPaymentIntent } from '@/lib/stripe'; // ✅ CORRECTION #2: Suppression de calculateFees (obsolète)
 import { getPlatformSettings } from '@/lib/settings';
 import { logPayment } from '@/lib/logger';
 import { TransactionEventType } from '@prisma/client';

@@ -249,10 +249,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 11. Calculate platform fees by currency (assuming 10% commission)
-    // Get platform commission rate from settings
+    // 11. Calculate platform fees by currency
+    // ✅ CORRECTION #2: Utiliser platformFeePercentage au lieu de platformCommissionRate
     const platformSettings = await prisma.platformSettings.findFirst();
-    const commissionRate = platformSettings?.platformCommissionRate || 10;
+    const commissionRate = platformSettings?.platformFeePercentage || 15;
 
     const feesByCurrency = Object.entries(payoutVolumeByCurrency).reduce((acc, [currency, amount]) => {
       acc[currency] = Number((amount * commissionRate / 100).toFixed(2));

@@ -87,7 +87,8 @@ export default function AdminDashboard() {
       if (settingsResponse.ok) {
         const data = await settingsResponse.json();
         setSettings(data?.settings);
-        setPlatformCommission(String(data?.settings?.platformCommissionRate ?? 10));
+        // ✅ CORRECTION #2: Utilisation de platformFeePercentage au lieu de platformCommissionRate
+        setPlatformCommission(String(data?.settings?.platformFeePercentage ?? 15));
       }
 
       // Get bookings
@@ -149,7 +150,7 @@ export default function AdminDashboard() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          platformCommissionRate: Number(platformCommission),
+          platformFeePercentage: Number(platformCommission), // ✅ CORRECTION #2: Utiliser platformFeePercentage
         }),
       });
 
