@@ -5,4 +5,9 @@ export { LoadingSpinner } from './LoadingSpinner';
 export { EmptyState } from './EmptyState';
 export { DataTable } from './DataTable';
 export { FilterBar } from './FilterBar';
+export { 
+  MultiCurrencyDisplay, 
+  MultiCurrencyDisplayCompact, 
+  MultiCurrencyDisplayCard 
+} from './MultiCurrencyDisplay';
 export { Pagination } from './Pagination';

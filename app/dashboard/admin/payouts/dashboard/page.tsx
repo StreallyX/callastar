@@ -7,7 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { LoadingSpinner, CurrencyDisplay, DateDisplay, StatusBadge } from '@/components/admin';
+import { 
+  LoadingSpinner, 
+  CurrencyDisplay, 
+  MultiCurrencyDisplay,
+  MultiCurrencyDisplayCard,
+  DateDisplay, 
+  StatusBadge 
+} from '@/components/admin';
 import {
   DollarSign,
   AlertTriangle,
@@ -28,11 +35,12 @@ interface DashboardData {
   };
   failedPayouts: {
     count: number;
-    totalAmount: number;
+    totalAmountByCurrency: Record<string, number>;
     recent: Array<{
       id: string;
       creatorName: string;
       amount: number;
+      currency: string;
       failureReason: string;
       createdAt: string;
     }>;
@@ -55,9 +63,15 @@ interface DashboardData {
     }>;
   };
   payoutVolume30Days: {
-    totalAmount: number;
+    totalAmountByCurrency: Record<string, number>;
+    totalFeesByCurrency: Record<string, number>;
     count: number;
   };
+  readyPayments: {
+    count: number;
+    totalAmountByCurrency: Record<string, number>;
+  };
+  stripeBalance?: Record<string, { available: number; pending: number }>;
   nextPayoutDate: string | null;
 }
 
@@ -79,7 +93,54 @@ export default function PayoutDashboard() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setDashboardData(data.data);
+        // Transform the API response to match our interface
+        const transformedData = {
+          pendingPayouts: {
+            count: data.summary.pendingPayouts,
+            totalAmount: 0, // Not provided by new API
+          },
+          failedPayouts: {
+            count: data.summary.failedPayouts,
+            totalAmountByCurrency: {}, // Will be calculated from failedPayouts array
+            recent: data.failedPayouts.slice(0, 5).map((p: any) => ({
+              id: p.id,
+              creatorName: p.creatorName,
+              amount: parseFloat(p.amount),
+              currency: p.currency,
+              failureReason: p.failureReason,
+              createdAt: p.createdAt,
+            })),
+          },
+          blockedCreators: {
+            count: data.summary.blockedCreators,
+            creators: data.blockedCreators.map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              email: c.email,
+              reason: c.reason,
+            })),
+          },
+          eligibilityIssues: {
+            count: data.summary.creatorsWithIssues,
+            creators: data.creatorsWithIssues.map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              reasons: c.issues,
+            })),
+          },
+          payoutVolume30Days: {
+            totalAmountByCurrency: data.summary.totalPayoutVolumeByCurrency,
+            totalFeesByCurrency: data.summary.totalFeesByCurrency,
+            count: data.summary.successfulPayouts,
+          },
+          readyPayments: {
+            count: data.summary.paymentsReady,
+            totalAmountByCurrency: data.summary.totalReadyAmountByCurrency,
+          },
+          stripeBalance: data.summary.stripeBalance || {},
+          nextPayoutDate: data.nextScheduledPayout?.nextPayoutDate || null,
+        };
+        setDashboardData(transformedData);
       } else {
         toast.error(data.error || 'Erreur lors du chargement');
       }
@@ -185,7 +246,7 @@ export default function PayoutDashboard() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
@@ -258,12 +319,47 @@ export default function PayoutDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">
-                <CurrencyDisplay amount={dashboardData.payoutVolume30Days.totalAmount} />
+              <div className="text-2xl font-bold text-green-600 mb-2">
+                <MultiCurrencyDisplay 
+                  amounts={dashboardData.payoutVolume30Days.totalAmountByCurrency}
+                  emptyMessage="Aucun paiement"
+                />
               </div>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600">
                 {dashboardData.payoutVolume30Days.count} paiements
               </p>
+              {Object.keys(dashboardData.payoutVolume30Days.totalFeesByCurrency).length > 0 && (
+                <div className="mt-3 pt-3 border-t">
+                  <p className="text-xs text-gray-500 mb-1">Fees plateforme:</p>
+                  <div className="text-sm font-medium text-purple-600">
+                    <MultiCurrencyDisplay 
+                      amounts={dashboardData.payoutVolume30Days.totalFeesByCurrency}
+                      emptyMessage="-"
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Paiements prêts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600 mb-1">
+                {dashboardData.readyPayments.count}
+              </div>
+              <div className="text-sm text-gray-600">
+                <MultiCurrencyDisplay 
+                  amounts={dashboardData.readyPayments.totalAmountByCurrency}
+                  emptyMessage="Aucun montant"
+                  orientation="horizontal"
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -285,6 +381,47 @@ export default function PayoutDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Stripe Balance Card */}
+        {dashboardData.stripeBalance && Object.keys(dashboardData.stripeBalance).length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Balance Stripe
+              </CardTitle>
+              <CardDescription>Soldes disponibles et en attente sur votre compte Stripe</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <p className="text-sm text-green-700 font-medium mb-2">💰 Disponible</p>
+                  <div className="text-xl font-bold text-green-800">
+                    <MultiCurrencyDisplay 
+                      amounts={Object.entries(dashboardData.stripeBalance).reduce((acc, [currency, data]) => {
+                        acc[currency] = data.available;
+                        return acc;
+                      }, {} as Record<string, number>)}
+                      emptyMessage="0.00"
+                    />
+                  </div>
+                </div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-700 font-medium mb-2">⏳ En attente</p>
+                  <div className="text-xl font-bold text-yellow-800">
+                    <MultiCurrencyDisplay 
+                      amounts={Object.entries(dashboardData.stripeBalance).reduce((acc, [currency, data]) => {
+                        acc[currency] = data.pending;
+                        return acc;
+                      }, {} as Record<string, number>)}
+                      emptyMessage="0.00"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Failed Payouts */}
         {dashboardData.failedPayouts.recent.length > 0 && (
@@ -312,7 +449,7 @@ export default function PayoutDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-red-600">
-                        <CurrencyDisplay amount={payout.amount} />
+                        <CurrencyDisplay amount={payout.amount} currency={payout.currency} />
                       </p>
                       <Button
                         size="sm"

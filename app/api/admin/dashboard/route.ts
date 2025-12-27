@@ -19,16 +19,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get total revenues
-    const totalPayments = await prisma.payment.aggregate({
+    // Get total revenues - GROUPED BY CURRENCY
+    const successfulPayments = await prisma.payment.findMany({
       where: {
         status: 'SUCCEEDED',
       },
-      _sum: {
+      select: {
         amount: true,
         platformFee: true,
+        currency: true,
       },
     });
+
+    // Group by currency
+    const revenueByCurrency = successfulPayments.reduce((acc, p) => {
+      const currency = p.currency || 'EUR';
+      acc[currency] = {
+        totalRevenue: (acc[currency]?.totalRevenue || 0) + Number(p.amount),
+        totalCommissions: (acc[currency]?.totalCommissions || 0) + Number(p.platformFee || 0),
+      };
+      return acc;
+    }, {} as Record<string, { totalRevenue: number; totalCommissions: number }>);
 
     // Get total bookings count
     const totalBookings = await prisma.booking.count();
@@ -102,10 +113,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Format amounts by currency
+    const formattedRevenueByCurrency = Object.entries(revenueByCurrency).reduce((acc, [currency, data]) => {
+      acc[currency] = {
+        totalRevenue: Number(data.totalRevenue.toFixed(2)),
+        totalCommissions: Number(data.totalCommissions.toFixed(2)),
+      };
+      return acc;
+    }, {} as Record<string, { totalRevenue: number; totalCommissions: number }>);
+
     return NextResponse.json({
       metrics: {
-        totalRevenue: Number(totalPayments._sum.amount || 0),
-        totalCommissions: Number(totalPayments._sum.platformFee || 0),
+        revenueByCurrency: formattedRevenueByCurrency,
         totalBookings,
         confirmedBookings,
         completedBookings,

@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { PayoutStatus } from '@prisma/client';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-12-18.acacia',
+});
 
 /**
  * GET /api/admin/payouts/dashboard
@@ -144,22 +149,28 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 6. Calculate total payout volume (last 30 days)
-    const payoutVolumeResult = await prisma.payout.aggregate({
+    // 6. Calculate total payout volume (last 30 days) - GROUPED BY CURRENCY
+    const successfulPayouts = await prisma.payout.findMany({
       where: {
         status: PayoutStatus.PAID,
         createdAt: {
           gte: thirtyDaysAgo,
         },
       },
-      _sum: {
+      select: {
         amount: true,
+        currency: true,
       },
-      _count: true,
     });
 
-    const totalPayoutVolume = Number(payoutVolumeResult._sum.amount || 0);
-    const successfulPayoutsCount = payoutVolumeResult._count;
+    // Group by currency
+    const payoutVolumeByCurrency = successfulPayouts.reduce((acc, p) => {
+      const currency = p.currency || 'EUR';
+      acc[currency] = (acc[currency] || 0) + Number(p.amount);
+      return acc;
+    }, {} as Record<string, number>);
+
+    const successfulPayoutsCount = successfulPayouts.length;
 
     // 7. Payment status summary (payments ready for payout)
     const paymentsReadyCount = await prisma.payment.count({
@@ -180,17 +191,23 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 8. Calculate total ready payout amount
-    const readyPaymentsResult = await prisma.payment.aggregate({
+    // 8. Calculate total ready payout amount - GROUPED BY CURRENCY
+    const readyPayments = await prisma.payment.findMany({
       where: {
         payoutStatus: 'READY',
       },
-      _sum: {
+      select: {
         creatorAmount: true,
+        currency: true,
       },
     });
 
-    const totalReadyAmount = Number(readyPaymentsResult._sum.creatorAmount || 0);
+    // Group by currency
+    const readyAmountByCurrency = readyPayments.reduce((acc, p) => {
+      const currency = p.currency || 'EUR';
+      acc[currency] = (acc[currency] || 0) + Number(p.creatorAmount);
+      return acc;
+    }, {} as Record<string, number>);
 
     // 9. Get recent successful payouts
     const recentSuccessfulPayouts = await prisma.payout.findMany({
@@ -232,6 +249,63 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // 11. Calculate platform fees by currency (assuming 10% commission)
+    // Get platform commission rate from settings
+    const platformSettings = await prisma.platformSettings.findFirst();
+    const commissionRate = platformSettings?.platformCommissionRate || 10;
+
+    const feesByCurrency = Object.entries(payoutVolumeByCurrency).reduce((acc, [currency, amount]) => {
+      acc[currency] = Number((amount * commissionRate / 100).toFixed(2));
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Format amounts by currency with proper decimals
+    const formattedPayoutVolume = Object.entries(payoutVolumeByCurrency).reduce((acc, [currency, amount]) => {
+      acc[currency] = Number(amount.toFixed(2));
+      return acc;
+    }, {} as Record<string, number>);
+
+    const formattedReadyAmount = Object.entries(readyAmountByCurrency).reduce((acc, [currency, amount]) => {
+      acc[currency] = Number(amount.toFixed(2));
+      return acc;
+    }, {} as Record<string, number>);
+
+    // 12. Get Stripe Balance (available and pending amounts by currency)
+    let stripeBalance: Record<string, { available: number; pending: number }> = {};
+    try {
+      const balance = await stripe.balance.retrieve();
+      
+      // Process available balance
+      balance.available.forEach((bal) => {
+        const currency = bal.currency.toUpperCase();
+        stripeBalance[currency] = {
+          available: bal.amount / 100, // Convert from cents
+          pending: stripeBalance[currency]?.pending || 0,
+        };
+      });
+
+      // Process pending balance
+      balance.pending.forEach((bal) => {
+        const currency = bal.currency.toUpperCase();
+        stripeBalance[currency] = {
+          available: stripeBalance[currency]?.available || 0,
+          pending: bal.amount / 100, // Convert from cents
+        };
+      });
+
+      // Format to 2 decimals
+      stripeBalance = Object.entries(stripeBalance).reduce((acc, [currency, data]) => {
+        acc[currency] = {
+          available: Number(data.available.toFixed(2)),
+          pending: Number(data.pending.toFixed(2)),
+        };
+        return acc;
+      }, {} as Record<string, { available: number; pending: number }>);
+    } catch (error) {
+      console.error('Error retrieving Stripe balance:', error);
+      // Continue without Stripe balance data
+    }
+
     return NextResponse.json({
       success: true,
       timestamp: now.toISOString(),
@@ -241,14 +315,15 @@ export async function GET(request: NextRequest) {
         blockedCreators: blockedCreatorsCount,
         creatorsWithIssues: creatorsWithIssuesCount,
         successfulPayouts: successfulPayoutsCount,
-        totalPayoutVolume: totalPayoutVolume.toFixed(2),
-        currency: 'EUR',
+        totalPayoutVolumeByCurrency: formattedPayoutVolume,
+        totalFeesByCurrency: feesByCurrency,
         paymentsReady: paymentsReadyCount,
         paymentsProcessing: paymentsProcessingCount,
         paymentsHeld: paymentsHeldCount,
-        totalReadyAmount: totalReadyAmount.toFixed(2),
+        totalReadyAmountByCurrency: formattedReadyAmount,
         activeSchedules: activeSchedulesCount,
         automaticSchedules: automaticSchedulesCount,
+        stripeBalance: stripeBalance,
       },
       nextScheduledPayout: nextScheduledPayout
         ? {
@@ -263,6 +338,7 @@ export async function GET(request: NextRequest) {
         creatorName: p.creator.user.name || p.creator.user.email,
         creatorEmail: p.creator.user.email,
         amount: Number(p.amount).toFixed(2),
+        currency: p.currency || 'EUR',
         failureReason: p.failureReason,
         retriedCount: p.retriedCount,
         createdAt: p.createdAt,
@@ -288,6 +364,7 @@ export async function GET(request: NextRequest) {
         creatorName: p.creator.user.name || p.creator.user.email,
         creatorEmail: p.creator.user.email,
         amount: Number(p.amount).toFixed(2),
+        currency: p.currency || 'EUR',
         stripePayoutId: p.stripePayoutId,
         createdAt: p.createdAt,
       })),

@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, DollarSign, Users, Calendar, TrendingUp, Send, CheckCircle, Settings as SettingsIcon, Video, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { MultiCurrencyDisplay } from '@/components/admin';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -180,10 +181,9 @@ export default function AdminDashboard() {
   }
 
   const creators = users.filter((u) => u.role === 'CREATOR');
-  const totalRevenue = dashboardData?.totalRevenue ?? 0;
-  const totalCommissions = dashboardData?.totalCommissions ?? 0;
-  const totalBookings = dashboardData?.totalBookings ?? 0;
-  const totalUsers = dashboardData?.totalUsers ?? 0;
+  const revenueByCurrency = dashboardData?.metrics?.revenueByCurrency ?? {};
+  const totalBookings = dashboardData?.metrics?.totalBookings ?? 0;
+  const totalUsers = dashboardData?.metrics?.totalUsers ?? 0;
   const revenueData = dashboardData?.revenueData ?? [];
 
   return (
@@ -249,7 +249,16 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">{totalRevenue.toFixed(2)} €</div>
+              <div className="text-2xl font-bold text-green-600">
+                <MultiCurrencyDisplay 
+                  amounts={Object.entries(revenueByCurrency).reduce((acc, [currency, data]) => {
+                    acc[currency] = data.totalRevenue;
+                    return acc;
+                  }, {} as Record<string, number>)}
+                  emptyMessage="0.00"
+                  orientation="vertical"
+                />
+              </div>
             </CardContent>
           </Card>
           
@@ -261,7 +270,16 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-purple-600">{totalCommissions.toFixed(2)} €</div>
+              <div className="text-2xl font-bold text-purple-600">
+                <MultiCurrencyDisplay 
+                  amounts={Object.entries(revenueByCurrency).reduce((acc, [currency, data]) => {
+                    acc[currency] = data.totalCommissions;
+                    return acc;
+                  }, {} as Record<string, number>)}
+                  emptyMessage="0.00"
+                  orientation="vertical"
+                />
+              </div>
             </CardContent>
           </Card>
 
