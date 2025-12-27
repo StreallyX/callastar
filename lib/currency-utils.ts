@@ -53,16 +53,36 @@ export function formatDbAmount(amount: number | string, decimals: number = 2): s
 }
 
 /**
- * Format amount with currency symbol
+ * Format amount with currency CODE (not symbol)
+ * 
+ * @param amount - Amount in currency units
+ * @param currency - Currency code (EUR, USD, CHF, etc.)
+ * @returns Formatted amount with currency code (e.g., "500.00 GBP", "1250.50 EUR")
+ * 
+ * Usage: Displaying amounts in UI consistently
+ * Note: Always displays as "amount CODE" format to avoid symbol confusion
+ */
+export function formatCurrency(
+  amount: number | string, 
+  currency: string = 'EUR'
+): string {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  const currencyCode = currency.toUpperCase();
+  
+  return `${numAmount.toFixed(2)} ${currencyCode}`;
+}
+
+/**
+ * Format amount with currency symbol (legacy, use formatCurrency instead)
  * 
  * @param amount - Amount in currency units
  * @param currency - Currency code (EUR, USD, CHF, etc.)
  * @param locale - Locale for formatting (default: 'fr-FR')
  * @returns Formatted amount with currency symbol
  * 
- * Usage: Displaying amounts in UI with proper localization
+ * @deprecated Use formatCurrency() for consistent "amount CODE" formatting
  */
-export function formatCurrency(
+export function formatCurrencyWithSymbol(
   amount: number | string, 
   currency: string = 'EUR',
   locale: string = 'fr-FR'

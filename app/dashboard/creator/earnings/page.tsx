@@ -195,7 +195,7 @@ export default function EarningsPage() {
                     <div className="text-right ml-4">
                       <div className="font-semibold text-lg">
                         <CurrencyDisplay 
-                          amount={Number(payment.creatorAmount)} 
+                          amount={Number(payment.amount)} 
                           currency={payment.currency || creatorCurrency} 
                         />
                       </div>

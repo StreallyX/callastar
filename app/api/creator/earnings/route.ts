@@ -92,16 +92,19 @@ export async function GET(request: NextRequest) {
     }
 
     // ✅ Calculate total earnings from DB (all PAID transfers)
+    // ✅ FIX: Use gross amount (what users paid), not net after commission
     const paidPayments = payments.filter(p => p.payoutStatus === PayoutStatus.PAID);
-    totalEarnings = paidPayments.reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+    totalEarnings = paidPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
     // ✅ Calculate pending earnings from DB (PROCESSING status - in holding period)
+    // ✅ FIX: Use gross amount (what users paid), not net after commission
     const processingPayments = payments.filter(p => p.payoutStatus === PayoutStatus.PROCESSING);
-    const dbPendingEarnings = processingPayments.reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+    const dbPendingEarnings = processingPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
     // ✅ Calculate ready for payout from DB (APPROVED status - ready for payout)
+    // ✅ FIX: Use gross amount (what users paid), not net after commission
     const approvedPayments = payments.filter(p => p.payoutStatus === PayoutStatus.APPROVED);
-    const dbReadyForPayout = approvedPayments.reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+    const dbReadyForPayout = approvedPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
     // ✅ Use Stripe as source of truth if available, otherwise use DB
     const finalPendingEarnings = stripeBalance ? stripeBalance.pending : dbPendingEarnings;

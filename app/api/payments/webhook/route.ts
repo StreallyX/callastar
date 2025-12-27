@@ -576,24 +576,19 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
   
   // ✅ Notify creator about received payment
   try {
-    // Calculate creator amount (85% of total payment, minus Stripe fees)
-    // With 15% commission: Creator receives ~81.80 EUR for 100 EUR payment
     const totalAmount = amount;
-    const platformFee = totalAmount * 0.15;
-    const creatorAmount = totalAmount - platformFee;
     
     await createNotification({
       userId: booking.callOffer.creator.userId,
       type: 'PAYMENT_RECEIVED',
-      title: '💰 Nouveau paiement reçu',
-      message: `Vous avez reçu un paiement de ${totalAmount.toFixed(2)} ${currency} pour "${booking.callOffer.title}". Votre part : ~${creatorAmount.toFixed(2)} ${currency} (après commission de ${platformFee.toFixed(2)} ${currency}). Les fonds sont disponibles sur votre compte Stripe.`,
-      link: '/dashboard/creator/payouts',
+      title: 'Paiement reçu',
+      message: `Vous avez reçu un paiement de ${totalAmount.toFixed(2)} ${currency}.`,
+      link: '/dashboard/creator/payments',
       metadata: {
         paymentId: payment.id,
         bookingId: booking.id,
         amount: totalAmount,
         currency,
-        note: 'Transfer handled automatically by Stripe',
       },
     });
   } catch (notifError) {
@@ -1715,12 +1710,16 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
     console.log('[Webhook] ✅ Auto-unblocking payouts for creator:', creator.id);
   }
 
+  // ✅ FIX: Also update creator's currency from Stripe account
+  const currency = (account.default_currency || 'eur').toUpperCase();
+  
   await prisma.creator.update({
     where: { id: creator.id },
     data: {
       isStripeOnboarded: accountStatus.isFullyOnboarded,
       payoutBlocked: shouldBlockPayout,
       payoutBlockedReason: blockReason,
+      currency: currency, // Update currency from Stripe account
     },
   });
 

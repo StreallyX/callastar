@@ -70,7 +70,8 @@ export default function PaymentsPage() {
     );
   }
 
-  const totalAmount = payments.reduce((sum, p) => sum + Number(p.creatorAmount ?? 0), 0);
+  // ✅ FIX: Display gross amounts (what users paid), not net amounts after commission
+  const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
   const paidPayments = payments.filter((p) => p.payoutStatus === 'PAID');
   const pendingPayments = payments.filter((p) => p.payoutStatus === 'HELD' || p.payoutStatus === 'PENDING');
   const readyPayments = payments.filter((p) => p.payoutStatus === 'READY');
@@ -175,7 +176,7 @@ export default function PaymentsPage() {
                       <div className="text-right ml-4">
                         <div className="font-semibold text-lg">
                           <CurrencyDisplay 
-                            amount={Number(payment.creatorAmount)} 
+                            amount={Number(payment.amount)} 
                             currency={payment.currency || creatorCurrency} 
                           />
                         </div>
@@ -204,6 +205,7 @@ export default function PaymentsPage() {
             <CardTitle className="text-blue-800 text-base">📋 Information</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-blue-700 space-y-2">
+            <p><strong>Montants affichés :</strong> Les montants affichés correspondent au montant total payé par l'utilisateur. Pour en savoir plus sur les frais et commissions, consultez la page <Link href="/dashboard/creator/fees" className="underline font-semibold">Frais et commissions</Link>.</p>
             <p><strong>Période de sécurité :</strong> Les paiements restent en attente pendant 7 jours pour la protection contre les litiges.</p>
             <p><strong>Transfert automatique :</strong> Après la période de sécurité, les fonds sont automatiquement transférés vers votre compte Stripe Connect.</p>
             <p><strong>Gestion des payouts :</strong> Pour gérer vos virements vers votre compte bancaire, rendez-vous sur la page <Link href="/dashboard/creator/payouts" className="underline font-semibold">Payouts</Link>.</p>

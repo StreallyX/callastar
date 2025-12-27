@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import prisma from '@/lib/db';
 
 // Allow build to succeed even without STRIPE_SECRET_KEY
 // At runtime, operations will fail with proper error messages
@@ -26,6 +27,99 @@ export function calculatePayoutReleaseDate(paymentDate: Date): Date {
   const releaseDate = new Date(paymentDate);
   releaseDate.setDate(releaseDate.getDate() + PAYOUT_HOLDING_DAYS);
   return releaseDate;
+}
+
+/**
+ * Get creator's currency from DB or Stripe account
+ * 
+ * @param creatorId - Creator ID in database
+ * @returns Currency code (e.g., 'GBP', 'EUR', 'CHF')
+ * 
+ * ✅ Priority:
+ * 1. Check creator.currency in DB (cached value)
+ * 2. Fetch from Stripe account if not in DB
+ * 3. Update DB with fetched currency
+ * 4. Default to 'EUR' if all fails
+ */
+export async function getCreatorCurrency(creatorId: string): Promise<string> {
+  try {
+    // 1. Try to get from DB first (fastest)
+    const creator = await prisma.creator.findUnique({
+      where: { id: creatorId },
+      select: { 
+        currency: true, 
+        stripeAccountId: true 
+      },
+    });
+
+    if (!creator) {
+      console.warn(`[getCreatorCurrency] Creator ${creatorId} not found`);
+      return 'EUR';
+    }
+
+    // If currency is already cached in DB, return it
+    if (creator.currency) {
+      return creator.currency.toUpperCase();
+    }
+
+    // 2. If no currency in DB, fetch from Stripe
+    if (!creator.stripeAccountId) {
+      console.warn(`[getCreatorCurrency] Creator ${creatorId} has no Stripe account`);
+      return 'EUR';
+    }
+
+    const stripeAccount = await stripe.accounts.retrieve(creator.stripeAccountId);
+    const currency = (stripeAccount.default_currency || 'eur').toUpperCase();
+
+    // 3. Update DB with fetched currency
+    await prisma.creator.update({
+      where: { id: creatorId },
+      data: { currency },
+    });
+
+    console.log(`[getCreatorCurrency] Fetched and cached currency for creator ${creatorId}: ${currency}`);
+    return currency;
+  } catch (error) {
+    console.error(`[getCreatorCurrency] Error fetching currency for creator ${creatorId}:`, error);
+    return 'EUR';
+  }
+}
+
+/**
+ * Get creator's currency by Stripe account ID
+ * 
+ * @param stripeAccountId - Stripe Connect account ID
+ * @returns Currency code (e.g., 'GBP', 'EUR', 'CHF')
+ */
+export async function getCreatorCurrencyByStripeAccount(stripeAccountId: string): Promise<string> {
+  try {
+    // Try to find creator in DB first
+    const creator = await prisma.creator.findFirst({
+      where: { stripeAccountId },
+      select: { id: true, currency: true },
+    });
+
+    if (creator?.currency) {
+      return creator.currency.toUpperCase();
+    }
+
+    // Fetch from Stripe
+    const stripeAccount = await stripe.accounts.retrieve(stripeAccountId);
+    const currency = (stripeAccount.default_currency || 'eur').toUpperCase();
+
+    // Update DB if we found the creator
+    if (creator?.id) {
+      await prisma.creator.update({
+        where: { id: creator.id },
+        data: { currency },
+      });
+    }
+
+    return currency;
+  } catch (error) {
+    console.error(`[getCreatorCurrencyByStripeAccount] Error fetching currency:`, error);
+    return 'EUR';
+  }
 }
 
 /**

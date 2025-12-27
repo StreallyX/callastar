@@ -1,30 +1,32 @@
 /**
  * CurrencyDisplay Component
  * 
- * Unified component for displaying amounts with currency symbols
+ * Unified component for displaying amounts with currency codes
  * Ensures consistent currency display across the platform
+ * 
+ * ✅ ALWAYS displays "amount CODE" format (e.g., "500.00 GBP")
+ * ✅ Never displays incorrect symbols (e.g., no more "$500 GBP")
  */
 
-import { getCurrencySymbol } from '@/lib/currency-converter';
+import { formatCurrency } from '@/lib/currency-utils';
 
 interface CurrencyDisplayProps {
   amount: number;
   currency: string;
   className?: string;
-  showSymbol?: boolean; // If true, shows symbol (€), if false shows code (EUR)
 }
 
 export function CurrencyDisplay({ 
   amount, 
   currency, 
-  className = '',
-  showSymbol = false 
+  className = ''
 }: CurrencyDisplayProps) {
-  const displayCurrency = showSymbol ? getCurrencySymbol(currency) : currency.toUpperCase();
+  // Always use formatCurrency from currency-utils for consistency
+  const formattedAmount = formatCurrency(amount, currency);
   
   return (
     <span className={className}>
-      {amount.toFixed(2)} {displayCurrency}
+      {formattedAmount}
     </span>
   );
 }
@@ -32,7 +34,7 @@ export function CurrencyDisplay({
 /**
  * CurrencyInput Component
  * 
- * Input field with currency symbol display
+ * Input field with currency code display
  */
 interface CurrencyInputProps {
   value: string | number;
@@ -53,7 +55,7 @@ export function CurrencyInput({
   placeholder,
   className = ''
 }: CurrencyInputProps) {
-  const symbol = getCurrencySymbol(currency);
+  const currencyCode = currency.toUpperCase();
   
   return (
     <div className="relative">
@@ -67,8 +69,8 @@ export function CurrencyInput({
         placeholder={placeholder}
         className={className}
       />
-      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-        {symbol}
+      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">
+        {currencyCode}
       </span>
     </div>
   );
@@ -77,24 +79,22 @@ export function CurrencyInput({
 /**
  * CurrencyLabel Component
  * 
- * Label with currency symbol for form fields
+ * Label with currency code for form fields
  */
 interface CurrencyLabelProps {
   children: React.ReactNode;
   currency: string;
-  showSymbol?: boolean;
 }
 
 export function CurrencyLabel({ 
   children, 
-  currency, 
-  showSymbol = false 
+  currency
 }: CurrencyLabelProps) {
-  const displayCurrency = showSymbol ? getCurrencySymbol(currency) : currency.toUpperCase();
+  const currencyCode = currency.toUpperCase();
   
   return (
     <span>
-      {children} ({displayCurrency})
+      {children} ({currencyCode})
     </span>
   );
 }
