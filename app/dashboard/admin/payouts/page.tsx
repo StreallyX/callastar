@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   LoadingSpinner,
@@ -21,7 +24,7 @@ import {
   StatusBadge,
   EmptyState,
 } from '@/components/admin';
-import { Send, Eye, RefreshCw, AlertCircle } from 'lucide-react';
+import { Send, Eye, RefreshCw, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Payout {
@@ -52,6 +55,14 @@ export default function AdminPayouts() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  
+  // Approval/Rejection modals
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [payoutToApprove, setPayoutToApprove] = useState<Payout | null>(null);
+  const [payoutToReject, setPayoutToReject] = useState<Payout | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Filters
   const [filters, setFilters] = useState({
@@ -102,16 +113,94 @@ export default function AdminPayouts() {
     setDetailsOpen(true);
   };
 
+  const handleOpenApproveModal = (payout: Payout) => {
+    setPayoutToApprove(payout);
+    setApproveModalOpen(true);
+  };
+
+  const handleOpenRejectModal = (payout: Payout) => {
+    setPayoutToReject(payout);
+    setRejectionReason('');
+    setRejectModalOpen(true);
+  };
+
+  const handleApprovePayout = async () => {
+    if (!payoutToApprove) return;
+
+    setActionLoading(true);
+    try {
+      const response = await fetch(`/api/admin/payouts/${payoutToApprove.id}/approve`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Paiement approuvé avec succès');
+        setApproveModalOpen(false);
+        setPayoutToApprove(null);
+        await fetchPayouts(); // Refresh the list
+      } else {
+        toast.error(data.error || 'Erreur lors de l\'approbation');
+      }
+    } catch (error) {
+      console.error('Error approving payout:', error);
+      toast.error('Erreur lors de l\'approbation du paiement');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectPayout = async () => {
+    if (!payoutToReject || !rejectionReason.trim()) {
+      toast.error('Veuillez fournir une raison pour le rejet');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const response = await fetch(`/api/admin/payouts/${payoutToReject.id}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reason: rejectionReason,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Paiement rejeté');
+        setRejectModalOpen(false);
+        setPayoutToReject(null);
+        setRejectionReason('');
+        await fetchPayouts(); // Refresh the list
+      } else {
+        toast.error(data.error || 'Erreur lors du rejet');
+      }
+    } catch (error) {
+      console.error('Error rejecting payout:', error);
+      toast.error('Erreur lors du rejet du paiement');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const filterConfigs = [
     {
       key: 'status',
       label: 'Statut',
       type: 'select' as const,
       options: [
-        { label: 'Payé', value: 'PAID' },
-        { label: 'En attente', value: 'PENDING' },
+        { label: 'En attente d\'approbation', value: 'PENDING_APPROVAL' },
+        { label: 'Approuvé', value: 'APPROVED' },
+        { label: 'Rejeté', value: 'REJECTED' },
         { label: 'En cours', value: 'PROCESSING' },
+        { label: 'Payé', value: 'PAID' },
         { label: 'Échoué', value: 'FAILED' },
+        { label: 'En attente', value: 'PENDING' },
       ],
     },
   ];
@@ -190,7 +279,7 @@ export default function AdminPayouts() {
                       <th className="py-3 px-2">Créateur</th>
                       <th className="py-3 px-2">Montant</th>
                       <th className="py-3 px-2">Statut</th>
-                      <th className="py-3 px-2">Raison échec</th>
+                      <th className="py-3 px-2">Raison échec/rejet</th>
                       <th className="py-3 px-2">Tentatives</th>
                       <th className="py-3 px-2">Date création</th>
                       <th className="py-3 px-2">Date paiement</th>
@@ -244,13 +333,38 @@ export default function AdminPayouts() {
                           )}
                         </td>
                         <td className="py-3 px-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleViewDetails(payout)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            {payout.status === 'PENDING_APPROVAL' ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  onClick={() => handleOpenApproveModal(payout)}
+                                  title="Approuver"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleOpenRejectModal(payout)}
+                                  title="Rejeter"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </Button>
+                              </>
+                            ) : null}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleViewDetails(payout)}
+                              title="Voir détails"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -357,6 +471,132 @@ export default function AdminPayouts() {
               </Card>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Approve Modal */}
+      <Dialog open={approveModalOpen} onOpenChange={setApproveModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approuver le paiement</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir approuver ce paiement ?
+            </DialogDescription>
+          </DialogHeader>
+          {payoutToApprove && (
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Créateur:</span>
+                      <span className="text-sm font-medium">{payoutToApprove.creator.user.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Montant:</span>
+                      <span className="text-sm font-bold text-green-600">
+                        <CurrencyDisplay amount={payoutToApprove.amount} />
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Date de demande:</span>
+                      <span className="text-sm">
+                        <DateDisplay date={payoutToApprove.createdAt} format="datetime" />
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Cette action déclenchera le transfert Stripe réel vers le compte bancaire du créateur.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setApproveModalOpen(false)}
+              disabled={actionLoading}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleApprovePayout}
+              disabled={actionLoading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {actionLoading ? 'Approbation...' : 'Approuver'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Modal */}
+      <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeter le paiement</DialogTitle>
+            <DialogDescription>
+              Veuillez fournir une raison pour le rejet de ce paiement.
+            </DialogDescription>
+          </DialogHeader>
+          {payoutToReject && (
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Créateur:</span>
+                      <span className="text-sm font-medium">{payoutToReject.creator.user.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Montant:</span>
+                      <span className="text-sm font-bold text-red-600">
+                        <CurrencyDisplay amount={payoutToReject.amount} />
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Date de demande:</span>
+                      <span className="text-sm">
+                        <DateDisplay date={payoutToReject.createdAt} format="datetime" />
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <div>
+                <label htmlFor="rejection-reason" className="block text-sm font-medium mb-2">
+                  Raison du rejet *
+                </label>
+                <Textarea
+                  id="rejection-reason"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Expliquez pourquoi ce paiement est rejeté..."
+                  rows={4}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRejectModalOpen(false)}
+              disabled={actionLoading}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleRejectPayout}
+              disabled={actionLoading || !rejectionReason.trim()}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {actionLoading ? 'Rejet...' : 'Rejeter'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

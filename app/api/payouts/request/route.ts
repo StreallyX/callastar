@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create payout record with currency tracking
+    // ✅ NEW: Create payout record with PENDING_APPROVAL status (NO Stripe payout yet)
     const payout = await prisma.payout.create({
       data: {
         creatorId: creator.id,
@@ -210,17 +210,17 @@ export async function POST(request: NextRequest) {
         currency: stripeCurrency,
         conversionRate: conversionRate,
         conversionDate: conversionDate,
-        status: PayoutStatus.PROCESSING,
+        status: PayoutStatus.PENDING_APPROVAL, // ✅ Wait for admin approval
       },
     });
 
-    // Log payout creation
+    // Log payout request creation
     await logPayout(TransactionEventType.PAYOUT_CREATED, {
       payoutId: payout.id,
       creatorId: creator.id,
       amount: payoutAmountEur,
       currency: 'EUR',
-      status: PayoutStatus.PROCESSING,
+      status: PayoutStatus.PENDING_APPROVAL,
       metadata: {
         availableBalance,
         requestedAmount: requestedAmount || null,
@@ -229,148 +229,72 @@ export async function POST(request: NextRequest) {
         amountInStripeCurrency: payoutAmountInStripeCurrency,
         conversionRate: conversionRate,
         currencyConverted: stripeCurrency !== 'EUR',
+        awaitingAdminApproval: true,
       },
     });
 
-    try {
-      // Create payout from Stripe Connect account to bank account
-      // ✅ Use converted amount and Stripe account currency
-      const stripePayout = await createConnectPayout({
-        amount: payoutAmountInStripeCurrency,
-        currency: stripeCurrency.toLowerCase(),
-        stripeAccountId: creator.stripeAccountId,
-        metadata: {
-          creatorId: creator.id,
-          payoutId: payout.id,
-          manual: 'true',
-          requestedBy: jwtUser.userId,
-          adminOverride: String(adminOverride && isAdmin),
-          amountEur: String(payoutAmountEur),
-          stripeCurrency: stripeCurrency,
-          ...(conversionRate && { conversionRate: String(conversionRate) }),
-        },
-      });
-
-      // Update payout with Stripe payout ID
-      await prisma.payout.update({
-        where: { id: payout.id },
-        data: {
-          stripePayoutId: stripePayout.id,
-          status: PayoutStatus.PROCESSING, // Keep as PROCESSING until Stripe confirms
-        },
-      });
-
-      // Log payout initiated
-      await logPayout(TransactionEventType.PAYOUT_CREATED, {
-        payoutId: payout.id,
+    // Create audit log entry
+    await prisma.payoutAuditLog.create({
+      data: {
         creatorId: creator.id,
+        action: 'TRIGGERED',
         amount: payoutAmountEur,
-        currency: 'EUR',
-        status: PayoutStatus.PROCESSING,
-        stripePayoutId: stripePayout.id,
-        metadata: {
-          stripePayoutId: stripePayout.id,
-          manual: true,
-          adminOverride: adminOverride && isAdmin,
-          requestedBy: jwtUser.userId,
-          estimatedArrival: stripePayout.arrival_date
-            ? new Date(stripePayout.arrival_date * 1000).toISOString()
-            : null,
+        status: PayoutStatus.PENDING_APPROVAL,
+        adminId: isAdmin ? jwtUser.userId : null,
+        reason: stripeCurrency !== 'EUR'
+          ? `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR (${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) en attente d'approbation`
+          : requestedAmount
+            ? `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR en attente d'approbation`
+            : `Demande de paiement complet de ${payoutAmountEur.toFixed(2)} EUR en attente d'approbation`,
+        metadata: JSON.stringify({
+          availableBalance,
+          requestedAmount: requestedAmount || null,
           stripeCurrency: stripeCurrency,
           amountInStripeCurrency: payoutAmountInStripeCurrency,
           conversionRate: conversionRate,
           currencyConverted: stripeCurrency !== 'EUR',
-        },
+          awaitingAdminApproval: true,
+        }),
+      },
+    });
+
+    // ✅ NEW: Send notification to admin
+    try {
+      // Find all admin users
+      const admins = await prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { id: true, name: true, email: true },
       });
 
-      // Create audit log entry
-      await prisma.payoutAuditLog.create({
-        data: {
-          creatorId: creator.id,
-          action: 'TRIGGERED',
-          amount: payoutAmountEur,
-          status: PayoutStatus.PROCESSING,
-          stripePayoutId: stripePayout.id,
-          adminId: isAdmin ? jwtUser.userId : null,
-          reason: stripeCurrency !== 'EUR'
-            ? `Paiement manuel de ${payoutAmountEur.toFixed(2)} EUR (${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) demandé`
-            : requestedAmount
-              ? `Paiement manuel de ${payoutAmountEur.toFixed(2)} EUR demandé`
-              : `Paiement complet de ${payoutAmountEur.toFixed(2)} EUR demandé`,
-          metadata: JSON.stringify({
-            availableBalance,
-            requestedAmount: requestedAmount || null,
-            estimatedArrival: stripePayout.arrival_date
-              ? new Date(stripePayout.arrival_date * 1000).toISOString()
-              : null,
-            stripeCurrency: stripeCurrency,
-            amountInStripeCurrency: payoutAmountInStripeCurrency,
-            conversionRate: conversionRate,
-            currencyConverted: stripeCurrency !== 'EUR',
-          }),
-        },
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: stripeCurrency !== 'EUR'
-          ? `Paiement de ${payoutAmountEur.toFixed(2)} EUR (≈ ${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) en cours de transfert vers votre compte bancaire`
-          : `Paiement de ${payoutAmountEur.toFixed(2)} EUR en cours de transfert vers votre compte bancaire`,
-        payout: {
-          id: payout.id,
-          amountEur: payoutAmountEur,
-          amountPaid: stripeCurrency !== 'EUR' ? payoutAmountInStripeCurrency : payoutAmountEur,
-          currency: stripeCurrency,
-          conversionRate: conversionRate,
-          stripePayoutId: stripePayout.id,
-          status: 'processing',
-          estimatedArrival: stripePayout.arrival_date
-            ? new Date(stripePayout.arrival_date * 1000)
-            : null,
-        },
-      });
-    } catch (error: any) {
-      console.error('Error creating payout:', error);
-
-      // Update payout status to failed
-      await prisma.payout.update({
-        where: { id: payout.id },
-        data: {
-          status: PayoutStatus.FAILED,
-          failureReason: error.message || 'Unknown error',
-          retriedCount: 1,
-        },
-      });
-
-      // Log failed payout
-      await logPayout(TransactionEventType.PAYOUT_FAILED, {
-        payoutId: payout.id,
-        creatorId: creator.id,
-        amount: payoutAmountEur,
-        currency: 'EUR',
-        status: PayoutStatus.FAILED,
-        errorMessage: error.message || 'Payout failed',
-      });
-
-      // Create audit log for failed payout
-      await prisma.payoutAuditLog.create({
-        data: {
-          creatorId: creator.id,
-          action: 'FAILED',
-          amount: payoutAmountEur,
-          status: PayoutStatus.FAILED,
-          adminId: isAdmin ? jwtUser.userId : null,
-          reason: `Échec du paiement: ${error.message || 'Erreur inconnue'}`,
-        },
-      });
-
-      return NextResponse.json(
-        {
-          error: 'Erreur lors du transfert: ' + (error.message || 'Erreur inconnue'),
-        },
-        { status: 500 }
-      );
+      // Send notification to each admin
+      for (const admin of admins) {
+        await createNotification({
+          userId: admin.id,
+          type: 'SYSTEM',
+          title: '💰 Nouvelle demande de paiement',
+          message: `${creator.user.name} a demandé un paiement de ${payoutAmountEur.toFixed(2)} EUR. Veuillez approuver ou rejeter la demande.`,
+          link: '/dashboard/admin/payouts',
+        });
+      }
+    } catch (error) {
+      console.error('Error sending admin notifications:', error);
+      // Non-critical error, continue
     }
+
+    return NextResponse.json({
+      success: true,
+      message: stripeCurrency !== 'EUR'
+        ? `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR (≈ ${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) envoyée. En attente d'approbation par l'administrateur.`
+        : `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR envoyée. En attente d'approbation par l'administrateur.`,
+      payout: {
+        id: payout.id,
+        amountEur: payoutAmountEur,
+        amountPaid: stripeCurrency !== 'EUR' ? payoutAmountInStripeCurrency : payoutAmountEur,
+        currency: stripeCurrency,
+        conversionRate: conversionRate,
+        status: 'pending_approval',
+      },
+    });
   } catch (error) {
     console.error('Error requesting payout:', error);
     return NextResponse.json(

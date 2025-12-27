@@ -42,13 +42,16 @@ enum CallRequestStatus {
 }
 
 enum PayoutStatus {
-  PENDING      // Initial state, awaiting payment
-  HELD         // Payment succeeded, funds held for 7 days
-  READY        // Holding period passed, ready for transfer
-  PROCESSING   // Transfer in progress
-  PAID         // Successfully transferred to creator (formerly PAID)
-  FAILED       // Transfer failed
-  CANCELLED    // Cancelled (refund/dispute)
+  PENDING           // Initial state, awaiting payment
+  HELD              // Payment succeeded, funds held for 7 days
+  READY             // Holding period passed, ready for transfer
+  PENDING_APPROVAL  // Awaiting admin approval
+  APPROVED          // Approved by admin, ready for Stripe processing
+  REJECTED          // Rejected by admin
+  PROCESSING        // Transfer in progress
+  PAID              // Successfully transferred to creator (formerly PAID)
+  FAILED            // Transfer failed
+  CANCELLED         // Cancelled (refund/dispute)
 }
 
 enum NotificationType {
@@ -379,6 +382,9 @@ model Payout {
   stripePayoutId  String?
   status          PayoutStatus @default(PENDING)
   failureReason   String?      @db.Text
+  rejectionReason String?      @db.Text // Reason for admin rejection
+  approvedById    String?      // Admin user ID who approved/rejected
+  approvedAt      DateTime?    // When approved/rejected
   retriedCount    Int          @default(0)
   
   // ✅ NEW: Currency conversion tracking

@@ -435,6 +435,18 @@ async function processWebhookEvent(event: Stripe.Event): Promise<void> {
       await handlePayoutFailed(event);
       break;
 
+    case 'payout.canceled':
+      await handlePayoutCanceled(event);
+      break;
+
+    case 'transfer.created':
+      await handleTransferCreated(event);
+      break;
+
+    case 'transfer.succeeded':
+      await handleTransferSucceeded(event);
+      break;
+
     case 'transfer.reversed':
       await handleTransferReversed(event);
       break;
@@ -1149,6 +1161,118 @@ async function handlePayoutFailed(event: Stripe.Event): Promise<void> {
     amount: payout.amount,
     reason: failureReason,
     failureCode: stripePayout.failure_code,
+  });
+}
+
+/**
+ * Handle payout.canceled
+ * When a payout is canceled
+ */
+async function handlePayoutCanceled(event: Stripe.Event): Promise<void> {
+  const stripePayout = event.data.object as Stripe.Payout;
+  
+  const payout = await prisma.payout.findFirst({
+    where: { stripePayoutId: stripePayout.id },
+  });
+
+  if (!payout) {
+    console.warn('[Webhook] Payout not found for canceled event:', stripePayout.id);
+    return;
+  }
+
+  await prisma.payout.update({
+    where: { id: payout.id },
+    data: {
+      status: PayoutStatus.CANCELLED,
+      updatedAt: new Date(),
+    },
+  });
+
+  await logPayout(TransactionEventType.PAYOUT_FAILED, {
+    payoutId: payout.id,
+    creatorId: payout.creatorId,
+    amount: Number(payout.amount),
+    status: PayoutStatus.CANCELLED,
+    stripePayoutId: stripePayout.id,
+    errorMessage: 'Payout canceled',
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.PAYOUT,
+    entityId: payout.id,
+    metadata: { stripePayoutId: stripePayout.id },
+  });
+
+  // Create audit log
+  await prisma.payoutAuditLog.create({
+    data: {
+      creatorId: payout.creatorId,
+      action: 'FAILED',
+      amount: Number(payout.amount),
+      status: PayoutStatus.CANCELLED,
+      stripePayoutId: stripePayout.id,
+      reason: 'Paiement annulé',
+    },
+  });
+
+  console.log('[Webhook] Payout canceled:', {
+    payoutId: payout.id,
+    stripePayoutId: stripePayout.id,
+  });
+}
+
+/**
+ * Handle transfer.created
+ * When a transfer is created (for logging purposes)
+ */
+async function handleTransferCreated(event: Stripe.Event): Promise<void> {
+  const transfer = event.data.object as Stripe.Transfer;
+  
+  console.log('[Webhook] Transfer created:', {
+    transferId: transfer.id,
+    amount: transfer.amount / 100,
+    destination: transfer.destination,
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.TRANSFER,
+    entityId: transfer.id,
+    metadata: {
+      transferId: transfer.id,
+      amount: transfer.amount / 100,
+      destination: transfer.destination,
+    },
+  });
+}
+
+/**
+ * Handle transfer.succeeded
+ * When a transfer succeeds (for logging purposes)
+ */
+async function handleTransferSucceeded(event: Stripe.Event): Promise<void> {
+  const transfer = event.data.object as Stripe.Transfer;
+  
+  console.log('[Webhook] Transfer succeeded:', {
+    transferId: transfer.id,
+    amount: transfer.amount / 100,
+    destination: transfer.destination,
+  });
+
+  await logWebhook({
+    stripeEventId: event.id,
+    eventType: event.type,
+    entityType: EntityType.TRANSFER,
+    entityId: transfer.id,
+    metadata: {
+      transferId: transfer.id,
+      amount: transfer.amount / 100,
+      destination: transfer.destination,
+      status: 'succeeded',
+    },
   });
 }
 

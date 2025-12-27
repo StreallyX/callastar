@@ -9,6 +9,7 @@ import {
   calculateNextPayoutDate,
   clearBalanceCache,
 } from '@/lib/payout-eligibility';
+import { createNotification } from '@/lib/notifications';
 
 /**
  * GET /api/cron/process-payouts
@@ -180,12 +181,12 @@ export async function GET(request: NextRequest) {
 
         console.log(`💰 [CRON] Creating payout of ${totalAmount.toFixed(2)} ${settings.currency} for ${readyPayments.length} payments`);
 
-        // 7. Create payout record
+        // ✅ NEW: Create payout record with PENDING_APPROVAL status (await admin approval)
         const payout = await prisma.payout.create({
           data: {
             creatorId: creator.id,
             amount: totalAmount,
-            status: PayoutStatus.PROCESSING,
+            status: PayoutStatus.PENDING_APPROVAL, // ✅ Wait for admin approval even for automatic payouts
           },
         });
 
@@ -195,128 +196,59 @@ export async function GET(request: NextRequest) {
           creatorId: creator.id,
           amount: totalAmount,
           currency: settings.currency,
-          status: PayoutStatus.PROCESSING,
+          status: PayoutStatus.PENDING_APPROVAL,
           metadata: {
             automatic: true,
             paymentCount: readyPayments.length,
             paymentIds: readyPayments.map((p) => p.id),
             frequency: schedule.frequency,
+            awaitingAdminApproval: true,
           },
         });
 
-        // Mark payments as processing
-        await prisma.payment.updateMany({
-          where: {
-            id: { in: readyPayments.map((p) => p.id) },
-          },
+        // Create audit log entry
+        await prisma.payoutAuditLog.create({
           data: {
-            payoutStatus: 'PROCESSING',
-          },
-        });
-
-        try {
-          // 8. Create Stripe transfer
-          const transfer = await createPayout({
-            amount: totalAmount,
-            stripeAccountId: creator.stripeAccountId!,
-            metadata: {
-              creatorId: creator.id,
-              payoutId: payout.id,
-              paymentIds: readyPayments.map((p) => p.id).join(','),
-              paymentCount: String(readyPayments.length),
-              automatic: 'true',
-              frequency: schedule.frequency,
-            },
-          });
-
-          // 9. Update payout status to paid
-          await prisma.payout.update({
-            where: { id: payout.id },
-            data: {
-              stripePayoutId: transfer.id,
-              status: PayoutStatus.PAID,
-            },
-          });
-
-          // Mark payments as paid
-          await prisma.payment.updateMany({
-            where: {
-              id: { in: readyPayments.map((p) => p.id) },
-            },
-            data: {
-              payoutStatus: 'PAID',
-              stripeTransferId: transfer.id,
-              payoutDate: new Date(),
-            },
-          });
-
-          // Log successful payout
-          await logPayout(TransactionEventType.PAYOUT_PAID, {
-            payoutId: payout.id,
             creatorId: creator.id,
+            action: 'TRIGGERED',
             amount: totalAmount,
-            currency: settings.currency,
-            status: PayoutStatus.PAID,
-            stripePayoutId: transfer.id,
-            metadata: {
+            status: PayoutStatus.PENDING_APPROVAL,
+            reason: `Paiement automatique de ${totalAmount.toFixed(2)} ${settings.currency} en attente d'approbation`,
+            metadata: JSON.stringify({
               automatic: true,
               paymentCount: readyPayments.length,
               paymentIds: readyPayments.map((p) => p.id),
-              stripeTransferId: transfer.id,
               frequency: schedule.frequency,
-            },
+              awaitingAdminApproval: true,
+            }),
+          },
+        });
+
+        // ✅ NEW: Send notification to admin
+        try {
+          // Find all admin users
+          const admins = await prisma.user.findMany({
+            where: { role: 'ADMIN' },
+            select: { id: true },
           });
 
-          // Clear balance cache
-          clearBalanceCache(creator.id);
-
-          console.log(`✅ [CRON] Payout successful for creator ${creator.id}: ${transfer.id}`);
-          summary.succeeded++;
-        } catch (error: any) {
-          // Transfer failed
-          console.error(`❌ [CRON] Transfer failed for creator ${creator.id}:`, error);
-
-          // Update payout status to failed
-          await prisma.payout.update({
-            where: { id: payout.id },
-            data: {
-              status: PayoutStatus.FAILED,
-              failureReason: error.message || 'Unknown error',
-              retriedCount: { increment: 1 },
-            },
-          });
-
-          // Mark payments back as READY
-          await prisma.payment.updateMany({
-            where: {
-              id: { in: readyPayments.map((p) => p.id) },
-            },
-            data: {
-              payoutStatus: 'READY',
-            },
-          });
-
-          // Log failed payout
-          await logPayout(TransactionEventType.PAYOUT_FAILED, {
-            payoutId: payout.id,
-            creatorId: creator.id,
-            amount: totalAmount,
-            currency: settings.currency,
-            status: PayoutStatus.FAILED,
-            errorMessage: error.message || 'Transfer failed',
-            metadata: {
-              automatic: true,
-              paymentCount: readyPayments.length,
-              error: error.message,
-            },
-          });
-
-          summary.failed++;
-          summary.errors.push({
-            creatorId: creator.id,
-            error: error.message || 'Unknown error',
-          });
+          // Send notification to each admin
+          for (const admin of admins) {
+            await createNotification({
+              userId: admin.id,
+              type: 'SYSTEM',
+              title: '💰 Nouvelle demande de paiement automatique',
+              message: `Paiement automatique de ${totalAmount.toFixed(2)} ${settings.currency} pour ${creator.user.name}. Veuillez approuver ou rejeter la demande.`,
+              link: '/dashboard/admin/payouts',
+            });
+          }
+        } catch (error) {
+          console.error('Error sending admin notifications:', error);
+          // Non-critical error, continue
         }
+
+        console.log(`✅ [CRON] Payout request created for creator ${creator.id}, awaiting admin approval`);
+        summary.succeeded++;
 
         // 10. Update next payout date
         const nextPayoutDate = calculateNextPayoutDate(schedule.frequency, now);
