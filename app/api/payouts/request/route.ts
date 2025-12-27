@@ -13,6 +13,8 @@ import { TransactionEventType, PayoutStatus } from '@prisma/client';
 import { checkPayoutEligibility, clearBalanceCache } from '@/lib/payout-eligibility';
 import { getStripeAccountStatus } from '@/lib/stripe-account-validator';
 import { getStripeCurrency, convertEurToStripeCurrency } from '@/lib/currency-converter';
+import { createNotification } from '@/lib/notifications';
+import { sendEmail } from '@/lib/email';
 
 /**
  * POST /api/payouts/request
@@ -74,9 +76,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get creator details
+    // Get creator details with user relation
     const creator = await prisma.creator.findUnique({
       where: { id: creatorId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
 
     if (!creator) {
@@ -258,27 +269,143 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // ✅ NEW: Send notification to admin
+    // ✅ NEW: Send notification to admins (in-app + email)
     try {
+      console.log('[Payout] Notifying admins of new payout request...');
+      
       // Find all admin users
       const admins = await prisma.user.findMany({
         where: { role: 'ADMIN' },
         select: { id: true, name: true, email: true },
       });
 
+      console.log(`[Payout] Found ${admins.length} admin(s) to notify`);
+
       // Send notification to each admin
       for (const admin of admins) {
-        await createNotification({
-          userId: admin.id,
-          type: 'SYSTEM',
-          title: '💰 Nouvelle demande de paiement',
-          message: `${creator.user.name} a demandé un paiement de ${payoutAmountEur.toFixed(2)} EUR. Veuillez approuver ou rejeter la demande.`,
-          link: '/dashboard/admin/payouts',
-        });
+        // Create in-app notification
+        try {
+          await createNotification({
+            userId: admin.id,
+            type: 'SYSTEM',
+            title: '💰 Nouvelle demande de paiement',
+            message: `${creator.user.name} a demandé un paiement de ${payoutAmountEur.toFixed(2)} EUR. Veuillez approuver ou rejeter la demande.`,
+            link: '/dashboard/admin/payouts',
+          });
+          console.log(`[Payout] In-app notification sent to admin ${admin.id}`);
+        } catch (notifError) {
+          console.error(`[Payout] Error creating in-app notification for admin ${admin.id}:`, notifError);
+        }
+
+        // Send email notification
+        try {
+          const emailHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Nouvelle demande de paiement</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px;">
+                <tr>
+                  <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                      <!-- Header -->
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+                          <h1 style="margin: 0; color: #ffffff; font-size: 28px;">💰 Nouvelle demande de paiement</h1>
+                        </td>
+                      </tr>
+                      
+                      <!-- Content -->
+                      <tr>
+                        <td style="padding: 40px 30px;">
+                          <p style="margin: 0 0 20px; font-size: 16px; color: #333333;">Bonjour ${admin.name || 'Admin'},</p>
+                          
+                          <p style="margin: 0 0 30px; font-size: 16px; color: #333333;">
+                            Un créateur a demandé un paiement. Veuillez vérifier et approuver ou rejeter cette demande.
+                          </p>
+                          
+                          <!-- Payout Details Box -->
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 8px; margin-bottom: 30px;">
+                            <tr>
+                              <td style="padding: 20px;">
+                                <h2 style="margin: 0 0 15px; font-size: 20px; color: #667eea;">Détails de la demande</h2>
+                                
+                                <p style="margin: 0 0 10px; font-size: 14px; color: #666666;">
+                                  <strong>👤 Créateur :</strong> ${creator.user.name}<br>
+                                  <small>${creator.user.email}</small>
+                                </p>
+                                
+                                <p style="margin: 0 0 10px; font-size: 14px; color: #666666;">
+                                  <strong>💰 Montant :</strong> <span style="color: #22c55e; font-size: 18px; font-weight: bold;">${payoutAmountEur.toFixed(2)} EUR</span>
+                                </p>
+                                
+                                ${stripeCurrency !== 'EUR' ? `
+                                <p style="margin: 0 0 10px; font-size: 14px; color: #666666;">
+                                  <strong>💱 Montant converti :</strong> ${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}
+                                </p>
+                                ` : ''}
+                                
+                                <p style="margin: 0; font-size: 14px; color: #666666;">
+                                  <strong>📅 Date de demande :</strong> ${new Date().toLocaleString('fr-FR')}
+                                </p>
+                              </td>
+                            </tr>
+                          </table>
+                          
+                          <!-- CTA Button -->
+                          <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td align="center" style="padding: 20px 0;">
+                                <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://callastar.fr'}/dashboard/admin/payouts" 
+                                   style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
+                                  Gérer la demande
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                          
+                          <p style="margin: 20px 0 0; font-size: 14px; color: #999999; text-align: center;">
+                            Veuillez traiter cette demande rapidement pour garantir une bonne expérience créateur.
+                          </p>
+                        </td>
+                      </tr>
+                      
+                      <!-- Footer -->
+                      <tr>
+                        <td style="background-color: #f8f9fa; padding: 20px 30px; text-align: center;">
+                          <p style="margin: 0; font-size: 12px; color: #999999;">
+                            Call a Star - Administration<br>
+                            Cet email a été envoyé automatiquement depuis le système de paiements.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+          `;
+
+          await sendEmail({
+            to: admin.email,
+            subject: `💰 Nouvelle demande de paiement - ${creator.user.name} (${payoutAmountEur.toFixed(2)} EUR)`,
+            html: emailHtml,
+          });
+          console.log(`[Payout] Email notification sent to admin ${admin.email}`);
+        } catch (emailError) {
+          console.error(`[Payout] Error sending email to admin ${admin.email}:`, emailError);
+          // Don't block the payout creation if email fails
+        }
       }
+
+      console.log('[Payout] Admin notifications completed');
     } catch (error) {
-      console.error('Error sending admin notifications:', error);
-      // Non-critical error, continue
+      console.error('[Payout] Error sending admin notifications:', error);
+      // Non-critical error, continue with payout creation
     }
 
     return NextResponse.json({

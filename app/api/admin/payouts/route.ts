@@ -16,11 +16,13 @@ export async function GET(request: NextRequest) {
     // Verify authentication and admin role
     const token = request.cookies.get('auth-token')?.value;
     if (!token) {
+      console.error('[AdminPayouts] No auth token found');
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
     const decoded = await verifyToken(token);
     if (!decoded || decoded.role !== 'ADMIN') {
+      console.error('[AdminPayouts] User is not admin:', decoded?.role);
       return NextResponse.json(
         { error: 'Accès réservé aux administrateurs' },
         { status: 403 }
@@ -31,16 +33,31 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const creatorId = searchParams.get('creatorId');
 
+    console.log('[AdminPayouts] Fetching payouts with filters:', { status, creatorId });
+
+    // Build where clause
+    const whereClause: any = {};
+    
+    if (status && status !== 'all' && status !== '') {
+      whereClause.status = status;
+      console.log('[AdminPayouts] Filtering by status:', status);
+    }
+    
+    if (creatorId && creatorId !== 'all' && creatorId !== '') {
+      whereClause.creatorId = creatorId;
+      console.log('[AdminPayouts] Filtering by creatorId:', creatorId);
+    }
+
+    console.log('[AdminPayouts] Where clause:', JSON.stringify(whereClause));
+
     const payouts = await prisma.payout.findMany({
-      where: {
-        ...(status && status !== 'all' && { status: status as any }),
-        ...(creatorId && creatorId !== 'all' && { creatorId }),
-      },
+      where: whereClause,
       include: {
         creator: {
           include: {
             user: {
               select: {
+                id: true,
                 name: true,
                 email: true,
               },
@@ -53,9 +70,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    console.log(`[AdminPayouts] Found ${payouts.length} payout(s)`);
+    
+    // Log summary by status
+    const statusCounts = payouts.reduce((acc, p) => {
+      acc[p.status] = (acc[p.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    console.log('[AdminPayouts] Payouts by status:', statusCounts);
+
     return NextResponse.json(payouts);
   } catch (error) {
-    console.error('Error fetching payouts:', error);
+    console.error('[AdminPayouts] Error fetching payouts:', error);
     return NextResponse.json(
       { error: 'Erreur lors de la récupération des payouts' },
       { status: 500 }

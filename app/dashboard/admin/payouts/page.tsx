@@ -70,7 +70,15 @@ export default function AdminPayouts() {
     creatorId: '',
   });
 
+  // Initial load on component mount
   useEffect(() => {
+    console.log('[AdminPayouts] Component mounted, fetching payouts...');
+    fetchPayouts();
+  }, []); // Empty dependencies = runs only on mount
+
+  // Reload when filters change
+  useEffect(() => {
+    console.log('[AdminPayouts] Filters changed:', filters);
     fetchPayouts();
   }, [filters]);
 
@@ -83,16 +91,21 @@ export default function AdminPayouts() {
         ...(filters.creatorId && { creatorId: filters.creatorId }),
       });
 
+      console.log('[AdminPayouts] Fetching payouts with params:', params.toString());
       const response = await fetch(`/api/admin/payouts?${params}`);
       const data = await response.json();
 
+      console.log('[AdminPayouts] Response:', { ok: response.ok, status: response.status, count: data.length });
+
       if (response.ok) {
         setPayouts(data);
+        console.log('[AdminPayouts] Payouts loaded:', data.length);
       } else {
+        console.error('[AdminPayouts] Error response:', data);
         toast.error('Erreur lors du chargement');
       }
     } catch (error) {
-      console.error('Error fetching payouts:', error);
+      console.error('[AdminPayouts] Error fetching payouts:', error);
       toast.error('Erreur lors du chargement des paiements');
     } finally {
       setLoading(false);
