@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
     const payments = await db.payment.findMany({
       where: {
         booking: {
-          creatorId: creator.id,
+          callOffer: {
+            creatorId: creator.id,
+          },
         },
         status: PaymentStatus.SUCCEEDED, // Only successful payments
       },
@@ -93,13 +95,13 @@ export async function GET(request: NextRequest) {
     const paidPayments = payments.filter(p => p.payoutStatus === PayoutStatus.PAID);
     totalEarnings = paidPayments.reduce((sum, p) => sum + Number(p.creatorAmount), 0);
 
-    // ✅ Calculate pending earnings from DB (HELD status - in 7-day holding period)
-    const heldPayments = payments.filter(p => p.payoutStatus === PayoutStatus.HELD);
-    const dbPendingEarnings = heldPayments.reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+    // ✅ Calculate pending earnings from DB (PROCESSING status - in holding period)
+    const processingPayments = payments.filter(p => p.payoutStatus === PayoutStatus.PROCESSING);
+    const dbPendingEarnings = processingPayments.reduce((sum, p) => sum + Number(p.creatorAmount), 0);
 
-    // ✅ Calculate ready for payout from DB (READY status - passed 7-day period)
-    const readyPayments = payments.filter(p => p.payoutStatus === PayoutStatus.READY);
-    const dbReadyForPayout = readyPayments.reduce((sum, p) => sum + Number(p.creatorAmount), 0);
+    // ✅ Calculate ready for payout from DB (APPROVED status - ready for payout)
+    const approvedPayments = payments.filter(p => p.payoutStatus === PayoutStatus.APPROVED);
+    const dbReadyForPayout = approvedPayments.reduce((sum, p) => sum + Number(p.creatorAmount), 0);
 
     // ✅ Use Stripe as source of truth if available, otherwise use DB
     const finalPendingEarnings = stripeBalance ? stripeBalance.pending : dbPendingEarnings;
@@ -133,12 +135,12 @@ export async function GET(request: NextRequest) {
       })),
       summary: {
         totalEarnings, // Total already transferred to Stripe Connect account
-        pendingEarnings: finalPendingEarnings, // In 7-day holding period
+        pendingEarnings: finalPendingEarnings, // In holding period
         readyForPayout: finalReadyForPayout, // Available for payout
         totalPayments: payments.length,
         paidPayments: paidPayments.length,
-        heldPayments: heldPayments.length,
-        readyPayments: readyPayments.length,
+        processingPayments: processingPayments.length,
+        approvedPayments: approvedPayments.length,
       },
       stripeConnected: !!creator.stripeAccountId && creator.isStripeOnboarded,
       stripeBalance: stripeBalance,
