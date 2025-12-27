@@ -538,9 +538,10 @@ export default function PayoutsPage() {
                           })}
                         </TableCell>
                         <TableCell className="font-semibold">
+                          {/* ✅ FIX: item.amount from DB (PayoutAuditLog) is already in currency units, not cents */}
                           {item.amount ? (
                             <CurrencyDisplay 
-                              amount={item.amount / 100} 
+                              amount={item.amount} 
                               currency={balance?.stripeCurrency || 'EUR'} 
                             />
                           ) : '-'}

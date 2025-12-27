@@ -8,6 +8,7 @@ import { sendEmail, generateBookingConfirmationEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
 import { logWebhook, logPayment, logPayout, logRefund, logDispute } from '@/lib/logger';
 import { TransactionEventType, EntityType, RefundStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
+import { stripeAmountToUnits, formatDbAmount } from '@/lib/currency-utils';
 import Stripe from 'stripe';
 
 /**
@@ -106,28 +107,29 @@ export async function POST(request: NextRequest) {
 
     // Handle payout.created event
     if (event.type === 'payout.created') {
-      const payout = event.data.object as any;
-      const creatorId = payout.metadata?.creatorId;
+      const stripePayout = event.data.object as any;
+      const creatorId = stripePayout.metadata?.creatorId;
 
       if (creatorId) {
+        // ✅ FIX: stripePayout.amount comes from Stripe API (IN CENTS)
         console.log('Payout created:', {
-          payoutId: payout.id,
+          payoutId: stripePayout.id,
           creatorId,
-          amount: payout.amount / 100,
-          status: payout.status,
+          amount: stripeAmountToUnits(stripePayout.amount), // Convert cents to units
+          status: stripePayout.status,
         });
 
         // Update audit log if exists
         await prisma.payoutAuditLog.updateMany({
           where: {
             creatorId,
-            stripePayoutId: payout.id,
+            stripePayoutId: stripePayout.id,
           },
           data: {
             status: 'PROCESSING',
             metadata: JSON.stringify({
-              stripeStatus: payout.status,
-              arrivalDate: new Date(payout.arrival_date * 1000),
+              stripeStatus: stripePayout.status,
+              arrivalDate: new Date(stripePayout.arrival_date * 1000),
               updatedAt: new Date().toISOString(),
             }),
           },
@@ -137,27 +139,28 @@ export async function POST(request: NextRequest) {
 
     // Handle payout.paid event
     if (event.type === 'payout.paid') {
-      const payout = event.data.object as any;
-      const creatorId = payout.metadata?.creatorId;
+      const stripePayout = event.data.object as any;
+      const creatorId = stripePayout.metadata?.creatorId;
 
       if (creatorId) {
+        // ✅ FIX: stripePayout.amount comes from Stripe API (IN CENTS)
         console.log('Payout paid successfully:', {
-          payoutId: payout.id,
+          payoutId: stripePayout.id,
           creatorId,
-          amount: payout.amount / 100,
+          amount: stripeAmountToUnits(stripePayout.amount), // Convert cents to units
         });
 
         // Update audit log status to COMPLETED
         const updatedLogs = await prisma.payoutAuditLog.updateMany({
           where: {
             creatorId,
-            stripePayoutId: payout.id,
+            stripePayoutId: stripePayout.id,
           },
           data: {
             status: 'PAID',
             metadata: JSON.stringify({
-              stripeStatus: payout.status,
-              arrivalDate: new Date(payout.arrival_date * 1000),
+              stripeStatus: stripePayout.status,
+              arrivalDate: new Date(stripePayout.arrival_date * 1000),
               paidAt: new Date().toISOString(),
             }),
           },
@@ -172,11 +175,14 @@ export async function POST(request: NextRequest) {
 
           if (creator) {
             const currency = creator.currency || 'EUR';
+            // ✅ FIX: stripePayout.amount from Stripe API (IN CENTS) → convert to units
+            const amountInUnits = stripeAmountToUnits(stripePayout.amount);
+            
             await createNotification({
               userId: creator.userId,
               type: 'PAYOUT_COMPLETED',
               title: 'Paiement effectué',
-              message: `Un paiement de ${(payout.amount / 100).toFixed(2)} ${currency} a été transféré sur votre compte bancaire.`,
+              message: `Un paiement de ${amountInUnits.toFixed(2)} ${currency} a été transféré sur votre compte bancaire.`,
               link: '/dashboard/creator',
             });
 
@@ -202,7 +208,7 @@ export async function POST(request: NextRequest) {
                     <div class="content">
                       <p>Bonjour ${creator.user.name},</p>
                       <p>Votre paiement a été transféré avec succès sur votre compte bancaire.</p>
-                      <div class="amount">${(payout.amount / 100).toFixed(2)} ${currency}</div>
+                      <div class="amount">${amountInUnits.toFixed(2)} ${currency}</div>
                       <p>Les fonds devraient apparaître sur votre compte dans les prochains jours ouvrables.</p>
                       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px;">
                         Merci d'utiliser Call a Star !
@@ -227,31 +233,32 @@ export async function POST(request: NextRequest) {
 
     // Handle payout.failed event
     if (event.type === 'payout.failed') {
-      const payout = event.data.object as any;
-      const creatorId = payout.metadata?.creatorId;
+      const stripePayout = event.data.object as any;
+      const creatorId = stripePayout.metadata?.creatorId;
 
       if (creatorId) {
+        // ✅ FIX: stripePayout.amount comes from Stripe API (IN CENTS)
         console.error('Payout failed:', {
-          payoutId: payout.id,
+          payoutId: stripePayout.id,
           creatorId,
-          amount: payout.amount / 100,
-          failureCode: payout.failure_code,
-          failureMessage: payout.failure_message,
+          amount: stripeAmountToUnits(stripePayout.amount), // Convert cents to units
+          failureCode: stripePayout.failure_code,
+          failureMessage: stripePayout.failure_message,
         });
 
         // Update audit log status to FAILED
         await prisma.payoutAuditLog.updateMany({
           where: {
             creatorId,
-            stripePayoutId: payout.id,
+            stripePayoutId: stripePayout.id,
           },
           data: {
             status: 'FAILED',
-            reason: `Échec du paiement: ${payout.failure_message || payout.failure_code || 'Raison inconnue'}`,
+            reason: `Échec du paiement: ${stripePayout.failure_message || stripePayout.failure_code || 'Raison inconnue'}`,
             metadata: JSON.stringify({
-              stripeStatus: payout.status,
-              failureCode: payout.failure_code,
-              failureMessage: payout.failure_message,
+              stripeStatus: stripePayout.status,
+              failureCode: stripePayout.failure_code,
+              failureMessage: stripePayout.failure_message,
               failedAt: new Date().toISOString(),
             }),
           },
@@ -266,11 +273,14 @@ export async function POST(request: NextRequest) {
 
           if (creator) {
             const currency = creator.currency || 'EUR';
+            // ✅ FIX: stripePayout.amount from Stripe API (IN CENTS) → convert to units
+            const amountInUnits = stripeAmountToUnits(stripePayout.amount);
+            
             await createNotification({
               userId: creator.userId,
               type: 'SYSTEM',
               title: 'Échec du paiement',
-              message: `Le paiement de ${(payout.amount / 100).toFixed(2)} ${currency} a échoué. Veuillez vérifier vos informations bancaires.`,
+              message: `Le paiement de ${amountInUnits.toFixed(2)} ${currency} a échoué. Veuillez vérifier vos informations bancaires.`,
               link: '/dashboard/creator',
             });
 
@@ -295,9 +305,9 @@ export async function POST(request: NextRequest) {
                     </div>
                     <div class="content">
                       <p>Bonjour ${creator.user.name},</p>
-                      <p>Nous n'avons pas pu effectuer le transfert de <strong>${(payout.amount / 100).toFixed(2)} ${currency}</strong> sur votre compte bancaire.</p>
+                      <p>Nous n'avons pas pu effectuer le transfert de <strong>${amountInUnits.toFixed(2)} ${currency}</strong> sur votre compte bancaire.</p>
                       <div class="alert">
-                        <strong>Raison:</strong> ${payout.failure_message || 'Veuillez vérifier vos informations bancaires'}
+                        <strong>Raison:</strong> ${stripePayout.failure_message || 'Veuillez vérifier vos informations bancaires'}
                       </div>
                       <p>Veuillez vérifier vos informations bancaires dans votre compte Stripe et réessayer.</p>
                       <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px;">
