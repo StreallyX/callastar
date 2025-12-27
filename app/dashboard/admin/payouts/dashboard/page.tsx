@@ -276,7 +276,10 @@ export default function PayoutDashboard() {
                 {dashboardData.failedPayouts.count}
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                Total: <CurrencyDisplay amount={dashboardData.failedPayouts.totalAmount} />
+                Total: <MultiCurrencyDisplay
+                  amounts={dashboardData.failedPayouts.totalAmountByCurrency}
+                  emptyMessage="-"
+                />
               </p>
             </CardContent>
           </Card>
