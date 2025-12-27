@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
     // 7. Payment status summary (payments ready for payout)
     const paymentsReadyCount = await prisma.payment.count({
       where: {
-        payoutStatus: 'READY',
+        payoutStatus: 'APPROVED',
       },
     });
 
@@ -187,14 +187,14 @@ export async function GET(request: NextRequest) {
 
     const paymentsHeldCount = await prisma.payment.count({
       where: {
-        payoutStatus: 'HELD',
+        payoutStatus: 'REQUESTED',
       },
     });
 
     // 8. Calculate total ready payout amount - GROUPED BY CURRENCY
     const readyPayments = await prisma.payment.findMany({
       where: {
-        payoutStatus: 'READY',
+        payoutStatus: 'APPROVED',
       },
       select: {
         creatorAmount: true,
@@ -340,7 +340,6 @@ export async function GET(request: NextRequest) {
         amount: Number(p.amount).toFixed(2),
         currency: p.currency || 'EUR',
         failureReason: p.failureReason,
-        retriedCount: p.retriedCount,
         createdAt: p.createdAt,
       })),
       blockedCreators: blockedCreators.map((c) => ({

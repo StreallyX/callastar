@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 /**
  * POST /api/payouts/update-status
- * Cron job to check and update payment statuses from HELD to READY
+ * Cron job to check and update payment statuses from REQUESTED to APPROVED
  * This should be called daily to check if any payments have passed the holding period
  */
 export async function POST(request: NextRequest) {
@@ -19,11 +19,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find all HELD payments where the release date has passed
+    // Find all REQUESTED payments where the release date has passed
     const now = new Date();
     const paymentsToUpdate = await db.payment.findMany({
       where: {
-        payoutStatus: 'HELD',
+        payoutStatus: 'REQUESTED',
         payoutReleaseDate: {
           lte: now,
         },
@@ -37,18 +37,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Update payments to READY status
+    // Update payments to APPROVED status
     const result = await db.payment.updateMany({
       where: {
         id: { in: paymentsToUpdate.map(p => p.id) },
       },
       data: {
-        payoutStatus: 'READY',
+        payoutStatus: 'APPROVED',
       },
     });
 
     return NextResponse.json({
-      message: `Updated ${result.count} payments to READY status`,
+      message: `Updated ${result.count} payments to APPROVED status`,
       updatedCount: result.count,
       paymentIds: paymentsToUpdate.map(p => p.id),
     });

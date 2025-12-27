@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         platformFee,
         creatorAmount,
-        payoutStatus: 'PENDING',
+        payoutStatus: 'REQUESTED',
       },
     });
 

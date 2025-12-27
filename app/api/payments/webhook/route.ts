@@ -553,7 +553,7 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
       status: 'SUCCEEDED',
       currency: currency,
       payoutReleaseDate, // <-- Ensure payoutReleaseDate is set on update too
-      payoutStatus: 'HELD',
+      payoutStatus: 'REQUESTED',
     },
     create: {
       bookingId: booking.id,
@@ -563,7 +563,7 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
       status: 'SUCCEEDED',
       platformFee,
       creatorAmount,
-      payoutStatus: 'HELD',
+      payoutStatus: 'REQUESTED',
       payoutReleaseDate,
     },
   });
@@ -1632,7 +1632,7 @@ async function handlePayoutCanceled(event: Stripe.Event): Promise<void> {
   await prisma.payout.update({
     where: { id: payout.id },
     data: {
-      status: PayoutStatus.CANCELLED,
+      status: PayoutStatus.CANCELED,
       updatedAt: new Date(),
     },
   });
@@ -1641,7 +1641,7 @@ async function handlePayoutCanceled(event: Stripe.Event): Promise<void> {
     payoutId: payout.id,
     creatorId: payout.creatorId,
     amount: Number(payout.amount),
-    status: PayoutStatus.CANCELLED,
+    status: PayoutStatus.CANCELED,
     stripePayoutId: stripePayout.id,
     errorMessage: 'Payout canceled',
   });
@@ -1660,7 +1660,7 @@ async function handlePayoutCanceled(event: Stripe.Event): Promise<void> {
       creatorId: payout.creatorId,
       action: 'FAILED',
       amount: Number(payout.amount),
-      status: PayoutStatus.CANCELLED,
+      status: PayoutStatus.CANCELED,
       stripePayoutId: stripePayout.id,
       reason: 'Paiement annulé',
     },
@@ -1741,7 +1741,7 @@ async function handleTransferReversed(event: Stripe.Event): Promise<void> {
     await prisma.payment.update({
       where: { id: payment.id },
       data: {
-        payoutStatus: 'HELD',
+        payoutStatus: 'REQUESTED',
         stripeTransferId: null,
         payoutDate: null,
       },

@@ -215,7 +215,7 @@ export async function checkPayoutEligibility(
         },
         status: 'SUCCEEDED',
         payoutStatus: {
-          in: ['HELD', 'READY'],
+          in: ['REQUESTED', 'APPROVED'],
         },
         createdAt: {
           gt: cutoffDate,

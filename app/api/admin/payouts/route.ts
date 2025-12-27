@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       data: {
         creatorId: validatedData.creatorId,
         amount: validatedData.amount,
-        status: 'PENDING',
+        status: 'REQUESTED',
       },
       include: {
         creator: {

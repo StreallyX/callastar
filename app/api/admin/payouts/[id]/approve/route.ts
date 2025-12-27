@@ -71,7 +71,8 @@ export async function POST(
     // Get payment amount details
     const payoutAmountEur = Number(payout.amount);
     const stripeCurrency = payout.currency || 'EUR';
-    const payoutAmountInStripeCurrency = payout.amountPaid ? Number(payout.amountPaid) : payoutAmountEur;
+    // Use the payout amount directly (no conversion needed, amount is already in correct currency)
+    const payoutAmountInStripeCurrency = payoutAmountEur;
 
     // Update payout to APPROVED (temporarily, will be PROCESSING after Stripe call)
     await prisma.payout.update({
@@ -109,7 +110,6 @@ export async function POST(
           approvedBy: jwtUser.userId,
           amountEur: String(payoutAmountEur),
           stripeCurrency: stripeCurrency,
-          ...(payout.conversionRate && { conversionRate: String(payout.conversionRate) }),
         },
       });
 
@@ -138,7 +138,6 @@ export async function POST(
             : null,
           stripeCurrency: stripeCurrency,
           amountInStripeCurrency: payoutAmountInStripeCurrency,
-          conversionRate: payout.conversionRate ? Number(payout.conversionRate) : null,
           currencyConverted: stripeCurrency !== 'EUR',
         },
       });
@@ -162,7 +161,6 @@ export async function POST(
               : null,
             stripeCurrency: stripeCurrency,
             amountInStripeCurrency: payoutAmountInStripeCurrency,
-            conversionRate: payout.conversionRate ? Number(payout.conversionRate) : null,
             currencyConverted: stripeCurrency !== 'EUR',
           }),
         },

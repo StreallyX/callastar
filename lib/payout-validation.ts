@@ -170,7 +170,7 @@ export async function checkHoldingPeriod(creatorId: string): Promise<ValidationR
       .flatMap(offer => offer.booking ? [offer.booking] : [])
       .filter(booking => booking.payment)
       .map(booking => booking.payment!)
-      .filter(payment => payment.payoutStatus === 'HELD');
+      .filter(payment => payment.payoutStatus === 'REQUESTED');
 
     if (heldPayments.length > 0) {
       const earliestRelease = heldPayments

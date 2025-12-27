@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
         // 6. Get payments ready for payout
         const readyPayments = await prisma.payment.findMany({
           where: {
-            payoutStatus: 'READY',
+            payoutStatus: 'APPROVED',
             booking: {
               callOffer: {
                 creatorId: creator.id,
@@ -181,12 +181,12 @@ export async function GET(request: NextRequest) {
 
         console.log(`💰 [CRON] Creating payout of ${totalAmount.toFixed(2)} ${settings.currency} for ${readyPayments.length} payments`);
 
-        // ✅ NEW: Create payout record with PENDING_APPROVAL status (await admin approval)
+        // ✅ NEW: Create payout record with REQUESTED status (await admin approval)
         const payout = await prisma.payout.create({
           data: {
             creatorId: creator.id,
             amount: totalAmount,
-            status: PayoutStatus.PENDING_APPROVAL, // ✅ Wait for admin approval even for automatic payouts
+            status: PayoutStatus.REQUESTED, // ✅ Wait for admin approval even for automatic payouts
           },
         });
 
@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
           creatorId: creator.id,
           amount: totalAmount,
           currency: settings.currency,
-          status: PayoutStatus.PENDING_APPROVAL,
+          status: PayoutStatus.REQUESTED,
           metadata: {
             automatic: true,
             paymentCount: readyPayments.length,
@@ -212,7 +212,7 @@ export async function GET(request: NextRequest) {
             creatorId: creator.id,
             action: 'TRIGGERED',
             amount: totalAmount,
-            status: PayoutStatus.PENDING_APPROVAL,
+            status: PayoutStatus.REQUESTED,
             reason: `Paiement automatique de ${totalAmount.toFixed(2)} ${settings.currency} en attente d'approbation`,
             metadata: JSON.stringify({
               automatic: true,

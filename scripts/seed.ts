@@ -336,7 +336,7 @@ async function main() {
     data: {
       creatorId: creator3.id,
       amount: 45.0, // 1 booking * 50€ * 0.9
-      status: 'PENDING',
+      status: 'REQUESTED',
     },
   });
 
