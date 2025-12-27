@@ -443,6 +443,8 @@ async function processWebhookEvent(event: Stripe.Event): Promise<void> {
       await handleTransferCreated(event);
       break;
 
+    // Note: transfer.succeeded is not in the Stripe API type, but it exists
+    // @ts-ignore
     case 'transfer.succeeded':
       await handleTransferSucceeded(event);
       break;
@@ -784,64 +786,168 @@ async function handlePaymentIntentFailed(event: Stripe.Event): Promise<void> {
 
 /**
  * Handle charge.refunded
+ * ✅ PHASE 1.2: Manage creator debt and Transfer Reversal
  */
 async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
   const charge = event.data.object as Stripe.Charge;
+  
+  // Import creator debt functions
+  const { 
+    calculateCreatorDebt, 
+    attemptTransferReversal, 
+    markRefundAsReconciled, 
+    checkAndBlockPayouts,
+    notifyDebt 
+  } = await import('@/lib/creator-debt');
   
   // Get the refund objects from the charge
   const refunds = charge.refunds?.data || [];
   
   for (const stripeRefund of refunds) {
-    // Find refund by Stripe refund ID
-    const refund = await prisma.refund.findUnique({
-      where: { stripeRefundId: stripeRefund.id },
-    });
-
-    if (!refund) {
-      console.warn('[Webhook] Refund not found for Stripe refund:', stripeRefund.id);
-      continue;
-    }
-
-    // Update refund status
-    await prisma.refund.update({
-      where: { id: refund.id },
-      data: {
-        status: RefundStatus.SUCCEEDED,
-        updatedAt: new Date(),
+    // Find payment by payment intent ID
+    const payment = await prisma.payment.findFirst({
+      where: { stripePaymentIntentId: charge.payment_intent as string },
+      include: {
+        booking: {
+          include: {
+            callOffer: {
+              include: {
+                creator: {
+                  include: { user: true },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
-    // Update payment refundedAmount
-    const payment = await prisma.payment.findUnique({
-      where: { id: refund.paymentId },
+    if (!payment) {
+      console.warn('[Webhook] Payment not found for refund:', stripeRefund.id);
+      continue;
+    }
+
+    // Check if refund already exists
+    let refund = await prisma.refund.findUnique({
+      where: { stripeRefundId: stripeRefund.id },
     });
 
-    if (payment) {
-      const newRefundedAmount = Number(payment.refundedAmount) + Number(refund.amount);
-      const isFullyRefunded = newRefundedAmount >= Number(payment.amount);
+    // Calculate creator debt (85% of refund amount)
+    const refundAmount = stripeRefund.amount / 100; // Convert cents to units
+    const creatorDebt = calculateCreatorDebt(refundAmount);
 
-      await prisma.payment.update({
-        where: { id: payment.id },
+    console.log('[Webhook] Processing refund:', {
+      refundId: stripeRefund.id,
+      amount: refundAmount,
+      creatorDebt,
+      paymentId: payment.id,
+      transferId: payment.transferId,
+    });
+
+    // Create or update refund record
+    if (!refund) {
+      refund = await prisma.refund.create({
         data: {
-          refundedAmount: newRefundedAmount,
-          status: isFullyRefunded ? 'FAILED' : payment.status, // Mark as failed if fully refunded
+          paymentId: payment.id,
+          amount: refundAmount,
+          currency: stripeRefund.currency.toUpperCase(),
+          reason: stripeRefund.reason || 'Refund requested',
+          status: RefundStatus.SUCCEEDED,
+          stripeRefundId: stripeRefund.id,
+          initiatedById: payment.booking.callOffer.creatorId, // Default to creator
+          creatorDebt: creatorDebt,
+          reconciled: false,
         },
       });
-
-      // Log refund success
-      await logRefund(TransactionEventType.REFUND_SUCCEEDED, {
-        refundId: refund.id,
-        paymentId: refund.paymentId,
-        amount: Number(refund.amount),
-        currency: refund.currency,
-        status: RefundStatus.SUCCEEDED,
-        stripeRefundId: stripeRefund.id,
-        metadata: {
-          isFullyRefunded,
-          newRefundedAmount,
+    } else {
+      refund = await prisma.refund.update({
+        where: { id: refund.id },
+        data: {
+          status: RefundStatus.SUCCEEDED,
+          creatorDebt: creatorDebt,
+          updatedAt: new Date(),
         },
       });
     }
+
+    // Update payment refundedAmount
+    const newRefundedAmount = Number(payment.refundedAmount) + refundAmount;
+    const isFullyRefunded = newRefundedAmount >= Number(payment.amount);
+
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        refundedAmount: newRefundedAmount,
+        status: isFullyRefunded ? 'FAILED' : payment.status,
+      },
+    });
+
+    // ✅ PHASE 1.2: Attempt Transfer Reversal if transfer exists
+    let reconciled = false;
+    let reversalId: string | undefined;
+
+    if (payment.transferId) {
+      console.log('[Webhook] Attempting transfer reversal for refund...');
+      
+      const reversalResult = await attemptTransferReversal(
+        payment.transferId,
+        Math.round(creatorDebt * 100) // Convert to cents
+      );
+
+      if (reversalResult.success) {
+        console.log('[Webhook] ✅ Transfer reversal successful');
+        reconciled = true;
+        reversalId = reversalResult.reversalId;
+
+        // Mark refund as reconciled
+        await markRefundAsReconciled(refund.id, 'TRANSFER_REVERSAL', reversalId);
+      } else {
+        console.log('[Webhook] ❌ Transfer reversal failed:', reversalResult.error);
+        
+        // Transfer reversal failed - record debt for future deduction
+        // Check if we should block payouts
+        await checkAndBlockPayouts(payment.booking.callOffer.creatorId);
+      }
+    } else {
+      console.warn('[Webhook] ⚠️  No transfer ID found - cannot attempt reversal');
+      
+      // No transfer to reverse - record debt for future deduction
+      await checkAndBlockPayouts(payment.booking.callOffer.creatorId);
+    }
+
+    // Notify creator and admin about the debt
+    if (!reconciled) {
+      await notifyDebt(
+        payment.booking.callOffer.creatorId,
+        'REFUND',
+        refundAmount,
+        stripeRefund.reason || 'Refund requested'
+      );
+    }
+
+    // Log refund success
+    await logRefund(TransactionEventType.REFUND_SUCCEEDED, {
+      refundId: refund.id,
+      paymentId: refund.paymentId,
+      amount: refundAmount,
+      currency: refund.currency,
+      status: RefundStatus.SUCCEEDED,
+      stripeRefundId: stripeRefund.id,
+      metadata: {
+        isFullyRefunded,
+        newRefundedAmount,
+        creatorDebt,
+        reconciled,
+        reversalId,
+        transferReversalAttempted: !!payment.transferId,
+      },
+    });
+
+    console.log('[Webhook] Refund processed:', {
+      refundId: refund.id,
+      reconciled,
+      creatorDebt,
+    });
   }
 
   await logWebhook({
@@ -854,13 +960,34 @@ async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
 
 /**
  * Handle charge.dispute.created
+ * ✅ PHASE 1.2: Manage creator debt for disputes
  */
 async function handleDisputeCreated(event: Stripe.Event): Promise<void> {
   const dispute = event.data.object as Stripe.Dispute;
   
-  // Find payment by charge ID
+  // Import creator debt functions
+  const { 
+    calculateCreatorDebt, 
+    checkAndBlockPayouts,
+    notifyDebt 
+  } = await import('@/lib/creator-debt');
+  
+  // Find payment by payment intent ID
   const payment = await prisma.payment.findFirst({
     where: { stripePaymentIntentId: dispute.payment_intent as string },
+    include: {
+      booking: {
+        include: {
+          callOffer: {
+            include: {
+              creator: {
+                include: { user: true },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!payment) {
@@ -868,16 +995,30 @@ async function handleDisputeCreated(event: Stripe.Event): Promise<void> {
     return;
   }
 
+  // Calculate creator debt (85% of dispute amount)
+  const disputeAmount = dispute.amount / 100; // Convert from cents
+  const creatorDebt = calculateCreatorDebt(disputeAmount);
+
+  console.log('[Webhook] Dispute created:', {
+    disputeId: dispute.id,
+    amount: disputeAmount,
+    creatorDebt,
+    paymentId: payment.id,
+    reason: dispute.reason,
+  });
+
   // Create dispute record
   const createdDispute = await prisma.dispute.create({
     data: {
       paymentId: payment.id,
       stripeDisputeId: dispute.id,
-      amount: dispute.amount / 100, // Convert from cents
+      amount: disputeAmount,
       currency: dispute.currency.toUpperCase(),
       reason: dispute.reason,
       status: 'NEEDS_RESPONSE',
       evidenceDetails: dispute.evidence_details as any,
+      creatorDebt: creatorDebt,
+      reconciled: false,
     },
   });
 
@@ -887,15 +1028,30 @@ async function handleDisputeCreated(event: Stripe.Event): Promise<void> {
     data: { disputeStatus: 'NEEDS_RESPONSE' },
   });
 
+  // ✅ PHASE 1.2: Block payouts if debt exceeds threshold
+  // Note: We don't reverse the transfer yet, only when dispute is lost
+  await checkAndBlockPayouts(payment.booking.callOffer.creatorId);
+
+  // Notify creator and admin
+  await notifyDebt(
+    payment.booking.callOffer.creatorId,
+    'DISPUTE',
+    disputeAmount,
+    dispute.reason
+  );
+
   // Log dispute
   await logDispute(TransactionEventType.DISPUTE_CREATED, {
     disputeId: createdDispute.id,
     paymentId: payment.id,
-    amount: Number(createdDispute.amount),
+    amount: disputeAmount,
     currency: createdDispute.currency,
     status: 'NEEDS_RESPONSE',
     stripeDisputeId: dispute.id,
     reason: dispute.reason,
+    metadata: {
+      creatorDebt,
+    },
   });
 
   await logWebhook({
@@ -906,23 +1062,65 @@ async function handleDisputeCreated(event: Stripe.Event): Promise<void> {
     metadata: { disputeId: dispute.id },
   });
 
-  // TODO: Send critical alert to admin about dispute
+  // Send critical alert to admins
+  const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN' },
+    select: { id: true, email: true },
+  });
+
+  for (const admin of admins) {
+    await createNotification({
+      userId: admin.id,
+      type: 'SYSTEM',
+      title: '🚨 ALERTE: Contestation de paiement',
+      message: `Une contestation de ${disputeAmount.toFixed(2)} EUR a été créée pour ${payment.booking.callOffer.creator.user.name}. Dette potentielle: ${creatorDebt.toFixed(2)} EUR.`,
+      link: '/dashboard/admin/refunds-disputes',
+    });
+  }
+
   console.error('[CRITICAL] Dispute created:', {
     disputeId: createdDispute.id,
     paymentId: payment.id,
-    amount: createdDispute.amount,
+    amount: disputeAmount,
+    creatorDebt,
     reason: dispute.reason,
   });
 }
 
 /**
  * Handle charge.dispute.closed
+ * ✅ PHASE 1.2: Manage Transfer Reversal for lost disputes
  */
 async function handleDisputeClosed(event: Stripe.Event): Promise<void> {
   const dispute = event.data.object as Stripe.Dispute;
   
+  // Import creator debt functions
+  const { 
+    attemptTransferReversal, 
+    markDisputeAsReconciled,
+    checkAndUnblockPayouts,
+    checkAndBlockPayouts 
+  } = await import('@/lib/creator-debt');
+  
   const existingDispute = await prisma.dispute.findUnique({
     where: { stripeDisputeId: dispute.id },
+    include: {
+      payment: {
+        include: {
+          booking: {
+            include: {
+              callOffer: {
+                include: {
+                  creator: {
+                    include: { user: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!existingDispute) {
@@ -932,6 +1130,14 @@ async function handleDisputeClosed(event: Stripe.Event): Promise<void> {
 
   const status = dispute.status === 'won' ? 'WON' : 'LOST';
 
+  console.log('[Webhook] Dispute closed:', {
+    disputeId: existingDispute.id,
+    status,
+    amount: existingDispute.amount,
+    creatorDebt: existingDispute.creatorDebt,
+  });
+
+  // Update dispute status
   await prisma.dispute.update({
     where: { id: existingDispute.id },
     data: {
@@ -944,6 +1150,103 @@ async function handleDisputeClosed(event: Stripe.Event): Promise<void> {
     where: { id: existingDispute.paymentId },
     data: { disputeStatus: status },
   });
+
+  // ✅ PHASE 1.2: Handle based on dispute outcome
+  if (status === 'WON') {
+    // Dispute won - mark as reconciled, no debt owed
+    console.log('[Webhook] ✅ Dispute won - marking as reconciled');
+    
+    await markDisputeAsReconciled(existingDispute.id, 'MANUAL');
+    
+    // Check if we can unblock payouts
+    await checkAndUnblockPayouts(existingDispute.payment.booking.callOffer.creatorId);
+
+    // Notify creator
+    await createNotification({
+      userId: existingDispute.payment.booking.callOffer.creator.userId,
+      type: 'SYSTEM',
+      title: '✅ Contestation gagnée',
+      message: `La contestation de ${Number(existingDispute.amount).toFixed(2)} EUR a été gagnée. Vous n'avez rien à rembourser.`,
+      link: '/dashboard/creator',
+    });
+
+    // Notify admins
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true },
+    });
+
+    for (const admin of admins) {
+      await createNotification({
+        userId: admin.id,
+        type: 'SYSTEM',
+        title: '✅ Contestation gagnée',
+        message: `La contestation de ${Number(existingDispute.amount).toFixed(2)} EUR pour ${existingDispute.payment.booking.callOffer.creator.user.name} a été gagnée.`,
+        link: '/dashboard/admin/refunds-disputes',
+      });
+    }
+  } else {
+    // Dispute lost - attempt Transfer Reversal
+    console.log('[Webhook] ❌ Dispute lost - attempting transfer reversal');
+    
+    let reconciled = false;
+    let reversalId: string | undefined;
+
+    if (existingDispute.payment.transferId) {
+      const reversalResult = await attemptTransferReversal(
+        existingDispute.payment.transferId,
+        Math.round(Number(existingDispute.creatorDebt) * 100) // Convert to cents
+      );
+
+      if (reversalResult.success) {
+        console.log('[Webhook] ✅ Transfer reversal successful for lost dispute');
+        reconciled = true;
+        reversalId = reversalResult.reversalId;
+
+        await markDisputeAsReconciled(existingDispute.id, 'TRANSFER_REVERSAL', reversalId);
+        
+        // Check if we can unblock payouts
+        await checkAndUnblockPayouts(existingDispute.payment.booking.callOffer.creatorId);
+      } else {
+        console.log('[Webhook] ❌ Transfer reversal failed for lost dispute:', reversalResult.error);
+        
+        // Transfer reversal failed - record debt for future deduction
+        await checkAndBlockPayouts(existingDispute.payment.booking.callOffer.creatorId);
+      }
+    } else {
+      console.warn('[Webhook] ⚠️  No transfer ID found - cannot attempt reversal for lost dispute');
+      
+      // No transfer to reverse - record debt for future deduction
+      await checkAndBlockPayouts(existingDispute.payment.booking.callOffer.creatorId);
+    }
+
+    // Notify creator about lost dispute
+    await createNotification({
+      userId: existingDispute.payment.booking.callOffer.creator.userId,
+      type: 'SYSTEM',
+      title: '❌ Contestation perdue',
+      message: reconciled
+        ? `La contestation de ${Number(existingDispute.amount).toFixed(2)} EUR a été perdue. Le montant a été récupéré automatiquement.`
+        : `La contestation de ${Number(existingDispute.amount).toFixed(2)} EUR a été perdue. Le montant de ${Number(existingDispute.creatorDebt).toFixed(2)} EUR sera déduit de vos prochains paiements.`,
+      link: '/dashboard/creator',
+    });
+
+    // Notify admins
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true },
+    });
+
+    for (const admin of admins) {
+      await createNotification({
+        userId: admin.id,
+        type: 'SYSTEM',
+        title: '❌ Contestation perdue',
+        message: `La contestation de ${Number(existingDispute.amount).toFixed(2)} EUR pour ${existingDispute.payment.booking.callOffer.creator.user.name} a été perdue. ${reconciled ? 'Réconciliée automatiquement.' : 'Dette enregistrée.'}`,
+        link: '/dashboard/admin/refunds-disputes',
+      });
+    }
+  }
 
   await logDispute(TransactionEventType.DISPUTE_CLOSED, {
     disputeId: existingDispute.id,

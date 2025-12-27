@@ -5,7 +5,7 @@ import { PayoutStatus } from '@prisma/client';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2025-12-15.clover',
 });
 
 /**
@@ -252,21 +252,21 @@ export async function GET(request: NextRequest) {
     // 11. Calculate platform fees by currency
     // ✅ CORRECTION #2: Utiliser platformFeePercentage au lieu de platformCommissionRate
     const platformSettings = await prisma.platformSettings.findFirst();
-    const commissionRate = platformSettings?.platformFeePercentage || 15;
+    const commissionRate = Number(platformSettings?.platformFeePercentage || 15);
 
     const feesByCurrency = Object.entries(payoutVolumeByCurrency).reduce((acc, [currency, amount]) => {
-      acc[currency] = Number((amount * commissionRate / 100).toFixed(2));
+      acc[currency] = Number((Number(amount) * commissionRate / 100).toFixed(2));
       return acc;
     }, {} as Record<string, number>);
 
     // Format amounts by currency with proper decimals
     const formattedPayoutVolume = Object.entries(payoutVolumeByCurrency).reduce((acc, [currency, amount]) => {
-      acc[currency] = Number(amount.toFixed(2));
+      acc[currency] = Number(Number(amount).toFixed(2));
       return acc;
     }, {} as Record<string, number>);
 
     const formattedReadyAmount = Object.entries(readyAmountByCurrency).reduce((acc, [currency, amount]) => {
-      acc[currency] = Number(amount.toFixed(2));
+      acc[currency] = Number(Number(amount).toFixed(2));
       return acc;
     }, {} as Record<string, number>);
 

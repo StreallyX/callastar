@@ -253,7 +253,7 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold text-green-600">
                 <MultiCurrencyDisplay 
                   amounts={Object.entries(revenueByCurrency).reduce((acc, [currency, data]) => {
-                    acc[currency] = data.totalRevenue;
+                    acc[currency] = (data as any).totalRevenue;
                     return acc;
                   }, {} as Record<string, number>)}
                   emptyMessage="0.00"
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold text-purple-600">
                 <MultiCurrencyDisplay 
                   amounts={Object.entries(revenueByCurrency).reduce((acc, [currency, data]) => {
-                    acc[currency] = data.totalCommissions;
+                    acc[currency] = (data as any).totalCommissions;
                     return acc;
                   }, {} as Record<string, number>)}
                   emptyMessage="0.00"

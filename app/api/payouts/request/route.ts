@@ -212,12 +212,101 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ✅ PHASE 1.2: Check for unreconciled debts and deduct automatically
+    const { getCreatorUnreconciledDebt, markRefundAsReconciled, markDisputeAsReconciled } = await import('@/lib/creator-debt');
+    const debtInfo = await getCreatorUnreconciledDebt(creator.id);
+    
+    let debtDeducted = 0;
+    let payoutAmountAfterDebt = payoutAmountEur;
+    const debtDeductions: { type: string; id: string; amount: number }[] = [];
+
+    if (debtInfo.totalDebt > 0) {
+      console.log('[Payout] Creator has unreconciled debt:', {
+        totalDebt: debtInfo.totalDebt,
+        refundDebt: debtInfo.refundDebt,
+        disputeDebt: debtInfo.disputeDebt,
+        payoutAmount: payoutAmountEur,
+      });
+
+      // Deduct from refunds first
+      for (const refund of debtInfo.refunds) {
+        const refundDebt = Number(refund.creatorDebt);
+        if (payoutAmountAfterDebt >= refundDebt) {
+          // Full refund debt can be deducted
+          payoutAmountAfterDebt -= refundDebt;
+          debtDeducted += refundDebt;
+          debtDeductions.push({ type: 'REFUND', id: refund.id, amount: refundDebt });
+          
+          // Mark refund as reconciled
+          await markRefundAsReconciled(refund.id, 'PAYOUT_DEDUCTION');
+        } else if (payoutAmountAfterDebt > 0) {
+          // Partial deduction
+          const partialDeduction = payoutAmountAfterDebt;
+          debtDeducted += partialDeduction;
+          debtDeductions.push({ type: 'REFUND', id: refund.id, amount: partialDeduction });
+          
+          // Update refund debt (partial reconciliation)
+          await prisma.refund.update({
+            where: { id: refund.id },
+            data: { creatorDebt: refundDebt - partialDeduction },
+          });
+          
+          payoutAmountAfterDebt = 0;
+          break;
+        } else {
+          break;
+        }
+      }
+
+      // Deduct from disputes if there's still payout amount left
+      for (const dispute of debtInfo.disputes) {
+        if (payoutAmountAfterDebt <= 0) break;
+
+        const disputeDebt = Number(dispute.creatorDebt);
+        if (payoutAmountAfterDebt >= disputeDebt) {
+          // Full dispute debt can be deducted
+          payoutAmountAfterDebt -= disputeDebt;
+          debtDeducted += disputeDebt;
+          debtDeductions.push({ type: 'DISPUTE', id: dispute.id, amount: disputeDebt });
+          
+          // Mark dispute as reconciled
+          await markDisputeAsReconciled(dispute.id, 'PAYOUT_DEDUCTION');
+        } else if (payoutAmountAfterDebt > 0) {
+          // Partial deduction
+          const partialDeduction = payoutAmountAfterDebt;
+          debtDeducted += partialDeduction;
+          debtDeductions.push({ type: 'DISPUTE', id: dispute.id, amount: partialDeduction });
+          
+          // Update dispute debt (partial reconciliation)
+          await prisma.dispute.update({
+            where: { id: dispute.id },
+            data: { creatorDebt: disputeDebt - partialDeduction },
+          });
+          
+          payoutAmountAfterDebt = 0;
+          break;
+        }
+      }
+
+      console.log('[Payout] Debt deduction summary:', {
+        originalAmount: payoutAmountEur,
+        debtDeducted,
+        amountAfterDebt: payoutAmountAfterDebt,
+        deductions: debtDeductions,
+      });
+
+      // Check if we can unblock payouts now
+      const { checkAndUnblockPayouts } = await import('@/lib/creator-debt');
+      await checkAndUnblockPayouts(creator.id);
+    }
+
     // ✅ NEW: Create payout record with PENDING_APPROVAL status (NO Stripe payout yet)
+    // Use the amount after debt deduction
     const payout = await prisma.payout.create({
       data: {
         creatorId: creator.id,
-        amount: payoutAmountEur, // Original EUR amount
-        amountPaid: stripeCurrency !== 'EUR' ? payoutAmountInStripeCurrency : null,
+        amount: payoutAmountAfterDebt, // Amount after debt deduction
+        amountPaid: stripeCurrency !== 'EUR' ? payoutAmountInStripeCurrency * (payoutAmountAfterDebt / payoutAmountEur) : null,
         currency: stripeCurrency,
         conversionRate: conversionRate,
         conversionDate: conversionDate,
@@ -408,18 +497,29 @@ export async function POST(request: NextRequest) {
       // Non-critical error, continue with payout creation
     }
 
+    // Build response message
+    let responseMessage = '';
+    if (debtDeducted > 0) {
+      responseMessage = `Demande de paiement envoyée. Montant demandé: ${payoutAmountEur.toFixed(2)} EUR. Dette déduite: ${debtDeducted.toFixed(2)} EUR. Montant final: ${payoutAmountAfterDebt.toFixed(2)} EUR. En attente d'approbation par l'administrateur.`;
+    } else {
+      responseMessage = stripeCurrency !== 'EUR'
+        ? `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR (≈ ${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) envoyée. En attente d'approbation par l'administrateur.`
+        : `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR envoyée. En attente d'approbation par l'administrateur.`;
+    }
+
     return NextResponse.json({
       success: true,
-      message: stripeCurrency !== 'EUR'
-        ? `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR (≈ ${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) envoyée. En attente d'approbation par l'administrateur.`
-        : `Demande de paiement de ${payoutAmountEur.toFixed(2)} EUR envoyée. En attente d'approbation par l'administrateur.`,
+      message: responseMessage,
       payout: {
         id: payout.id,
-        amountEur: payoutAmountEur,
-        amountPaid: stripeCurrency !== 'EUR' ? payoutAmountInStripeCurrency : payoutAmountEur,
+        amountRequested: payoutAmountEur,
+        amountEur: payoutAmountAfterDebt,
+        amountPaid: stripeCurrency !== 'EUR' ? payoutAmountInStripeCurrency * (payoutAmountAfterDebt / payoutAmountEur) : payoutAmountAfterDebt,
         currency: stripeCurrency,
         conversionRate: conversionRate,
         status: 'pending_approval',
+        debtDeducted: debtDeducted > 0 ? debtDeducted : undefined,
+        debtDeductions: debtDeductions.length > 0 ? debtDeductions : undefined,
       },
     });
   } catch (error) {

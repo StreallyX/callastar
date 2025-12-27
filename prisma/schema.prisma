@@ -495,6 +495,14 @@ model Refund {
   status          RefundStatus @default(PENDING)
   stripeRefundId  String?      @unique
   initiatedById   String       // Admin/Creator who initiated the refund
+  
+  // ✅ NEW: Separate Charges and Transfers - Creator debt tracking
+  creatorDebt     Decimal      @default(0) @db.Decimal(10, 2) // Amount creator owes (85% of refund)
+  reconciled      Boolean      @default(false) // Whether the debt has been recovered
+  reconciledAt    DateTime?    // When the debt was reconciled
+  reconciledBy    String?      // How it was reconciled: "TRANSFER_REVERSAL", "PAYOUT_DEDUCTION", "MANUAL"
+  reversalId      String?      // Stripe Transfer Reversal ID if applicable
+  
   metadata        Json?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -507,6 +515,7 @@ model Refund {
   @@index([paymentId])
   @@index([status])
   @@index([stripeRefundId])
+  @@index([reconciled])
 }
 
 // Dispute/Chargeback tracking
@@ -519,6 +528,14 @@ model Dispute {
   reason            String
   status            DisputeStatus
   evidenceDetails   Json?         // Store evidence submission details
+  
+  // ✅ NEW: Separate Charges and Transfers - Creator debt tracking
+  creatorDebt       Decimal       @default(0) @db.Decimal(10, 2) // Amount creator owes (85% of dispute)
+  reconciled        Boolean       @default(false) // Whether the debt has been recovered
+  reconciledAt      DateTime?     // When the debt was reconciled
+  reconciledBy      String?       // How it was reconciled: "TRANSFER_REVERSAL", "PAYOUT_DEDUCTION", "MANUAL"
+  reversalId        String?       // Stripe Transfer Reversal ID if applicable
+  
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
@@ -528,6 +545,7 @@ model Dispute {
   @@index([paymentId])
   @@index([status])
   @@index([stripeDisputeId])
+  @@index([reconciled])
 }
 
 // Per-creator payout scheduling (renamed to avoid conflict with enum)
