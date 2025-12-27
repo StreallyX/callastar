@@ -568,140 +568,36 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     },
   });
 
-  // ✅ PHASE 1.1: Create Transfer to creator (Separate Charges and Transfers)
-  // Transfer happens immediately after payment succeeds
-  const stripeAccountId = paymentIntent.metadata?.stripeAccountId;
-  const creatorAmountCents = parseInt(paymentIntent.metadata?.creatorAmount || '0');
+  // ✅ DESTINATION CHARGES: No need to create Transfer manually
+  // Stripe handles the transfer automatically via transfer_data in PaymentIntent
+  // transferId and transferStatus remain null (Stripe manages the transfer internally)
   
-  if (stripeAccountId && creatorAmountCents > 0) {
-    try {
-      console.log('💸 Creating transfer to creator:', {
-        destination: stripeAccountId,
-        amount: creatorAmountCents,
-        currency: currency,
-        paymentIntentId: paymentIntent.id,
-      });
-
-      // Create Transfer using Stripe API
-      const { stripe: stripeClient } = await import('@/lib/stripe');
-      const transfer = await stripeClient.transfers.create({
-        amount: creatorAmountCents,
-        currency: currency.toLowerCase(),
-        destination: stripeAccountId,
-        transfer_group: paymentIntent.id,
-        metadata: {
-          paymentId: payment.id,
-          offerId: paymentIntent.metadata?.offerId || '',
-          bookingId: booking.id,
-          creatorId: booking.callOffer.creatorId,
-        },
-      });
-
-      console.log('✅ Transfer created successfully:', {
-        transferId: transfer.id,
-        amount: transfer.amount / 100,
-        destination: transfer.destination,
-      });
-
-      // Update payment with transfer info
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          transferId: transfer.id,
-          transferStatus: 'SUCCEEDED',
-          stripeTransferId: transfer.id, // Also update legacy field for compatibility
-        },
-      });
-
-      // Log transfer success
-      await logPayment(TransactionEventType.TRANSFER_SUCCEEDED, {
+  console.log('✅ Payment successful - Stripe will handle transfer automatically via Destination Charges');
+  
+  // ✅ Notify creator about received payment
+  try {
+    // Calculate creator amount (85% of total payment, minus Stripe fees)
+    // With 15% commission: Creator receives ~81.80 EUR for 100 EUR payment
+    const totalAmount = amount;
+    const platformFee = totalAmount * 0.15;
+    const creatorAmount = totalAmount - platformFee;
+    
+    await createNotification({
+      userId: booking.callOffer.creator.userId,
+      type: 'PAYMENT_RECEIVED',
+      title: '💰 Nouveau paiement reçu',
+      message: `Vous avez reçu un paiement de ${totalAmount.toFixed(2)} ${currency} pour "${booking.callOffer.title}". Votre part : ~${creatorAmount.toFixed(2)} ${currency} (après commission de ${platformFee.toFixed(2)} ${currency}). Les fonds sont disponibles sur votre compte Stripe.`,
+      link: '/dashboard/creator/payouts',
+      metadata: {
         paymentId: payment.id,
-        amount: transfer.amount / 100,
-        currency: currency,
-        status: 'SUCCEEDED',
-        metadata: {
-          transferId: transfer.id,
-          destination: stripeAccountId,
-          creatorId: booking.callOffer.creatorId,
-        },
-      });
-
-      // ✅ NEW: Notify creator about received payment
-      try {
-        await createNotification({
-          userId: booking.callOffer.creator.userId,
-          type: 'PAYMENT_RECEIVED',
-          title: '💰 Nouveau paiement reçu',
-          message: `Vous avez reçu ${(transfer.amount / 100).toFixed(2)} ${currency} pour "${booking.callOffer.title}". Les fonds sont disponibles sur votre compte Stripe.`,
-          link: '/dashboard/creator/payouts',
-          metadata: {
-            paymentId: payment.id,
-            bookingId: booking.id,
-            amount: transfer.amount / 100,
-            currency,
-            transferId: transfer.id,
-          },
-        });
-      } catch (notifError) {
-        console.error('[Webhook] Error sending payment received notification:', notifError);
-      }
-    } catch (transferError) {
-      // ❌ Transfer failed - log but don't block webhook
-      console.error('❌ CRITICAL: Transfer creation failed:', {
-        error: transferError,
-        paymentId: payment.id,
-        destination: stripeAccountId,
-        amount: creatorAmountCents,
-      });
-
-      // Update payment with failed transfer status
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          transferStatus: 'FAILED',
-        },
-      });
-
-      // Log transfer failure
-      await logPayment(TransactionEventType.TRANSFER_FAILED, {
-        paymentId: payment.id,
-        amount: creatorAmountCents / 100,
-        currency: currency,
-        status: 'FAILED',
-        errorMessage: transferError instanceof Error ? transferError.message : String(transferError),
-        metadata: {
-          destination: stripeAccountId,
-          creatorId: booking.callOffer.creatorId,
-        },
-      });
-
-      // ✅ NEW: Notify admins about failed transfer
-      try {
-        const { notifyAdmins } = await import('@/lib/notifications');
-        await notifyAdmins({
-          type: 'TRANSFER_FAILED',
-          title: '🚨 ALERTE: Transfer échoué',
-          message: `Le transfer de ${(creatorAmountCents / 100).toFixed(2)} ${currency} vers ${booking.callOffer.creator.user.name} a échoué. Intervention manuelle requise.`,
-          link: `/dashboard/admin/payments`,
-          metadata: {
-            paymentId: payment.id,
-            bookingId: booking.id,
-            creatorId: booking.callOffer.creatorId,
-            amount: creatorAmountCents / 100,
-            currency,
-            error: transferError instanceof Error ? transferError.message : String(transferError),
-          },
-        });
-      } catch (notifError) {
-        console.error('[Webhook] Error sending transfer failure notification:', notifError);
-      }
-    }
-  } else {
-    console.warn('⚠️  No transfer created - missing stripeAccountId or amount:', {
-      stripeAccountId,
-      creatorAmountCents,
-      paymentId: payment.id,
+        bookingId: booking.id,
+        amount: totalAmount,
+        currency,
+        note: 'Transfer handled automatically by Stripe',
+      },
     });
+  } catch (notifError) {
+    console.error('[Webhook] Error sending payment received notification:', notifError);
   }
 
   // Log payment success

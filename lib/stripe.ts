@@ -29,26 +29,26 @@ export function calculatePayoutReleaseDate(paymentDate: Date): Date {
 }
 
 /**
- * Create a Stripe Payment Intent using Separate Charges and Transfers
+ * Create a Stripe Payment Intent using Destination Charges (Option 1)
  * 
- * ✅ NEW ARCHITECTURE (Phase 1.1 - Separate Charges and Transfers):
- * - Charge is created on platform account (no destination)
- * - Transfer happens in webhook after payment_intent.succeeded
- * - Creator receives EXACTLY 85% of total (85 EUR for 100 EUR payment)
- * - Platform absorbs Stripe fees (~2.9% + €0.30)
+ * ✅ DESTINATION CHARGES ARCHITECTURE:
+ * - Charge is created on platform account WITH transfer_data
+ * - Transfer happens automatically by Stripe when payment succeeds
+ * - Platform retains application_fee_amount as commission
+ * - Creator receives payment MINUS platform fee and Stripe fees
  * 
  * Example calculation for 100 EUR payment with 15% commission:
  * 1. Client pays: 100.00 EUR → Platform account
- * 2. Stripe deducts fees: ~3.20 EUR from platform
- * 3. Platform keeps: 15.00 EUR commission
- * 4. Transfer to creator: 85.00 EUR (guaranteed via Transfer API)
- * 5. Net platform: 15.00 - 3.20 = 11.80 EUR
+ * 2. Stripe deducts fees: ~3.20 EUR (from creator's share)
+ * 3. Platform keeps: 15.00 EUR commission (application_fee_amount)
+ * 4. Creator receives: 81.80 EUR (100 - 15 - 3.20)
+ * 5. Net platform: ~11.80 EUR (15.00 - platform's Stripe fees)
  * 
  * Benefits:
- * - Creator always receives exact expected amount (85 EUR, not 81.80)
- * - Platform absorbs all Stripe fees
- * - Better control over fund flow
- * - Same currency for charge and transfer (no conversion issues)
+ * - Simpler webhook logic (no manual Transfer creation)
+ * - Stripe handles the transfer automatically
+ * - Lower risk of transfer failures
+ * - Immediate fund availability to creator
  */
 export async function createPaymentIntent({
   amount,
@@ -66,42 +66,36 @@ export async function createPaymentIntent({
   try {
     const amountInCents = Math.round(amount * 100);
     
-    // Calculate creator amount (85% of total for 15% commission)
+    // Calculate platform fee (15% of total for default 15% commission)
     const feePercentage = platformFeePercentage || 15; // Default 15%
-    const creatorAmount = amount * (1 - feePercentage / 100);
-    const creatorAmountInCents = Math.round(creatorAmount * 100);
-    const platformFeeAmount = amount - creatorAmount;
+    const platformFeeInCents = Math.round(amountInCents * (feePercentage / 100));
 
-    // ✅ NEW: Separate Charges and Transfers
-    // Create a simple PaymentIntent on platform account (no destination, no application_fee)
-    // Transfer will be created in webhook after payment_intent.succeeded
+    // ✅ DESTINATION CHARGES: Use transfer_data and application_fee_amount
     const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
       amount: amountInCents,
       currency: currency.toLowerCase(),
+      transfer_data: stripeAccountId ? {
+        destination: stripeAccountId,
+      } : undefined,
+      application_fee_amount: stripeAccountId ? platformFeeInCents : undefined,
       metadata: {
         ...metadata,
-        // ✅ Store creator info for webhook transfer
+        // ✅ Store for tracking purposes only
         creatorId: metadata.creatorId || '',
         offerId: metadata.offerId || '',
-        stripeAccountId: stripeAccountId || '',
-        // ✅ Store amounts for transfer calculation
-        creatorAmount: String(creatorAmountInCents), // Amount in cents for transfer
-        platformFeePercentage: String(feePercentage),
-        platformFeeAmount: platformFeeAmount.toFixed(2),
       },
       automatic_payment_methods: {
         enabled: true,
       },
     };
 
-    console.log('💳 Creating payment intent with Separate Charges and Transfers:', {
+    console.log('💳 Creating payment intent with Destination Charges:', {
       amount: amount,
       currency: currency,
       platformFeePercentage: feePercentage,
-      platformFeeAmount: platformFeeAmount.toFixed(2),
-      creatorAmount: creatorAmount.toFixed(2),
-      creatorAmountCents: creatorAmountInCents,
-      destination: stripeAccountId || 'none (transfer in webhook)',
+      platformFee: (platformFeeInCents / 100).toFixed(2),
+      destination: stripeAccountId || 'none (no transfer)',
+      note: 'Stripe will handle the transfer automatically',
     });
 
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
@@ -111,6 +105,8 @@ export async function createPaymentIntent({
       amount: paymentIntent.amount,
       currency: paymentIntent.currency,
       status: paymentIntent.status,
+      transfer_data: paymentIntent.transfer_data,
+      application_fee_amount: paymentIntent.application_fee_amount,
     });
 
     return paymentIntent;
