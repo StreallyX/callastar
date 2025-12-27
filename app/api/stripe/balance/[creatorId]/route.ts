@@ -92,9 +92,39 @@ export async function GET(
       const availableTotal = balance.available.reduce((sum, b) => sum + (b.amount / 100), 0);
       const pendingTotal = balance.pending.reduce((sum, b) => sum + (b.amount / 100), 0);
 
+      // ✅ NEW: Fetch in-transit payouts (payouts on the way to bank)
+      let inTransitTotal = 0;
+      let lifetimeTotal = 0;
+      try {
+        // Get payouts with status "in_transit" or "paid" (last 30 days for in_transit)
+        const payouts = await stripe.payouts.list(
+          {
+            limit: 100, // Get recent payouts
+          },
+          {
+            stripeAccount: creator.stripeAccountId,
+          }
+        );
+
+        // Calculate in-transit amount (status: in_transit or pending)
+        inTransitTotal = payouts.data
+          .filter(p => p.status === 'in_transit' || p.status === 'pending')
+          .reduce((sum, p) => sum + (p.amount / 100), 0);
+
+        // Calculate lifetime total (all successful payouts)
+        lifetimeTotal = payouts.data
+          .filter(p => p.status === 'paid' || p.status === 'in_transit')
+          .reduce((sum, p) => sum + (p.amount / 100), 0);
+      } catch (payoutError) {
+        console.error('Error fetching Stripe payouts:', payoutError);
+        // Continue without payout data
+      }
+
       return NextResponse.json({
         available: availableTotal,
         pending: pendingTotal,
+        inTransit: inTransitTotal, // ✅ NEW: Amount in transit to bank
+        lifetimeTotal: lifetimeTotal, // ✅ NEW: Lifetime total volume
         currency: 'EUR', // Database currency (source of truth)
         stripeCurrency: stripeCurrency, // Stripe account currency
         // ✅ FIX: Return correct account status using validator

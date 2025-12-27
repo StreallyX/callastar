@@ -30,6 +30,8 @@ import { CurrencyDisplay } from '@/components/ui/currency-display';
 interface BalanceData {
   available: number;
   pending: number;
+  inTransit: number; // ✅ NEW: Amount in transit to bank
+  lifetimeTotal: number; // ✅ NEW: Lifetime total volume
   currency: string; // Database currency (EUR)
   stripeCurrency?: string; // Stripe account currency (may differ from database)
 }
@@ -102,6 +104,8 @@ export default function PayoutsPage() {
         setBalance({
           available: balanceData.available || 0,
           pending: balanceData.pending || 0,
+          inTransit: balanceData.inTransit || 0, // ✅ NEW
+          lifetimeTotal: balanceData.lifetimeTotal || 0, // ✅ NEW
           currency: balanceData.currency || 'EUR',
           stripeCurrency: balanceData.stripeCurrency || 'EUR',
         });
@@ -183,8 +187,6 @@ export default function PayoutsPage() {
     );
   }
 
-  const totalBalance = (balance?.available || 0) + (balance?.pending || 0);
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
       <Navbar />
@@ -236,26 +238,21 @@ export default function PayoutsPage() {
         )}
 
         {/* Balance Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Available Balance */}
           <Card className="border-green-200 bg-gradient-to-br from-green-50 to-white">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                 <Wallet className="w-4 h-4" />
-                Solde disponible
+                Disponible
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-green-600">
                 {balance?.available.toFixed(2) || '0.00'} {balance?.stripeCurrency || 'EUR'}
               </div>
-              {balance?.stripeCurrency !== 'EUR' && (
-                <p className="text-xs text-gray-500 mt-1">
-                  ≈ {balance?.available.toFixed(2)} EUR (base)
-                </p>
-              )}
               <p className="text-xs text-gray-500 mt-2">
-                Peut être versé immédiatement
+                Prêt pour virement
               </p>
             </CardContent>
           </Card>
@@ -265,43 +262,51 @@ export default function PayoutsPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                Solde en attente
+                En attente
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">
+              <div className="text-2xl font-bold text-yellow-600">
                 {balance?.pending.toFixed(2) || '0.00'} {balance?.stripeCurrency || 'EUR'}
               </div>
-              {balance?.stripeCurrency !== 'EUR' && (
-                <p className="text-xs text-gray-500 mt-1">
-                  ≈ {balance?.pending.toFixed(2)} EUR (base)
-                </p>
-              )}
               <p className="text-xs text-gray-500 mt-2">
-                En attente de période de sécurité
+                Période de sécurité (7j)
               </p>
             </CardContent>
           </Card>
 
-          {/* Total Balance */}
+          {/* ✅ NEW: In Transit to Bank */}
+          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <RefreshCw className="w-4 h-4" />
+                En transit
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {balance?.inTransit?.toFixed(2) || '0.00'} {balance?.stripeCurrency || 'EUR'}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Vers votre banque
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* ✅ NEW: Lifetime Total */}
           <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-white">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
-                Solde total
+                Total versé
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-purple-600">
-                {totalBalance.toFixed(2)} {balance?.stripeCurrency || 'EUR'}
+              <div className="text-2xl font-bold text-purple-600">
+                {balance?.lifetimeTotal?.toFixed(2) || '0.00'} {balance?.stripeCurrency || 'EUR'}
               </div>
-              {balance?.stripeCurrency !== 'EUR' && (
-                <p className="text-xs text-gray-500 mt-1">
-                  ≈ {totalBalance.toFixed(2)} EUR (base)
-                </p>
-              )}
               <p className="text-xs text-gray-500 mt-2">
-                Disponible + En attente
+                Volume total (lifetime)
               </p>
             </CardContent>
           </Card>

@@ -43,11 +43,11 @@ export default function EarningsPage() {
         setCreatorCurrency(userData.user.creator.currency);
       }
 
-      // Get payout data
-      const payoutResponse = await fetch('/api/payouts/creator');
-      if (payoutResponse.ok) {
-        const payoutResponseData = await payoutResponse.json();
-        setPayoutData(payoutResponseData);
+      // ✅ FIX: Get earnings data from new endpoint
+      const earningsResponse = await fetch('/api/creator/earnings');
+      if (earningsResponse.ok) {
+        const earningsData = await earningsResponse.json();
+        setPayoutData(earningsData);
       }
 
     } catch (error) {
