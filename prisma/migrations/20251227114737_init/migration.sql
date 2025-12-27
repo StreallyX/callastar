@@ -14,10 +14,10 @@ CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'SUCCEEDED', 'FAILED');
 CREATE TYPE "CallRequestStatus" AS ENUM ('PENDING', 'ACCEPTED', 'REJECTED');
 
 -- CreateEnum
-CREATE TYPE "PayoutStatus" AS ENUM ('PENDING', 'HELD', 'READY', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED');
+CREATE TYPE "PayoutStatus" AS ENUM ('REQUESTED', 'APPROVED', 'PROCESSING', 'PAID', 'FAILED', 'REJECTED', 'CANCELED');
 
 -- CreateEnum
-CREATE TYPE "NotificationType" AS ENUM ('BOOKING_CONFIRMED', 'BOOKING_CANCELLED', 'CALL_REQUEST', 'REVIEW_RECEIVED', 'PAYOUT_COMPLETED', 'SYSTEM');
+CREATE TYPE "NotificationType" AS ENUM ('BOOKING_CONFIRMED', 'BOOKING_CANCELLED', 'CALL_REQUEST', 'REVIEW_RECEIVED', 'PAYOUT_COMPLETED', 'SYSTEM', 'PAYMENT_RECEIVED', 'PAYOUT_REQUEST', 'PAYOUT_APPROVED', 'PAYOUT_FAILED', 'REFUND_CREATED', 'DISPUTE_CREATED', 'DEBT_DEDUCTED', 'TRANSFER_FAILED', 'DEBT_THRESHOLD_EXCEEDED');
 
 -- CreateEnum
 CREATE TYPE "PayoutSchedule" AS ENUM ('DAILY', 'WEEKLY', 'MANUAL');
@@ -161,10 +161,12 @@ CREATE TABLE "Payment" (
     "refundedAmount" DECIMAL(10,2) NOT NULL DEFAULT 0,
     "disputeStatus" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "payoutStatus" "PayoutStatus" NOT NULL DEFAULT 'HELD',
+    "payoutStatus" "PayoutStatus" NOT NULL DEFAULT 'REQUESTED',
     "payoutReleaseDate" TIMESTAMP(3),
     "stripeTransferId" TEXT,
     "payoutDate" TIMESTAMP(3),
+    "transferId" TEXT,
+    "transferStatus" TEXT,
 
     CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
 );
@@ -205,8 +207,10 @@ CREATE TABLE "Notification" (
     "title" TEXT NOT NULL,
     "message" TEXT NOT NULL,
     "link" TEXT,
-    "isRead" BOOLEAN NOT NULL DEFAULT false,
+    "read" BOOLEAN NOT NULL DEFAULT false,
+    "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "readAt" TIMESTAMP(3),
 
     CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
 );
@@ -216,17 +220,18 @@ CREATE TABLE "Payout" (
     "id" TEXT NOT NULL,
     "creatorId" TEXT NOT NULL,
     "amount" DECIMAL(10,2) NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'EUR',
+    "status" "PayoutStatus" NOT NULL DEFAULT 'REQUESTED',
     "stripePayoutId" TEXT,
-    "status" "PayoutStatus" NOT NULL DEFAULT 'PENDING',
-    "failureReason" TEXT,
-    "rejectionReason" TEXT,
-    "approvedById" TEXT,
+    "requestedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "approvedAt" TIMESTAMP(3),
-    "retriedCount" INTEGER NOT NULL DEFAULT 0,
-    "amountPaid" DECIMAL(10,2),
-    "currency" TEXT DEFAULT 'EUR',
-    "conversionRate" DECIMAL(10,6),
-    "conversionDate" TIMESTAMP(3),
+    "paidAt" TIMESTAMP(3),
+    "failedAt" TIMESTAMP(3),
+    "rejectedAt" TIMESTAMP(3),
+    "approvedById" TEXT,
+    "rejectionReason" TEXT,
+    "failureReason" TEXT,
+    "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -247,6 +252,7 @@ CREATE TABLE "AdminSettings" (
 CREATE TABLE "PayoutAuditLog" (
     "id" TEXT NOT NULL,
     "creatorId" TEXT NOT NULL,
+    "payoutId" TEXT,
     "action" "PayoutAction" NOT NULL,
     "amount" DECIMAL(10,2),
     "status" "PayoutStatus",
@@ -306,6 +312,11 @@ CREATE TABLE "Refund" (
     "status" "RefundStatus" NOT NULL DEFAULT 'PENDING',
     "stripeRefundId" TEXT,
     "initiatedById" TEXT NOT NULL,
+    "creatorDebt" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "reconciled" BOOLEAN NOT NULL DEFAULT false,
+    "reconciledAt" TIMESTAMP(3),
+    "reconciledBy" TEXT,
+    "reversalId" TEXT,
     "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -323,6 +334,11 @@ CREATE TABLE "Dispute" (
     "reason" TEXT NOT NULL,
     "status" "DisputeStatus" NOT NULL,
     "evidenceDetails" JSONB,
+    "creatorDebt" DECIMAL(10,2) NOT NULL DEFAULT 0,
+    "reconciled" BOOLEAN NOT NULL DEFAULT false,
+    "reconciledAt" TIMESTAMP(3),
+    "reconciledBy" TEXT,
+    "reversalId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -413,6 +429,9 @@ CREATE INDEX "Payment_payoutStatus_idx" ON "Payment"("payoutStatus");
 CREATE INDEX "Payment_currency_idx" ON "Payment"("currency");
 
 -- CreateIndex
+CREATE INDEX "Payment_transferId_idx" ON "Payment"("transferId");
+
+-- CreateIndex
 CREATE INDEX "CallRequest_userId_idx" ON "CallRequest"("userId");
 
 -- CreateIndex
@@ -437,10 +456,13 @@ CREATE INDEX "Review_rating_idx" ON "Review"("rating");
 CREATE INDEX "Notification_userId_idx" ON "Notification"("userId");
 
 -- CreateIndex
-CREATE INDEX "Notification_isRead_idx" ON "Notification"("isRead");
+CREATE INDEX "Notification_read_idx" ON "Notification"("read");
 
 -- CreateIndex
 CREATE INDEX "Notification_createdAt_idx" ON "Notification"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Payout_stripePayoutId_key" ON "Payout"("stripePayoutId");
 
 -- CreateIndex
 CREATE INDEX "Payout_creatorId_idx" ON "Payout"("creatorId");
@@ -452,6 +474,9 @@ CREATE INDEX "Payout_status_idx" ON "Payout"("status");
 CREATE INDEX "Payout_currency_idx" ON "Payout"("currency");
 
 -- CreateIndex
+CREATE INDEX "Payout_stripePayoutId_idx" ON "Payout"("stripePayoutId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "AdminSettings_key_key" ON "AdminSettings"("key");
 
 -- CreateIndex
@@ -459,6 +484,9 @@ CREATE INDEX "AdminSettings_key_idx" ON "AdminSettings"("key");
 
 -- CreateIndex
 CREATE INDEX "PayoutAuditLog_creatorId_idx" ON "PayoutAuditLog"("creatorId");
+
+-- CreateIndex
+CREATE INDEX "PayoutAuditLog_payoutId_idx" ON "PayoutAuditLog"("payoutId");
 
 -- CreateIndex
 CREATE INDEX "PayoutAuditLog_action_idx" ON "PayoutAuditLog"("action");
@@ -494,6 +522,9 @@ CREATE INDEX "Refund_status_idx" ON "Refund"("status");
 CREATE INDEX "Refund_stripeRefundId_idx" ON "Refund"("stripeRefundId");
 
 -- CreateIndex
+CREATE INDEX "Refund_reconciled_idx" ON "Refund"("reconciled");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Dispute_stripeDisputeId_key" ON "Dispute"("stripeDisputeId");
 
 -- CreateIndex
@@ -504,6 +535,9 @@ CREATE INDEX "Dispute_status_idx" ON "Dispute"("status");
 
 -- CreateIndex
 CREATE INDEX "Dispute_stripeDisputeId_idx" ON "Dispute"("stripeDisputeId");
+
+-- CreateIndex
+CREATE INDEX "Dispute_reconciled_idx" ON "Dispute"("reconciled");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PayoutScheduleNew_creatorId_key" ON "PayoutScheduleNew"("creatorId");
@@ -557,10 +591,16 @@ ALTER TABLE "Review" ADD CONSTRAINT "Review_creatorId_fkey" FOREIGN KEY ("creato
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Payout" ADD CONSTRAINT "Payout_approvedById_fkey" FOREIGN KEY ("approvedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Payout" ADD CONSTRAINT "Payout_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "Creator"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PayoutAuditLog" ADD CONSTRAINT "PayoutAuditLog_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "Creator"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PayoutAuditLog" ADD CONSTRAINT "PayoutAuditLog_payoutId_fkey" FOREIGN KEY ("payoutId") REFERENCES "Payout"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TransactionLog" ADD CONSTRAINT "TransactionLog_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "Payment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
