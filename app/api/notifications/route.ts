@@ -1,67 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import prisma from '@/lib/db';
+/**
+ * GET /api/notifications
+ * Récupérer les notifications de l'utilisateur connecté
+ */
 
-// GET - Fetch user's notifications
-export async function GET(req: NextRequest) {
+import { NextRequest, NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/auth";
+import { getUserNotifications } from "@/lib/notifications";
+import { NotificationType } from "@prisma/client";
+
+export async function GET(request: NextRequest) {
   try {
-    const tokenValue = req.cookies.get('auth-token')?.value;
-    if (!tokenValue) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Check authentication
+    const jwtUser = await getUserFromRequest(request);
+    if (!jwtUser?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = await verifyToken(tokenValue);
-    if (!token) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const read = searchParams.get("read");
+    const type = searchParams.get("type");
+    const limit = searchParams.get("limit");
+    const offset = searchParams.get("offset");
+
+    // Build options
+    const options: any = {};
+    
+    if (read !== null) {
+      options.read = read === "true";
+    }
+    
+    if (type && Object.values(NotificationType).includes(type as NotificationType)) {
+      options.type = type as NotificationType;
+    }
+    
+    if (limit) {
+      options.limit = parseInt(limit, 10);
+    }
+    
+    if (offset) {
+      options.offset = parseInt(offset, 10);
     }
 
-    const notifications = await prisma.notification.findMany({
-      where: { userId: token.userId },
-      orderBy: { createdAt: 'desc' },
-      take: 50, // Limit to last 50 notifications
-    });
+    // Get notifications
+    const result = await getUserNotifications(jwtUser.userId, options);
 
-    return NextResponse.json(notifications);
+    return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    console.error("[GET /api/notifications] Error:", error);
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération des notifications' },
-      { status: 500 }
-    );
-  }
-}
-
-// POST - Create a notification (internal use)
-export async function POST(req: NextRequest) {
-  try {
-    const tokenValue = req.cookies.get('auth-token')?.value;
-    if (!tokenValue) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    const token = await verifyToken(tokenValue);
-    if (!token || token.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
-    }
-
-    const body = await req.json();
-    const { userId, type, title, message, link } = body;
-
-    const notification = await prisma.notification.create({
-      data: {
-        userId,
-        type,
-        title,
-        message,
-        link,
-      },
-    });
-
-    return NextResponse.json(notification);
-  } catch (error) {
-    console.error('Error creating notification:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la création de la notification' },
+      { error: "Failed to fetch notifications" },
       { status: 500 }
     );
   }

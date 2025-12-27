@@ -1,85 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import prisma from '@/lib/db';
+/**
+ * DELETE /api/notifications/[id]
+ * Supprimer une notification
+ */
 
-// PATCH - Mark notification as read
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const tokenValue = req.cookies.get('auth-token')?.value;
-    if (!tokenValue) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+import { NextRequest, NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/auth";
+import { deleteNotification } from "@/lib/notifications";
 
-    const token = await verifyToken(tokenValue);
-    if (!token) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    const { id } = params;
-
-    // Verify notification belongs to user
-    const notification = await prisma.notification.findUnique({
-      where: { id },
-    });
-
-    if (!notification || notification.userId !== token.userId) {
-      return NextResponse.json({ error: 'Notification introuvable' }, { status: 404 });
-    }
-
-    const updated = await prisma.notification.update({
-      where: { id },
-      data: { isRead: true },
-    });
-
-    return NextResponse.json(updated);
-  } catch (error) {
-    console.error('Error updating notification:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour de la notification' },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE - Delete notification
 export async function DELETE(
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const tokenValue = req.cookies.get('auth-token')?.value;
-    if (!tokenValue) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Check authentication
+    const jwtUser = await getUserFromRequest(request);
+    if (!jwtUser?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = await verifyToken(tokenValue);
-    if (!token) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    const notificationId = params.id;
 
-    const { id } = params;
+    // Delete notification (function checks ownership)
+    await deleteNotification(notificationId, jwtUser.userId);
 
-    // Verify notification belongs to user
-    const notification = await prisma.notification.findUnique({
-      where: { id },
-    });
-
-    if (!notification || notification.userId !== token.userId) {
-      return NextResponse.json({ error: 'Notification introuvable' }, { status: 404 });
-    }
-
-    await prisma.notification.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting notification:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de la suppression de la notification' },
+      { message: "Notification deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("[DELETE /api/notifications/[id]] Error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete notification" },
       { status: 500 }
     );
   }

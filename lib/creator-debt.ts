@@ -239,10 +239,16 @@ export async function checkAndBlockPayouts(
       // Notify creator
       await createNotification({
         userId: creator.userId,
-        type: 'SYSTEM',
+        type: 'DEBT_THRESHOLD_EXCEEDED',
         title: '⚠️ Paiements bloqués',
         message: `Vos paiements ont été temporairement bloqués en raison d'une dette impayée de ${debtInfo.totalDebt.toFixed(2)} EUR. Cette dette sera automatiquement déduite de vos prochains paiements.`,
         link: '/dashboard/creator',
+        metadata: {
+          totalDebt: debtInfo.totalDebt,
+          refundDebt: debtInfo.refundDebt,
+          disputeDebt: debtInfo.disputeDebt,
+          threshold,
+        },
       });
 
       // Send email to creator
@@ -306,10 +312,18 @@ export async function checkAndBlockPayouts(
       for (const admin of admins) {
         await createNotification({
           userId: admin.id,
-          type: 'SYSTEM',
+          type: 'DEBT_THRESHOLD_EXCEEDED',
           title: '🚨 Créateur bloqué pour dette',
           message: `Le créateur ${creator.user.name} a été bloqué en raison d'une dette de ${debtInfo.totalDebt.toFixed(2)} EUR.`,
           link: '/dashboard/admin/refunds-disputes',
+          metadata: {
+            creatorId,
+            creatorName: creator.user.name,
+            totalDebt: debtInfo.totalDebt,
+            refundDebt: debtInfo.refundDebt,
+            disputeDebt: debtInfo.disputeDebt,
+            threshold,
+          },
         });
       }
 
@@ -378,10 +392,16 @@ export async function notifyDebt(
   // Notify creator
   await createNotification({
     userId: creator.userId,
-    type: 'SYSTEM',
+    type: type === 'REFUND' ? 'REFUND_CREATED' : 'DISPUTE_CREATED',
     title: `⚠️ ${type === 'REFUND' ? 'Remboursement' : 'Contestation'} enregistré`,
     message: `Un ${typeLabel} de ${amount.toFixed(2)} EUR a été enregistré. Vous devez ${creatorDebt.toFixed(2)} EUR qui sera automatiquement déduit de vos prochains paiements.`,
     link: '/dashboard/creator',
+    metadata: {
+      type,
+      amount,
+      creatorDebt,
+      reason,
+    },
   });
 
   // Send email to creator
@@ -440,10 +460,18 @@ export async function notifyDebt(
   for (const admin of admins) {
     await createNotification({
       userId: admin.id,
-      type: 'SYSTEM',
+      type: type === 'REFUND' ? 'REFUND_CREATED' : 'DISPUTE_CREATED',
       title: `🚨 ${type === 'REFUND' ? 'Remboursement' : 'Contestation'} - Dette créateur`,
       message: `${creator.user.name} doit ${creatorDebt.toFixed(2)} EUR suite à un ${typeLabel} de ${amount.toFixed(2)} EUR.`,
       link: '/dashboard/admin/refunds-disputes',
+      metadata: {
+        type,
+        amount,
+        creatorDebt,
+        creatorId,
+        creatorName: creator.user.name,
+        reason,
+      },
     });
   }
 }

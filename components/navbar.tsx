@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import NotificationBell from '@/components/NotificationBell';
 
 interface UserData {
   id: string;
@@ -92,7 +93,9 @@ export function Navbar() {
             {!loading && (
               <>
                 {user ? (
-                  <DropdownMenu>
+                  <>
+                    <NotificationBell />
+                    <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="gap-2">
                         <User className="w-4 h-4" />
@@ -127,6 +130,7 @@ export function Navbar() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  </>
                 ) : (
                   <>
                     <Link href="/auth/login">

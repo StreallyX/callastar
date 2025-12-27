@@ -171,12 +171,19 @@ export async function POST(
       try {
         await createNotification({
           userId: payout.creator.userId,
-          type: 'PAYOUT_COMPLETED',
+          type: 'PAYOUT_APPROVED',
           title: '✅ Demande de paiement approuvée',
           message: stripeCurrency !== 'EUR'
             ? `Votre demande de paiement de ${payoutAmountEur.toFixed(2)} EUR (≈ ${payoutAmountInStripeCurrency.toFixed(2)} ${stripeCurrency}) a été approuvée et le transfert est en cours.`
             : `Votre demande de paiement de ${payoutAmountEur.toFixed(2)} EUR a été approuvée et le transfert est en cours.`,
-          link: '/dashboard/creator',
+          link: '/dashboard/creator/payouts',
+          metadata: {
+            payoutId: payout.id,
+            amount: payoutAmountEur,
+            amountPaid: payoutAmountInStripeCurrency,
+            currency: stripeCurrency,
+            stripePayoutId: stripePayout.id,
+          },
         });
 
         // Send email

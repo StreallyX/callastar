@@ -625,6 +625,26 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
           creatorId: booking.callOffer.creatorId,
         },
       });
+
+      // ✅ NEW: Notify creator about received payment
+      try {
+        await createNotification({
+          userId: booking.callOffer.creator.userId,
+          type: 'PAYMENT_RECEIVED',
+          title: '💰 Nouveau paiement reçu',
+          message: `Vous avez reçu ${(transfer.amount / 100).toFixed(2)} ${currency} pour "${booking.callOffer.title}". Les fonds sont disponibles sur votre compte Stripe.`,
+          link: '/dashboard/creator/payouts',
+          metadata: {
+            paymentId: payment.id,
+            bookingId: booking.id,
+            amount: transfer.amount / 100,
+            currency,
+            transferId: transfer.id,
+          },
+        });
+      } catch (notifError) {
+        console.error('[Webhook] Error sending payment received notification:', notifError);
+      }
     } catch (transferError) {
       // ❌ Transfer failed - log but don't block webhook
       console.error('❌ CRITICAL: Transfer creation failed:', {
@@ -655,8 +675,26 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
         },
       });
 
-      // TODO: Create admin notification for failed transfer
-      // This requires manual intervention to retry the transfer
+      // ✅ NEW: Notify admins about failed transfer
+      try {
+        const { notifyAdmins } = await import('@/lib/notifications');
+        await notifyAdmins({
+          type: 'TRANSFER_FAILED',
+          title: '🚨 ALERTE: Transfer échoué',
+          message: `Le transfer de ${(creatorAmountCents / 100).toFixed(2)} ${currency} vers ${booking.callOffer.creator.user.name} a échoué. Intervention manuelle requise.`,
+          link: `/dashboard/admin/payments`,
+          metadata: {
+            paymentId: payment.id,
+            bookingId: booking.id,
+            creatorId: booking.callOffer.creatorId,
+            amount: creatorAmountCents / 100,
+            currency,
+            error: transferError instanceof Error ? transferError.message : String(transferError),
+          },
+        });
+      } catch (notifError) {
+        console.error('[Webhook] Error sending transfer failure notification:', notifError);
+      }
     }
   } else {
     console.warn('⚠️  No transfer created - missing stripeAccountId or amount:', {

@@ -61,6 +61,15 @@ enum NotificationType {
   REVIEW_RECEIVED
   PAYOUT_COMPLETED
   SYSTEM
+  PAYMENT_RECEIVED
+  PAYOUT_REQUEST
+  PAYOUT_APPROVED
+  PAYOUT_FAILED
+  REFUND_CREATED
+  DISPUTE_CREATED
+  DEBT_DEDUCTED
+  TRANSFER_FAILED
+  DEBT_THRESHOLD_EXCEEDED
 }
 
 // User's payout schedule enums
@@ -369,14 +378,16 @@ model Notification {
   title     String
   message   String           @db.Text
   link      String?
-  isRead    Boolean          @default(false)
+  read      Boolean          @default(false)
+  metadata  Json?            // Données additionnelles (paymentId, payoutId, amount, etc.)
   createdAt DateTime         @default(now())
+  readAt    DateTime?        // Date when notification was marked as read
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([isRead])
+  @@index([read])
   @@index([createdAt])
 }
 

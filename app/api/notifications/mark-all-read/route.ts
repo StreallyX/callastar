@@ -1,35 +1,31 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
-import prisma from '@/lib/db';
+/**
+ * PATCH /api/notifications/mark-all-read
+ * Marquer toutes les notifications comme lues
+ */
 
-// POST - Mark all notifications as read
-export async function POST(req: NextRequest) {
+import { NextRequest, NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/auth";
+import { markAllNotificationsAsRead } from "@/lib/notifications";
+
+export async function PATCH(request: NextRequest) {
   try {
-    const tokenValue = req.cookies.get('auth-token')?.value;
-    if (!tokenValue) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    // Check authentication
+    const jwtUser = await getUserFromRequest(request);
+    if (!jwtUser?.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = await verifyToken(tokenValue);
-    if (!token) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    // Mark all notifications as read
+    const result = await markAllNotificationsAsRead(jwtUser.userId);
 
-    await prisma.notification.updateMany({
-      where: {
-        userId: token.userId,
-        isRead: false,
-      },
-      data: {
-        isRead: true,
-      },
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error marking notifications as read:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de la mise à jour des notifications' },
+      { message: "All notifications marked as read", count: result.count },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("[PATCH /api/notifications/mark-all-read] Error:", error);
+    return NextResponse.json(
+      { error: "Failed to mark all notifications as read" },
       { status: 500 }
     );
   }

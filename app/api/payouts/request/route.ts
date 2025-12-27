@@ -376,10 +376,16 @@ export async function POST(request: NextRequest) {
         try {
           await createNotification({
             userId: admin.id,
-            type: 'SYSTEM',
+            type: 'PAYOUT_REQUEST',
             title: '💰 Nouvelle demande de paiement',
             message: `${creator.user.name} a demandé un paiement de ${payoutAmountEur.toFixed(2)} EUR. Veuillez approuver ou rejeter la demande.`,
             link: '/dashboard/admin/payouts',
+            metadata: {
+              creatorId: creator.id,
+              creatorName: creator.user.name,
+              amount: payoutAmountEur,
+              payoutId: payout.id,
+            },
           });
           console.log(`[Payout] In-app notification sent to admin ${admin.id}`);
         } catch (notifError) {
