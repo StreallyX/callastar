@@ -294,6 +294,7 @@ model Booking {
   stripePaymentIntentId String?
   dailyRoomUrl          String?
   dailyRoomName         String?
+  isTestBooking         Boolean       @default(false) // Flag for test/development bookings
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
@@ -305,6 +306,7 @@ model Booking {
 
   @@index([userId])
   @@index([status])
+  @@index([isTestBooking])
 }
 
 model Payment {

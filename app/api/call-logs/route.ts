@@ -17,7 +17,7 @@ const callLogSchema = z.object({
     'CAMERA_TOGGLED',
     'MIC_TOGGLED',
   ]),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   message: z.string().optional(),
 });
 
@@ -33,6 +33,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    
+    // Validate that body exists and is an object
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        { error: 'Données invalides - corps de requête manquant' },
+        { status: 400 }
+      );
+    }
+
     const validatedData = callLogSchema.parse(body);
 
     // Verify booking exists and user has access

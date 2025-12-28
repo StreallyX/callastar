@@ -100,6 +100,11 @@ export default function CallsPage() {
   };
 
   const canJoinCall = (booking: any) => {
+    // 🧪 Les bookings de test sont toujours accessibles
+    if (booking?.isTestBooking) {
+      return true;
+    }
+    
     const callTime = new Date(booking?.callOffer?.dateTime ?? new Date()).getTime();
     const now = Date.now();
     const fifteenMinutesBefore = callTime - 15 * 60 * 1000;
@@ -153,9 +158,14 @@ export default function CallsPage() {
                       <CardContent className="pt-6">
                         <div className="flex items-start justify-between">
                           <div className="space-y-2 flex-1">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-wrap">
                               <h3 className="font-semibold text-lg">{booking?.callOffer?.title}</h3>
                               {getStatusBadge(booking?.status)}
+                              {booking?.isTestBooking && (
+                                <Badge className="bg-blue-500 text-white">
+                                  🧪 Mode Test
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-sm text-gray-600">avec {booking?.callOffer?.creator?.user?.name}</p>
                             <div className="flex items-center gap-2 text-sm text-gray-500">

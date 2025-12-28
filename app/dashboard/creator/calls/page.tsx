@@ -219,7 +219,8 @@ export default function CallsPage() {
             {filteredBookings.map((booking: any) => {
               const callDate = new Date(booking?.callOffer?.dateTime ?? new Date());
               const statusInfo = getStatusInfo(booking);
-              const canJoin = booking.status === 'CONFIRMED' && callDate > now && callDate <= new Date(now.getTime() + 30 * 60000);
+              // 🧪 Les bookings de test sont toujours accessibles
+              const canJoin = booking?.isTestBooking || (booking.status === 'CONFIRMED' && callDate > now && callDate <= new Date(now.getTime() + 30 * 60000));
               
               return (
                 <Card key={booking?.id}>
@@ -231,11 +232,16 @@ export default function CallsPage() {
                             <Video className="w-5 h-5 text-purple-600" />
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-1">
+                            <div className="flex items-center gap-3 mb-1 flex-wrap">
                               <h3 className="font-semibold text-lg">{booking?.callOffer?.title}</h3>
                               <Badge className={statusInfo.color}>
                                 {statusInfo.label}
                               </Badge>
+                              {booking?.isTestBooking && (
+                                <Badge className="bg-blue-500 text-white">
+                                  🧪 Mode Test
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 text-sm text-gray-600">
                               <User className="w-4 h-4" />

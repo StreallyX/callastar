@@ -93,8 +93,8 @@ export default function CallPage({ params }: { params: Promise<{ bookingId: stri
           const remaining = Math.max(0, scheduledDuration - elapsed);
           setTimeRemaining(remaining);
           
-          // Auto-end call when time is up
-          if (remaining === 0 && callFrameRef.current) {
+          // Auto-end call when time is up (mais pas pour les bookings de test)
+          if (!booking?.isTestBooking && remaining === 0 && callFrameRef.current) {
             endCall();
           }
         }
@@ -122,17 +122,20 @@ export default function CallPage({ params }: { params: Promise<{ bookingId: stri
       debugLog('Booking data:', fetchedBooking);
 
       // Check if call is accessible
-      const callTime = new Date(fetchedBooking?.callOffer?.dateTime).getTime();
-      const now = Date.now();
-      const fifteenMinutesBefore = callTime - 15 * 60 * 1000;
+      // 🧪 Les bookings de test sont toujours accessibles immédiatement
+      if (!fetchedBooking?.isTestBooking) {
+        const callTime = new Date(fetchedBooking?.callOffer?.dateTime).getTime();
+        const now = Date.now();
+        const fifteenMinutesBefore = callTime - 15 * 60 * 1000;
 
-      if (now < fifteenMinutesBefore) {
-        const minutesUntil = Math.ceil((fifteenMinutesBefore - now) / 60000);
-        setCallState({ 
-          phase: 'waiting', 
-          error: `L'accès à l'appel sera disponible dans ${minutesUntil} minutes` 
-        });
-        return;
+        if (now < fifteenMinutesBefore) {
+          const minutesUntil = Math.ceil((fifteenMinutesBefore - now) / 60000);
+          setCallState({ 
+            phase: 'waiting', 
+            error: `L'accès à l'appel sera disponible dans ${minutesUntil} minutes` 
+          });
+          return;
+        }
       }
 
       // Move to pre-call state
@@ -487,7 +490,14 @@ export default function CallPage({ params }: { params: Promise<{ bookingId: stri
         <div className="container mx-auto max-w-4xl px-4 py-12">
           <Card>
             <CardHeader>
-              <CardTitle>Prêt à rejoindre l'appel</CardTitle>
+              <CardTitle className="flex items-center gap-3 flex-wrap">
+                Prêt à rejoindre l'appel
+                {booking?.isTestBooking && (
+                  <Badge className="bg-blue-500 text-white">
+                    🧪 Mode Test
+                  </Badge>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -497,6 +507,11 @@ export default function CallPage({ params }: { params: Promise<{ bookingId: stri
                   <p className="text-sm text-gray-500">
                     Durée prévue: {booking?.callOffer?.duration} minutes
                   </p>
+                  {booking?.isTestBooking && (
+                    <p className="text-sm text-blue-600 font-medium mt-2">
+                      ℹ️ Ceci est un appel de test pour le développement
+                    </p>
+                  )}
                 </div>
 
                 <div className="bg-gray-100 rounded-lg p-6 space-y-4">
@@ -574,13 +589,20 @@ export default function CallPage({ params }: { params: Promise<{ bookingId: stri
           {/* Timer overlay */}
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full">
             <div className="flex items-center gap-4">
+              {booking?.isTestBooking && (
+                <Badge className="bg-blue-500 text-white">
+                  🧪 Test
+                </Badge>
+              )}
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 <span className="font-mono">{formatTime(elapsedTime)}</span>
               </div>
-              <div className="text-sm text-gray-300">
-                Temps restant: {formatTime(timeRemaining)}
-              </div>
+              {!booking?.isTestBooking && (
+                <div className="text-sm text-gray-300">
+                  Temps restant: {formatTime(timeRemaining)}
+                </div>
+              )}
             </div>
           </div>
         </div>
