@@ -188,34 +188,51 @@ export default function UserDashboard() {
           <p className="text-gray-600">Bienvenue, {user?.name}</p>
         </div>
 
-        {/* Statistics */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Appels à venir</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-purple-600">{upcomingBookings.length}</div>
-            </CardContent>
-          </Card>
+        {/* Quick Actions */}
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
+          <Link href="/dashboard/user/calls">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <CardDescription>Appels à venir</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600">{upcomingBookings.length}</div>
+              </CardContent>
+            </Card>
+          </Link>
           
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Demandes envoyées</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{callRequests.length}</div>
-            </CardContent>
-          </Card>
+          <Link href="/dashboard/user/requests">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <CardDescription>Demandes envoyées</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600">{callRequests.length}</div>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Appels terminés</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gray-600">{pastBookings.length}</div>
-            </CardContent>
-          </Card>
+          <Link href="/dashboard/user/history">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <CardDescription>Appels terminés</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-gray-600">{pastBookings.length}</div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/user/notifications">
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <CardDescription>Notifications</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-600">0</div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Tabs */}
