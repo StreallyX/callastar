@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { creatorId, amount, currency = 'eur' } = body;
+    const { creatorId, amount } = body;
 
     // Validation
     const errors: string[] = [];
@@ -33,11 +33,7 @@ export async function POST(request: NextRequest) {
     if (!amount || isNaN(Number(amount))) {
       errors.push('Le montant est requis et doit être un nombre');
     } else if (Number(amount) < 10) {
-      errors.push('Le montant minimum de paiement est de 10€');
-    }
-
-    if (currency !== 'eur') {
-      errors.push('Seule la devise EUR est supportée actuellement');
+      errors.push('Le montant minimum de paiement est de 10');
     }
 
     if (errors.length > 0) {
@@ -98,6 +94,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ✅ USE CREATOR'S CURRENCY FROM DATABASE (source of truth)
+    const currency = creator.currency.toLowerCase();
+    const stripeCurrency = (stripeAccount.default_currency || 'eur').toUpperCase();
+
+    // ⚠️ DETECT CURRENCY INCONSISTENCY
+    if (stripeCurrency !== creator.currency) {
+      console.warn(`[payout-trigger] ⚠️  INCOHÉRENCE DEVISE DÉTECTÉE pour créateur ${creator.id} (${creator.user.name}):
+        - Base de données : ${creator.currency}
+        - Compte Stripe   : ${stripeCurrency}
+        → Action requise : Resynchroniser via /api/admin/sync-currency`);
+      
+      // Log the inconsistency but continue with DB currency (source of truth)
+      // This ensures we don't fail the payout but we alert admins
+    }
+
     // Validate KYC is complete
     if (!stripeAccount.charges_enabled) {
       return NextResponse.json(
@@ -134,16 +145,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if sufficient balance (in the main currency)
+    // Check if sufficient balance (in the creator's currency)
     const availableBalance = balance.available.find(b => b.currency === currency);
     const requestedAmountInCents = Math.round(Number(amount) * 100);
     
-    if (!availableBalance || availableBalance.amount < requestedAmountInCents) {
-      const availableAmount = availableBalance ? (availableBalance.amount / 100).toFixed(2) : '0.00';
+    if (!availableBalance) {
+      console.error(`[payout-trigger] ❌ Solde non trouvé dans la devise ${creator.currency} pour créateur ${creator.id}`);
+      console.error(`[payout-trigger] Devises disponibles:`, balance.available.map(b => b.currency).join(', '));
+      return NextResponse.json(
+        { 
+          error: 'Solde non trouvé dans la devise',
+          message: `Solde non trouvé dans la devise ${creator.currency}. Devises disponibles: ${balance.available.map(b => b.currency).join(', ')}`
+        },
+        { status: 400 }
+      );
+    }
+    
+    if (availableBalance.amount < requestedAmountInCents) {
+      const availableAmount = (availableBalance.amount / 100).toFixed(2);
       return NextResponse.json(
         { 
           error: 'Solde insuffisant',
-          message: `Solde disponible: ${availableAmount}€, Montant demandé: ${amount}€`
+          message: `Solde disponible: ${availableAmount} ${creator.currency}, Montant demandé: ${amount} ${creator.currency}`
         },
         { status: 400 }
       );

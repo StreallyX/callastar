@@ -2,19 +2,8 @@ import Stripe from 'stripe';
 import { stripe } from './stripe';
 
 /**
- * Comprehensive Stripe Connect account validation
- * 
- * IMPORTANT: For Stripe Connect Express accounts, operational status is determined by:
- * 1. details_submitted === true (user completed onboarding)
- * 2. requirements.currently_due.length === 0 (no pending requirements)
- *
- * DO NOT use charges_enabled or payouts_enabled for validation:
- * - These can be false in test mode
- * - These can be false during Stripe processing delays
- * - These represent immediate technical state, not account readiness
- *
- * Stripe Dashboard may show "all capabilities enabled" (authorization)
- * while charges_enabled is still false (immediate state)
+ * Stripe Connect Express – Account Status
+ * Source de vérité = Stripe
  */
 
 export interface StripeAccountStatus {
@@ -26,6 +15,7 @@ export interface StripeAccountStatus {
     currentlyDue: string[];
     eventuallyDue: string[];
     pastDue: string[];
+    identityDue: string[];
   };
   capabilities: {
     cardPayments: string;
@@ -39,87 +29,77 @@ export interface StripeAccountStatus {
 }
 
 /**
- * Get detailed status of a Stripe Connect account
- * @param stripeAccountId - The Stripe Connect account ID
- * @returns Detailed account status with all checks
+ * Get detailed Stripe Connect Express account status
  */
 export async function getStripeAccountStatus(
   stripeAccountId: string
 ): Promise<StripeAccountStatus> {
   const account = await stripe.accounts.retrieve(stripeAccountId);
 
-  const currentlyDue = account.requirements?.currently_due || [];
-  const eventuallyDue = account.requirements?.eventually_due || [];
-  const pastDue = account.requirements?.past_due || [];
-  const disabledReason = account.requirements?.disabled_reason || null;
+  const currentlyDue = account.requirements?.currently_due ?? [];
+  const eventuallyDue = account.requirements?.eventually_due ?? [];
+  const pastDue = account.requirements?.past_due ?? [];
+  const disabledReason = account.requirements?.disabled_reason ?? null;
 
-  // Check capabilities
-  const cardPaymentsCapability = account.capabilities?.card_payments || 'inactive';
-  const transfersCapability = account.capabilities?.transfers || 'inactive';
+  // 🔍 Détection spécifique des exigences d'identité
+  const identityDue = [...currentlyDue, ...eventuallyDue].filter((req) =>
+    req.includes('verification') ||
+    req.includes('identity') ||
+    req.includes('document')
+  );
 
-  // Check if external accounts (bank accounts) are configured
-  const hasExternalAccount: boolean =
-    !!(account.external_accounts?.data && account.external_accounts.data.length > 0);
+  // Capabilities (info uniquement)
+  const cardPaymentsCapability = account.capabilities?.card_payments ?? 'inactive';
+  const transfersCapability = account.capabilities?.transfers ?? 'inactive';
 
-  // Basic flags
-  const detailsSubmitted = account.details_submitted || false;
-  const chargesEnabled = account.charges_enabled || false;
-  const payoutsEnabled = account.payouts_enabled || false;
+  // Comptes bancaires
+  const hasExternalAccount =
+    !!account.external_accounts?.data &&
+    account.external_accounts.data.length > 0;
 
-  // Collect issues - ONLY for actual user-actionable problems
+  // Flags Stripe
+  const detailsSubmitted = !!account.details_submitted;
+  const chargesEnabled = !!account.charges_enabled;
+  const payoutsEnabled = !!account.payouts_enabled;
+
+  // Problèmes réels (user-actionable)
   const issues: string[] = [];
 
-  // For Express accounts, operational status is based on:
-  // 1. details_submitted === true
-  // 2. requirements.currently_due.length === 0
-  const isOperational = detailsSubmitted && currentlyDue.length === 0 && pastDue.length === 0;
-
   if (!detailsSubmitted) {
-    issues.push('Informations de compte non soumises');
+    issues.push('Informations de compte Stripe non soumises');
   }
 
-  // Show actual missing requirements, not technical state flags
   if (currentlyDue.length > 0) {
-    issues.push(`Exigences en attente: ${currentlyDue.join(', ')}`);
+    issues.push(`Exigences en attente : ${currentlyDue.join(', ')}`);
   }
 
   if (pastDue.length > 0) {
-    issues.push(`Exigences en retard: ${pastDue.join(', ')}`);
+    issues.push(`Exigences en retard : ${pastDue.join(', ')}`);
   }
 
-  // Disabled reason is a real problem
+  if (identityDue.length > 0) {
+    issues.push(
+      `Vérification d'identité requise : ${identityDue.join(', ')}`
+    );
+  }
+
   if (disabledReason) {
-    issues.push(`Compte désactivé: ${disabledReason}`);
+    issues.push(`Compte Stripe désactivé : ${disabledReason}`);
   }
 
-  // DO NOT check charges_enabled or payouts_enabled as issues
-  // These can be false in test mode or during processing delays
-  // They are NOT user errors for Express accounts
-
-  // DO NOT check capabilities as issues
-  // For Express accounts, capabilities being pending/inactive is normal during setup
-  // They will automatically become active once requirements are met
-  // Only disabled_reason indicates a real problem (already handled above)
-
-  // External account is only required if payouts are being set up
-  // Not including this as an "issue" since it's handled by requirements
-
-  // Determine if fully onboarded and can receive payments/payouts
-  // For Express accounts: details_submitted + no pending requirements = operational
-  const canReceivePayments: boolean =
-    !!detailsSubmitted &&
+  // 🧠 Logique métier correcte pour Express
+  const canReceivePayments =
+    detailsSubmitted &&
     currentlyDue.length === 0 &&
     pastDue.length === 0 &&
+    identityDue.length === 0 &&
     !disabledReason;
 
-  const canReceivePayouts: boolean =
-    !!detailsSubmitted &&
-    currentlyDue.length === 0 &&
-    pastDue.length === 0 &&
-    !disabledReason &&
+  const canReceivePayouts =
+    canReceivePayments &&
     hasExternalAccount;
 
-  const isFullyOnboarded: boolean = canReceivePayments && canReceivePayouts;
+  const isFullyOnboarded = canReceivePayments && canReceivePayouts;
 
   return {
     isFullyOnboarded,
@@ -130,42 +110,41 @@ export async function getStripeAccountStatus(
       currentlyDue,
       eventuallyDue,
       pastDue,
+      identityDue,
     },
     capabilities: {
       cardPayments: cardPaymentsCapability,
       transfers: transfersCapability,
     },
-    detailsSubmitted: !!detailsSubmitted,
-    chargesEnabled: !!chargesEnabled,
-    payoutsEnabled: !!payoutsEnabled,
+    detailsSubmitted,
+    chargesEnabled,
+    payoutsEnabled,
     hasExternalAccount,
     disabledReason,
   };
 }
 
 /**
- * Get human-readable status message
- * @param status - Account status object
- * @returns User-friendly status message
+ * Message lisible pour le créateur
  */
 export function getStatusMessage(status: StripeAccountStatus): string {
   if (status.isFullyOnboarded) {
-    return 'Compte complètement configuré et prêt à recevoir des paiements';
+    return 'Compte Stripe entièrement configuré et opérationnel';
   }
 
   if (status.issues.length > 0) {
-    return status.issues[0]; // Return the first/most important issue
+    return status.issues[0];
   }
 
-  return 'Configuration en cours';
+  return 'Configuration Stripe en cours';
 }
 
 /**
- * Get recommended action for the creator
- * @param status - Account status object
- * @returns User-friendly action message
+ * Action recommandée pour le créateur
  */
-export function getRecommendedAction(status: StripeAccountStatus): string | null {
+export function getRecommendedAction(
+  status: StripeAccountStatus
+): string | null {
   if (status.isFullyOnboarded) {
     return null;
   }
@@ -174,32 +153,24 @@ export function getRecommendedAction(status: StripeAccountStatus): string | null
     return 'Complétez votre configuration Stripe Connect';
   }
 
+  if (status.requirements.identityDue.length > 0) {
+    return 'Stripe demande un document d’identité pour vérifier votre compte';
+  }
+
   if (status.requirements.pastDue.length > 0) {
-    return 'Complétez les exigences en retard de toute urgence';
+    return 'Complétez les exigences Stripe en retard';
   }
 
   if (status.requirements.currentlyDue.length > 0) {
-    return 'Complétez les exigences manquantes sur Stripe';
+    return 'Complétez les informations manquantes sur Stripe';
   }
 
   if (!status.hasExternalAccount) {
-    return 'Configurez votre compte bancaire sur Stripe';
+    return 'Ajoutez un compte bancaire sur Stripe pour recevoir les virements';
   }
 
   if (status.disabledReason) {
-    return 'Votre compte nécessite une attention - consultez Stripe';
-  }
-
-  // DO NOT recommend actions based on charges_enabled or payouts_enabled
-  // These are technical states that resolve automatically after requirements are met
-  // Showing "wait for activation" is misleading when nothing is actually wrong
-
-  // If we reach here with details submitted and no requirements, the account is operational
-  // Even if charges_enabled/payouts_enabled are temporarily false
-  if (status.detailsSubmitted && 
-      status.requirements.currentlyDue.length === 0 && 
-      status.requirements.pastDue.length === 0) {
-    return null; // No action needed - account is operational
+    return 'Votre compte Stripe est temporairement désactivé';
   }
 
   return 'Vérifiez votre compte Stripe pour plus de détails';

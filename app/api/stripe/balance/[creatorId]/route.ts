@@ -85,6 +85,14 @@ export async function GET(
       const stripeAccount = await stripe.accounts.retrieve(creator.stripeAccountId);
       const stripeCurrency = (stripeAccount.default_currency || 'eur').toUpperCase();
 
+      // ⚠️ DETECT CURRENCY INCONSISTENCY
+      if (stripeCurrency !== creator.currency) {
+        console.warn(`[balance] ⚠️  INCOHÉRENCE DEVISE DÉTECTÉE pour créateur ${creator.id} (${creator.user.name}):
+          - Base de données : ${creator.currency}
+          - Compte Stripe   : ${stripeCurrency}
+          → Action requise : Resynchroniser via /api/admin/sync-currency`);
+      }
+
       // ✅ FIX: Use comprehensive validation logic instead of raw flags
       const accountStatus = await getStripeAccountStatus(creator.stripeAccountId);
 
@@ -125,8 +133,8 @@ export async function GET(
         pending: pendingTotal,
         inTransit: inTransitTotal, // ✅ NEW: Amount in transit to bank
         lifetimeTotal: lifetimeTotal, // ✅ NEW: Lifetime total volume
-        currency: 'EUR', // Database currency (source of truth)
-        stripeCurrency: stripeCurrency, // Stripe account currency
+        currency: creator.currency, // ✅ FIX: Use creator's currency from DB (source of truth)
+        stripeCurrency: stripeCurrency, // Stripe account currency (for comparison)
         // ✅ FIX: Return correct account status using validator
         detailsSubmitted: accountStatus.detailsSubmitted,
         requirementsCount: accountStatus.requirements.currentlyDue.length,
