@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { comparePassword, generateToken, setAuthCookie } from '@/lib/auth';
+import { logAuth } from '@/lib/system-logger';
 
 // Validation schema
 const loginSchema = z.object({
@@ -22,6 +23,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user || !user.password) {
+      // Log failed login attempt
+      await logAuth('LOGIN', 'unknown', false, {
+        email: validatedData.email,
+        reason: 'User not found or no password',
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+      });
+      
       return NextResponse.json(
         { error: 'Email ou mot de passe incorrect' },
         { status: 401 }
@@ -32,6 +40,13 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = await comparePassword(validatedData.password, user.password);
 
     if (!isPasswordValid) {
+      // Log failed login attempt
+      await logAuth('LOGIN', user.id, false, {
+        email: validatedData.email,
+        reason: 'Invalid password',
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+      });
+      
       return NextResponse.json(
         { error: 'Email ou mot de passe incorrect' },
         { status: 401 }
@@ -43,6 +58,14 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       role: user.role,
+    });
+
+    // Log successful login
+    await logAuth('LOGIN', user.id, true, {
+      email: user.email,
+      role: user.role,
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+      userAgent: request.headers.get('user-agent'),
     });
 
     // Create response

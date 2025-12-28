@@ -3,9 +3,10 @@ import { getUserFromRequest } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { createConnectPayout } from '@/lib/stripe';
 import { logPayout } from '@/lib/logger';
-import { TransactionEventType, PayoutStatus } from '@prisma/client';
+import { TransactionEventType, PayoutStatus, LogLevel, LogActor } from '@prisma/client';
 import { createNotification } from '@/lib/notifications';
 import { sendEmail } from '@/lib/email';
+import { logAdminAction, logPayoutEvent, logError as logSystemError, logInfo } from '@/lib/system-logger';
 
 /**
  * POST /api/admin/payouts/[id]/approve
@@ -22,9 +23,25 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const approvalStartTime = Date.now();
+  
   try {
     const jwtUser = await getUserFromRequest(request);
     if (!jwtUser || jwtUser.role !== 'ADMIN') {
+      // Log unauthorized admin access attempt
+      await logSystemError(
+        'PAYOUT_APPROVAL_UNAUTHORIZED',
+        LogActor.GUEST,
+        'Tentative d\'approbation de payout non autorisée',
+        undefined,
+        {
+          endpoint: '/api/admin/payouts/[id]/approve',
+          payoutId: params.id,
+          hasAuth: !!jwtUser,
+          role: jwtUser?.role,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Non autorisé' },
         { status: 401 }
@@ -32,6 +49,19 @@ export async function POST(
     }
 
     const payoutId = params.id;
+    
+    // Log approval initiation
+    await logAdminAction(
+      'PAYOUT_APPROVAL_INITIATED',
+      jwtUser.userId,
+      `Approbation de payout initiée par l'administrateur`,
+      LogLevel.INFO,
+      {
+        payoutId: payoutId,
+        adminId: jwtUser.userId,
+        adminEmail: jwtUser.email,
+      }
+    );
 
     // Get the payout
     const payout = await prisma.payout.findUnique({
@@ -46,6 +76,18 @@ export async function POST(
     });
 
     if (!payout) {
+      // Log payout not found
+      await logSystemError(
+        'PAYOUT_APPROVAL_NOT_FOUND',
+        LogActor.ADMIN,
+        'Paiement introuvable lors de l\'approbation',
+        jwtUser.userId,
+        {
+          payoutId: payoutId,
+          adminId: jwtUser.userId,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Paiement introuvable' },
         { status: 404 }
@@ -54,6 +96,22 @@ export async function POST(
 
     // ✅ PHASE 3: Verify status is REQUESTED
     if (payout.status !== PayoutStatus.REQUESTED) {
+      // Log invalid status
+      await logSystemError(
+        'PAYOUT_APPROVAL_INVALID_STATUS',
+        LogActor.ADMIN,
+        `Tentative d'approbation d'un payout avec un statut invalide: ${payout.status}`,
+        jwtUser.userId,
+        {
+          payoutId: payoutId,
+          adminId: jwtUser.userId,
+          currentStatus: payout.status,
+          expectedStatus: PayoutStatus.REQUESTED,
+          creatorId: payout.creatorId,
+          amount: Number(payout.amount),
+        }
+      );
+      
       return NextResponse.json(
         { error: `Ce paiement ne peut pas être approuvé. Statut actuel: ${payout.status}` },
         { status: 400 }
@@ -62,6 +120,22 @@ export async function POST(
 
     // Verify creator has Stripe account
     if (!payout.creator.stripeAccountId || !payout.creator.isStripeOnboarded) {
+      // Log Stripe account not configured
+      await logSystemError(
+        'PAYOUT_APPROVAL_NO_STRIPE_ACCOUNT',
+        LogActor.ADMIN,
+        'Approbation refusée : créateur sans compte Stripe configuré',
+        jwtUser.userId,
+        {
+          payoutId: payoutId,
+          adminId: jwtUser.userId,
+          creatorId: payout.creatorId,
+          creatorEmail: payout.creator.user.email,
+          hasStripeAccountId: !!payout.creator.stripeAccountId,
+          isStripeOnboarded: payout.creator.isStripeOnboarded,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Le créateur n\'a pas configuré son compte Stripe' },
         { status: 400 }
@@ -73,6 +147,23 @@ export async function POST(
     const stripeCurrency = payout.currency || 'EUR';
     // Use the payout amount directly (no conversion needed, amount is already in correct currency)
     const payoutAmountInStripeCurrency = payoutAmountEur;
+    
+    // Log approval details
+    await logAdminAction(
+      'PAYOUT_APPROVAL_VALIDATED',
+      jwtUser.userId,
+      `Payout validé et prêt pour approbation`,
+      LogLevel.INFO,
+      {
+        payoutId: payout.id,
+        adminId: jwtUser.userId,
+        creatorId: payout.creatorId,
+        creatorEmail: payout.creator.user.email,
+        amount: payoutAmountEur,
+        currency: stripeCurrency,
+        stripeAccountId: payout.creator.stripeAccountId,
+      }
+    );
 
     // Update payout to APPROVED (temporarily, will be PROCESSING after Stripe call)
     await prisma.payout.update({
@@ -83,6 +174,23 @@ export async function POST(
         approvedAt: new Date(),
       },
     });
+    
+    // Log status change to APPROVED
+    await logPayoutEvent(
+      'APPROVED',
+      payout.id,
+      payout.creatorId,
+      payoutAmountEur,
+      stripeCurrency,
+      LogLevel.INFO,
+      {
+        payoutId: payout.id,
+        adminId: jwtUser.userId,
+        creatorId: payout.creatorId,
+        previousStatus: PayoutStatus.REQUESTED,
+        newStatus: PayoutStatus.APPROVED,
+      }
+    );
 
     // Log approval
     await logPayout(TransactionEventType.PAYOUT_CREATED, {
@@ -98,6 +206,22 @@ export async function POST(
     });
 
     try {
+      // Log Stripe payout creation start
+      await logInfo(
+        'PAYOUT_APPROVAL_STRIPE_CREATION',
+        LogActor.SYSTEM,
+        `Création du payout Stripe après approbation admin`,
+        payout.creatorId,
+        {
+          payoutId: payout.id,
+          adminId: jwtUser.userId,
+          creatorId: payout.creatorId,
+          amount: payoutAmountInStripeCurrency,
+          currency: stripeCurrency,
+          stripeAccountId: payout.creator.stripeAccountId,
+        }
+      );
+      
       // Create payout from Stripe Connect account to bank account
       const stripePayout = await createConnectPayout({
         amount: payoutAmountInStripeCurrency,
@@ -112,6 +236,25 @@ export async function POST(
           stripeCurrency: stripeCurrency,
         },
       });
+      
+      // Log successful Stripe payout creation
+      await logInfo(
+        'PAYOUT_APPROVAL_STRIPE_CREATION_SUCCESS',
+        LogActor.SYSTEM,
+        `Payout Stripe créé avec succès après approbation admin`,
+        payout.creatorId,
+        {
+          payoutId: payout.id,
+          adminId: jwtUser.userId,
+          creatorId: payout.creatorId,
+          stripePayoutId: stripePayout.id,
+          amount: payoutAmountInStripeCurrency,
+          currency: stripeCurrency,
+          estimatedArrival: stripePayout.arrival_date
+            ? new Date(stripePayout.arrival_date * 1000).toISOString()
+            : null,
+        }
+      );
 
       // Update payout with Stripe payout ID and PROCESSING status
       await prisma.payout.update({

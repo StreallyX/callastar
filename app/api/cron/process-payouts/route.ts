@@ -3,13 +3,14 @@ import prisma from '@/lib/db';
 import { createPayout } from '@/lib/stripe';
 import { getPlatformSettings } from '@/lib/settings';
 import { logPayout, logTransaction } from '@/lib/logger';
-import { TransactionEventType, PayoutStatus, EntityType } from '@prisma/client';
+import { TransactionEventType, PayoutStatus, EntityType, LogLevel, LogActor } from '@prisma/client';
 import {
   checkPayoutEligibility,
   calculateNextPayoutDate,
   clearBalanceCache,
 } from '@/lib/payout-eligibility';
 import { createNotification } from '@/lib/notifications';
+import { logSystem, logError as logSystemError, logInfo } from '@/lib/system-logger';
 
 /**
  * GET /api/cron/process-payouts
@@ -45,6 +46,18 @@ export async function GET(request: NextRequest) {
 
     if (!expectedSecret) {
       console.error('CRON_SECRET not configured in environment variables');
+      
+      // Log configuration error
+      await logSystemError(
+        'CRON_PAYOUT_CONFIG_ERROR',
+        LogActor.SYSTEM,
+        'CRON_SECRET non configuré dans les variables d\'environnement',
+        undefined,
+        {
+          endpoint: '/api/cron/process-payouts',
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Cron secret not configured' },
         { status: 500 }
@@ -53,6 +66,19 @@ export async function GET(request: NextRequest) {
 
     if (cronSecret !== expectedSecret) {
       console.error('Invalid cron secret provided');
+      
+      // Log unauthorized cron attempt
+      await logSystemError(
+        'CRON_PAYOUT_UNAUTHORIZED',
+        LogActor.SYSTEM,
+        'Tentative d\'exécution du cron de payouts avec un secret invalide',
+        undefined,
+        {
+          endpoint: '/api/cron/process-payouts',
+          providedSecret: cronSecret ? '***' : null,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -60,6 +86,17 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('🤖 [CRON] Starting automatic payout processing...');
+    
+    // Log cron job start
+    await logSystem(
+      'CRON_PAYOUT_STARTED',
+      '🤖 Cron de traitement automatique des payouts démarré',
+      LogLevel.INFO,
+      {
+        startTime: new Date().toISOString(),
+        endpoint: '/api/cron/process-payouts',
+      }
+    );
 
     // 2. Get platform settings
     const settings = await getPlatformSettings();
@@ -282,6 +319,24 @@ export async function GET(request: NextRequest) {
     const duration = Date.now() - startTime;
     console.log(`🤖 [CRON] Payout processing complete in ${duration}ms`);
     console.log(`📊 [CRON] Summary: ${summary.succeeded} succeeded, ${summary.failed} failed, ${summary.skipped} skipped`);
+    
+    // Log cron job completion
+    await logSystem(
+      'CRON_PAYOUT_COMPLETED',
+      `✅ Cron de traitement automatique des payouts terminé avec succès`,
+      LogLevel.INFO,
+      {
+        endTime: new Date().toISOString(),
+        durationMs: duration,
+        durationSeconds: Math.round(duration / 1000),
+        processed: summary.processed,
+        succeeded: summary.succeeded,
+        failed: summary.failed,
+        skipped: summary.skipped,
+        errors: summary.errors,
+        endpoint: '/api/cron/process-payouts',
+      }
+    );
 
     return NextResponse.json({
       success: true,
@@ -294,6 +349,23 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('❌ [CRON] Fatal error in payout processing:', error);
+    
+    // Log fatal cron error
+    const duration = Date.now() - startTime;
+    await logSystemError(
+      'CRON_PAYOUT_FATAL_ERROR',
+      LogActor.SYSTEM,
+      `❌ Erreur fatale dans le cron de traitement des payouts: ${error.message}`,
+      undefined,
+      {
+        errorMessage: error.message,
+        errorStack: error.stack,
+        durationMs: duration,
+        summary,
+        endpoint: '/api/cron/process-payouts',
+      }
+    );
+    
     return NextResponse.json(
       {
         error: 'Internal server error',
