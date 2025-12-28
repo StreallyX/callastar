@@ -100,12 +100,15 @@ export async function getCreatorCurrencyByStripeAccount(stripeAccountId: string)
     });
 
     if (creator?.currency) {
+      console.log(`[getCreatorCurrencyByStripeAccount] Devise trouvée en DB pour ${stripeAccountId}: ${creator.currency}`);
       return creator.currency.toUpperCase();
     }
 
     // Fetch from Stripe
+    console.log(`[getCreatorCurrencyByStripeAccount] Récupération de la devise depuis Stripe pour ${stripeAccountId}...`);
     const stripeAccount = await stripe.accounts.retrieve(stripeAccountId);
     const currency = (stripeAccount.default_currency || 'eur').toUpperCase();
+    console.log(`[getCreatorCurrencyByStripeAccount] Devise récupérée depuis Stripe: ${currency}`);
 
     // Update DB if we found the creator
     if (creator?.id) {
@@ -113,11 +116,12 @@ export async function getCreatorCurrencyByStripeAccount(stripeAccountId: string)
         where: { id: creator.id },
         data: { currency },
       });
+      console.log(`[getCreatorCurrencyByStripeAccount] ✅ Devise mise à jour en DB pour créateur ${creator.id}: ${currency}`);
     }
 
     return currency;
   } catch (error) {
-    console.error(`[getCreatorCurrencyByStripeAccount] Error fetching currency:`, error);
+    console.error(`[getCreatorCurrencyByStripeAccount] ❌ Erreur lors de la récupération de la devise:`, error);
     return 'EUR';
   }
 }

@@ -136,6 +136,9 @@ export async function GET(request: NextRequest) {
       stripeCurrency !== creator.currency;
 
     if (needsUpdate) {
+      const onboardingChanged = accountStatus.isFullyOnboarded !== creator.isStripeOnboarded;
+      const currencyChanged = stripeCurrency !== creator.currency;
+
       await prisma.creator.update({
         where: { id: creator.id },
         data: { 
@@ -144,7 +147,13 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      console.log(`✅ Updated creator ${creator.id}: onboarded=${accountStatus.isFullyOnboarded}, currency=${stripeCurrency}`);
+      console.log(`[connect-onboard] ✅ Créateur ${creator.id} mis à jour:`);
+      if (onboardingChanged) {
+        console.log(`  - Statut onboarding: ${creator.isStripeOnboarded} → ${accountStatus.isFullyOnboarded}`);
+      }
+      if (currencyChanged) {
+        console.log(`  - Devise: ${creator.currency} → ${stripeCurrency}`);
+      }
 
       // Ensure PayoutSchedule exists when onboarding is complete
       if (accountStatus.isFullyOnboarded) {
