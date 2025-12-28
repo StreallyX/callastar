@@ -226,7 +226,7 @@ export default function SystemLogsPage() {
     {
       key: 'type',
       label: 'Type',
-      type: 'text' as const,
+      type: 'search' as const,
       placeholder: 'ex: USER_LOGIN, BOOKING_CREATED',
     },
     {
@@ -237,15 +237,18 @@ export default function SystemLogsPage() {
     },
     {
       key: 'startDate',
-      label: 'Date début',
-      type: 'date' as const,
+      label: 'Date début (YYYY-MM-DD)',
+      type: 'search' as const,
+      placeholder: '2024-01-01',
     },
     {
       key: 'endDate',
-      label: 'Date fin',
-      type: 'date' as const,
+      label: 'Date fin (YYYY-MM-DD)',
+      type: 'search' as const,
+      placeholder: '2024-12-31',
     },
   ];
+
 
   if (loading) {
     return (
