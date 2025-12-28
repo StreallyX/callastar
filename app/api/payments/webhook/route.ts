@@ -8,7 +8,7 @@ import { sendEmail, generateBookingConfirmationEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
 import { logWebhook, logPayment, logPayout, logRefund, logDispute } from '@/lib/logger';
 import { logWebhookEvent, logBooking, logInfo, logError, logWarning } from '@/lib/system-logger';
-import { TransactionEventType, EntityType, RefundStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
+import { TransactionEventType, EntityType, RefundStatus, PaymentStatus, PayoutStatus, LogActor } from '@prisma/client';
 import { stripeAmountToUnits, formatDbAmount } from '@/lib/currency-utils';
 import Stripe from 'stripe';
 
@@ -604,6 +604,15 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     return;
   }
 
+  // ✅ Declare variables before usage
+  const amount = Number(booking.totalPrice);
+  const platformFee = Number(paymentIntent.metadata?.platformFee || 0);
+  const creatorAmount = Number(paymentIntent.metadata?.creatorAmount || 0);
+  const currency = paymentIntent.metadata?.currency || booking.callOffer.creator.currency || 'EUR';
+  
+  const paymentDate = new Date();
+  const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
+
   // Create Daily.co room
   const roomName = `call-${bookingId}`;
   try {
@@ -648,15 +657,6 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
   }
 
   // Create or update payment record
-  const amount = Number(booking.totalPrice);
-  const platformFee = Number(paymentIntent.metadata?.platformFee || 0);
-  const creatorAmount = Number(paymentIntent.metadata?.creatorAmount || 0);
-  
-  const paymentDate = new Date();
-  const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
-  
-  // ✅ Get currency from metadata or booking
-  const currency = paymentIntent.metadata?.currency || booking.callOffer.creator.currency || 'EUR';
 
   // ✅ FIX: Always set payoutReleaseDate, even when updating existing payment
   const payment = await prisma.payment.upsert({

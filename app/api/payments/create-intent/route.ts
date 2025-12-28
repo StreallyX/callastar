@@ -6,7 +6,7 @@ import { createPaymentIntent } from '@/lib/stripe'; // ✅ CORRECTION #2: Suppre
 import { getPlatformSettings } from '@/lib/settings';
 import { logPayment } from '@/lib/logger';
 import { logInfo, logError, logPaymentEvent, logApiError } from '@/lib/system-logger';
-import { TransactionEventType, LogActor } from '@prisma/client';
+import { TransactionEventType, LogActor, LogLevel } from '@prisma/client';
 
 const createIntentSchema = z.object({
   bookingId: z.string().cuid(),
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
       user.userId,
       amount,
       creatorCurrency,
-      LogActor.INFO,
+      LogLevel.INFO,
       {
         paymentId: payment.id,
         bookingId: booking.id,
