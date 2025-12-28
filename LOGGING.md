@@ -1,767 +1,1094 @@
-# 📊 Système de Logs Backend - Callastar
+# 📋 Système de Logging Callastar
 
-## Table des matières
+## 🎯 Vue d'ensemble
 
-1. [Vue d'ensemble](#vue-densemble)
-2. [Architecture](#architecture)
-3. [Niveaux de gravité](#niveaux-de-gravité)
-4. [Types d'acteurs](#types-dacteurs)
-5. [Politique de rétention](#politique-de-rétention)
-6. [Utilisation du système de logs](#utilisation-du-système-de-logs)
-7. [Page d'administration](#page-dadministration)
-8. [Système de rétention automatique](#système-de-rétention-automatique)
-9. [Exemples d'intégration](#exemples-dintégration)
-10. [API Routes](#api-routes)
-11. [Optimisations et performances](#optimisations-et-performances)
+Callastar dispose d'un système de logging complet à deux niveaux pour assurer une traçabilité exhaustive de toutes les opérations de la plateforme :
+
+1. **`TransactionLog`** (logger.ts) : Logs financiers (paiements, payouts, remboursements, litiges)
+2. **`Log`** (system-logger.ts) : Logs système généraux (actions utilisateurs, admin, système, erreurs)
+
+## 🗂️ Architecture du Système
+
+### 1. Logger Financier (`lib/logger.ts`)
+
+#### Modèle Prisma : `TransactionLog`
+
+```prisma
+model TransactionLog {
+  id            String               @id @default(cuid())
+  eventType     TransactionEventType // Type d'événement
+  entityType    EntityType          // Type d'entité
+  entityId      String              // ID de l'entité
+  stripeEventId String?             // ID de l'événement Stripe
+  amount        Decimal?            // Montant
+  currency      String?             // Devise
+  status        String?             // Statut
+  metadata      Json?               // Métadonnées structurées
+  errorMessage  String?             // Message d'erreur
+  createdAt     DateTime @default(now())
+  
+  // Relations optionnelles
+  paymentId String?
+  payoutId  String?
+  refundId  String?
+}
+```
+
+#### Enums Disponibles
+
+```typescript
+enum TransactionEventType {
+  PAYMENT_CREATED
+  PAYMENT_SUCCEEDED
+  PAYMENT_FAILED
+  REFUND_CREATED
+  REFUND_SUCCEEDED
+  REFUND_FAILED
+  PAYOUT_CREATED
+  PAYOUT_PAID
+  PAYOUT_FAILED
+  TRANSFER_CREATED
+  TRANSFER_SUCCEEDED
+  TRANSFER_FAILED
+  WEBHOOK_RECEIVED
+  DISPUTE_CREATED
+  DISPUTE_UPDATED
+  DISPUTE_CLOSED
+}
+
+enum EntityType {
+  PAYMENT
+  PAYOUT
+  REFUND
+  DISPUTE
+  TRANSFER
+}
+```
+
+#### Fonctions Principales
+
+```typescript
+// Log générique de transaction
+await logTransaction({
+  eventType: TransactionEventType.PAYMENT_CREATED,
+  entityType: EntityType.PAYMENT,
+  entityId: payment.id,
+  amount: 100.50,
+  currency: 'EUR',
+  status: 'PENDING',
+  metadata: { bookingId: 'xyz', userId: 'abc' },
+});
+
+// Log de paiement
+await logPayment(TransactionEventType.PAYMENT_SUCCEEDED, {
+  paymentId: payment.id,
+  amount: 100.50,
+  currency: 'EUR',
+  status: 'SUCCEEDED',
+  stripePaymentIntentId: 'pi_xxx',
+  metadata: { bookingId: 'xyz' },
+});
+
+// Log de payout
+await logPayout(TransactionEventType.PAYOUT_CREATED, {
+  payoutId: payout.id,
+  creatorId: creator.id,
+  amount: 85.00,
+  currency: 'EUR',
+  status: 'REQUESTED',
+  stripePayoutId: 'po_xxx',
+  metadata: { approvedBy: 'admin_id' },
+});
+
+// Log de remboursement
+await logRefund(TransactionEventType.REFUND_SUCCEEDED, {
+  refundId: refund.id,
+  paymentId: payment.id,
+  amount: 100.50,
+  currency: 'EUR',
+  status: 'SUCCEEDED',
+  stripeRefundId: 're_xxx',
+  reason: 'Demande client',
+});
+
+// Log de webhook
+await logWebhook({
+  stripeEventId: event.id,
+  eventType: event.type,
+  entityType: EntityType.PAYMENT,
+  entityId: payment.id,
+  metadata: { paymentIntentId: 'pi_xxx' },
+});
+
+// Log d'erreur financière
+await logError(
+  TransactionEventType.PAYMENT_FAILED,
+  EntityType.PAYMENT,
+  payment.id,
+  new Error('Insufficient funds'),
+  { userId: 'user_id', attemptNumber: 2 }
+);
+```
 
 ---
 
-## Vue d'ensemble
+### 2. Logger Système (`lib/system-logger.ts`)
 
-Le système de logs de Callastar est conçu pour tracer toutes les activités de la plateforme de manière complète et performante. Il est distinct du système `TransactionLog` (qui gère uniquement les transactions financières) et couvre :
-
-- ✅ Actions des utilisateurs (fans)
-- ✅ Actions des créateurs
-- ✅ Actions des administrateurs
-- ✅ Événements système
-- ✅ Webhooks externes (Stripe, Daily.co, etc.)
-- ✅ Erreurs backend
-
-### Architecture à deux niveaux
-
-1. **TransactionLog** : Logs financiers uniquement (paiements, payouts, refunds, disputes, transfers)
-2. **Log (SystemLog)** : Logs généraux de toutes les activités de la plateforme
-
----
-
-## Architecture
-
-### Modèle Prisma
+#### Modèle Prisma : `Log`
 
 ```prisma
 model Log {
-  id        String    @id @default(cuid())
-  level     LogLevel  @default(INFO)
-  type      String
-  actor     LogActor
-  actorId   String?
-  message   String    @db.Text
-  metadata  Json?
-  createdAt DateTime  @default(now())
-
-  @@index([createdAt])
-  @@index([level])
-  @@index([type])
-  @@index([actor])
-  @@index([actorId])
-  @@index([level, createdAt])
+  id        String   @id @default(cuid())
+  level     LogLevel @default(INFO)
+  type      String   // Ex: "USER_LOGIN", "PAYOUT_REQUESTED"
+  actor     LogActor // Qui a effectué l'action
+  actorId   String?  // ID de l'acteur
+  message   String   @db.Text
+  metadata  Json?    // Métadonnées additionnelles
+  createdAt DateTime @default(now())
 }
+```
 
+#### Enums Disponibles
+
+```typescript
 enum LogLevel {
-  INFO
-  WARNING
-  ERROR
-  CRITICAL
+  INFO      // Opérations normales
+  WARNING   // Anomalies non critiques
+  ERROR     // Erreurs qui nécessitent attention
+  CRITICAL  // Erreurs critiques bloquantes
 }
 
 enum LogActor {
-  USER
-  CREATOR
-  ADMIN
-  SYSTEM
-  GUEST
+  USER      // Utilisateur standard
+  CREATOR   // Créateur
+  ADMIN     // Administrateur
+  SYSTEM    // Action automatique
+  GUEST     // Non authentifié
 }
 ```
 
-### Service de logging : `lib/system-logger.ts`
-
-Le service centralise toutes les opérations de logging avec des fonctions spécialisées.
-
----
-
-## Niveaux de gravité
-
-| Niveau | Description | Exemples |
-|--------|-------------|----------|
-| **INFO** | Actions normales | Connexion utilisateur, création de booking, webhooks OK |
-| **WARNING** | Comportement anormal mais non bloquant | Tentative de connexion échouée, accès refusé |
-| **ERROR** | Erreur fonctionnelle ou technique | Erreur API, erreur de validation, échec de paiement |
-| **CRITICAL** | Erreur bloquante nécessitant une attention immédiate | Incohérence Stripe, erreur de webhook critique, corruption de données |
-
----
-
-## Types d'acteurs
-
-| Acteur | Description |
-|--------|-------------|
-| **USER** | Utilisateur (fan) de la plateforme |
-| **CREATOR** | Créateur de contenu |
-| **ADMIN** | Administrateur |
-| **SYSTEM** | Événement système automatique |
-| **GUEST** | Visiteur non authentifié |
-
----
-
-## Politique de rétention
-
-La rétention des logs est automatique et basée sur le niveau de gravité :
-
-| Niveau | Rétention | Raison |
-|--------|-----------|--------|
-| **INFO** | 30 jours | Logs d'activité normale, grand volume |
-| **WARNING** | 60 jours | Comportements suspects à surveiller |
-| **ERROR** | 90 jours | Erreurs importantes pour debug et analyse |
-| **CRITICAL** | **Illimité** | Conservation permanente pour audit et sécurité |
-
-Le nettoyage automatique est effectué quotidiennement à 3h du matin via un cron job Vercel.
-
----
-
-## Utilisation du système de logs
-
-### Import
+#### Fonctions Principales
 
 ```typescript
-import {
-  logInfo,
-  logWarning,
-  logError,
-  logCritical,
-  logAuth,
-  logUserAction,
-  logCreatorAction,
-  logAdminAction,
-  logSystem,
-  logBooking,
-  logPaymentEvent,
-  logPayoutEvent,
-  logWebhookEvent,
-  logApiError,
-} from '@/lib/system-logger';
-import { LogActor, LogLevel } from '@prisma/client';
-```
-
-### Fonctions principales
-
-#### 1. Logs génériques par niveau
-
-```typescript
-// Log INFO
+// Logs génériques par niveau
 await logInfo(
-  'USER_PROFILE_UPDATE',
-  LogActor.USER,
-  'User updated their profile',
-  userId,
-  { updatedFields: ['name', 'bio'] }
+  'PAYOUT_REQUEST_INITIATED',
+  LogActor.CREATOR,
+  'Demande de payout initiée par le créateur',
+  creatorId,
+  { amount: 500, currency: 'EUR' }
 );
 
-// Log WARNING
 await logWarning(
-  'RATE_LIMIT_APPROACHING',
-  LogActor.USER,
-  'User approaching rate limit',
-  userId,
-  { requestCount: 95, limit: 100 }
+  'PAYOUT_BALANCE_LOW',
+  LogActor.SYSTEM,
+  'Solde insuffisant pour le payout automatique',
+  creatorId,
+  { availableBalance: 8.50, requestedAmount: 10 }
 );
 
-// Log ERROR
 await logError(
-  'API_ERROR',
+  'STRIPE_API_ERROR',
   LogActor.SYSTEM,
-  'Failed to fetch user data',
-  undefined,
-  { endpoint: '/api/users', errorCode: 500 }
+  'Erreur API Stripe lors de la création du payout',
+  creatorId,
+  { 
+    errorType: 'api_error',
+    errorCode: 'rate_limit',
+    errorMessage: 'Too many requests' 
+  }
 );
 
-// Log CRITICAL
 await logCritical(
-  'DATA_CORRUPTION',
+  'DATABASE_CONNECTION_LOST',
   LogActor.SYSTEM,
-  'Critical data integrity issue detected',
+  'Perte de connexion à la base de données',
   undefined,
-  { affectedTable: 'payments', count: 10 }
+  { dbHost: 'postgres.example.com', retryAttempt: 3 }
 );
-```
 
-#### 2. Logs d'authentification
+// Logs spécialisés
 
-```typescript
-// Connexion réussie
-await logAuth('LOGIN', userId, true, {
-  ipAddress: request.headers.get('x-forwarded-for'),
-  userAgent: request.headers.get('user-agent'),
-});
+// Authentification
+await logAuth(
+  'LOGIN',
+  userId,
+  true, // success
+  { ipAddress: '192.168.1.1', userAgent: 'Mozilla/5.0...' }
+);
 
-// Connexion échouée
-await logAuth('LOGIN', 'unknown', false, {
-  email: 'user@example.com',
-  reason: 'Invalid password',
-  ipAddress: request.headers.get('x-forwarded-for'),
-});
-
-// Autres actions d'authentification
-await logAuth('LOGOUT', userId, true);
-await logAuth('REGISTER', userId, true);
-await logAuth('PASSWORD_RESET', userId, true);
-await logAuth('EMAIL_VERIFY', userId, true);
-```
-
-#### 3. Logs d'actions utilisateur/créateur/admin
-
-```typescript
-// Action utilisateur
+// Actions utilisateur
 await logUserAction(
   'BOOKING_CREATED',
   userId,
-  'User created a booking',
-  { bookingId, creatorId, price: 50 }
+  'Réservation créée pour un appel',
+  { bookingId: 'xyz', creatorId: 'abc', amount: 100 }
 );
 
-// Action créateur
+// Actions créateur
 await logCreatorAction(
-  'CALL_OFFER_CREATED',
+  'OFFER_CREATED',
   creatorId,
-  'Creator created a new call offer',
-  { offerId, price: 50, duration: 30 }
+  'Nouvelle offre d\'appel créée',
+  { offerId: 'xyz', price: 150, duration: 30 }
 );
 
-// Action admin
+// Actions admin
 await logAdminAction(
   'PAYOUT_APPROVED',
   adminId,
-  'Admin approved payout',
+  'Payout approuvé par l\'administrateur',
   LogLevel.INFO,
-  { payoutId, creatorId, amount: 500 }
+  { payoutId: 'xyz', creatorId: 'abc', amount: 500 }
 );
-```
 
-#### 4. Logs de bookings
-
-```typescript
-await logBooking(
-  'CREATED',  // 'CREATED' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED'
-  bookingId,
-  userId,
-  creatorId,
-  { price: 50, currency: 'EUR', dateTime: '2024-01-15T10:00:00Z' }
+// Actions système
+await logSystem(
+  'CRON_STARTED',
+  'Démarrage du cron de traitement des payouts',
+  LogLevel.INFO,
+  { cronName: 'process-payouts', timestamp: new Date() }
 );
-```
 
-#### 5. Logs de paiements et payouts
-
-```typescript
-// Paiement
+// Événements de paiement (haut niveau)
 await logPaymentEvent(
-  'SUCCEEDED',  // 'INITIATED' | 'SUCCEEDED' | 'FAILED' | 'REFUNDED'
+  'SUCCEEDED',
   paymentId,
   userId,
-  50,
+  100.50,
   'EUR',
-  undefined,  // level (optionnel, auto-détecté)
-  { stripePaymentIntentId: 'pi_xxxxx' }
+  LogLevel.INFO,
+  { bookingId: 'xyz', creatorId: 'abc' }
 );
 
-// Payout
+// Événements de payout (haut niveau)
 await logPayoutEvent(
-  'APPROVED',  // 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'PAID' | 'FAILED'
+  'APPROVED',
   payoutId,
   creatorId,
   500,
   'EUR',
-  undefined,
-  { approvedBy: adminId }
+  LogLevel.INFO,
+  { adminId: 'admin_id', approvedAt: new Date() }
 );
-```
 
-#### 6. Logs de webhooks
-
-```typescript
-// Webhook Stripe réussi
+// Webhooks
 await logWebhookEvent(
   'STRIPE',
   'payment_intent.succeeded',
-  true,
-  { eventId: 'evt_xxxxx', paymentIntentId: 'pi_xxxxx' }
+  true, // success
+  { eventId: 'evt_xxx', paymentIntentId: 'pi_xxx' }
 );
 
-// Webhook échoué
+// Erreurs API
+await logApiError(
+  '/api/payouts/request',
+  new Error('Validation failed'),
+  LogActor.CREATOR,
+  creatorId,
+  { requestBody: { amount: -50 }, validationErrors: ['Amount must be positive'] }
+);
+```
+
+---
+
+## 📝 Guide d'Utilisation par Catégorie
+
+### 🎯 PAYOUTS (Traçabilité Exhaustive)
+
+#### 1. Demande de Payout par le Créateur
+
+```typescript
+// ✅ DÉBUT : Log d'initiation
+await logInfo(
+  'PAYOUT_REQUEST_INITIATED',
+  LogActor.CREATOR,
+  `Demande de payout initiée par ${creator.name}`,
+  creatorId,
+  {
+    creatorId,
+    creatorEmail: creator.email,
+    requestedAmount: amount,
+    currency: 'EUR',
+    payoutSchedule: creator.payoutSchedule,
+  }
+);
+
+// ✅ VALIDATIONS : Log des échecs de validation
+if (!creator.stripeAccountId) {
+  await logError(
+    'PAYOUT_REQUEST_NO_STRIPE_ACCOUNT',
+    LogActor.CREATOR,
+    'Demande de payout refusée : compte Stripe non configuré',
+    creatorId,
+    { creatorId, requestedAmount: amount }
+  );
+  // return error
+}
+
+if (creator.isPayoutBlocked) {
+  await logError(
+    'PAYOUT_REQUEST_BLOCKED',
+    LogActor.CREATOR,
+    'Demande de payout refusée : payouts bloqués',
+    creatorId,
+    { 
+      creatorId,
+      blockReason: creator.payoutBlockReason,
+      requestedAmount: amount 
+    }
+  );
+  // return error
+}
+
+// ✅ VÉRIFICATION STRIPE : Log des étapes de vérification
+await logInfo(
+  'PAYOUT_REQUEST_STRIPE_VERIFICATION',
+  LogActor.SYSTEM,
+  'Vérification du compte Stripe pour la demande de payout',
+  creatorId,
+  { creatorId, stripeAccountId: creator.stripeAccountId }
+);
+
+// ✅ VÉRIFICATION DU SOLDE
+await logInfo(
+  'PAYOUT_REQUEST_BALANCE_CHECK',
+  LogActor.SYSTEM,
+  'Vérification du solde disponible',
+  creatorId,
+  { 
+    creatorId,
+    requestedAmount: amount,
+    availableBalance: availableAmount 
+  }
+);
+
+// ❌ SOLDE INSUFFISANT
+if (availableBalance.amount < requestedAmountInCents) {
+  await logError(
+    'PAYOUT_REQUEST_INSUFFICIENT_BALANCE',
+    LogActor.CREATOR,
+    'Solde insuffisant pour la demande de payout',
+    creatorId,
+    {
+      creatorId,
+      requestedAmount: amount,
+      availableAmount: availableBalance.amount / 100,
+      currency: 'EUR',
+    }
+  );
+  // return error
+}
+
+// ✅ CRÉATION STRIPE : Log de création du payout Stripe
+await logInfo(
+  'PAYOUT_REQUEST_STRIPE_CREATION',
+  LogActor.SYSTEM,
+  'Création du payout Stripe en cours',
+  creatorId,
+  {
+    creatorId,
+    amount,
+    currency: 'EUR',
+    stripeAccountId: creator.stripeAccountId,
+  }
+);
+
+// ✅ SUCCÈS STRIPE
+await logInfo(
+  'PAYOUT_REQUEST_STRIPE_CREATION_SUCCESS',
+  LogActor.SYSTEM,
+  'Payout Stripe créé avec succès',
+  creatorId,
+  {
+    creatorId,
+    stripePayoutId: stripePayout.id,
+    amount,
+    currency: 'EUR',
+    status: stripePayout.status,
+    arrivalDate: new Date(stripePayout.arrival_date * 1000),
+  }
+);
+
+// ❌ ÉCHEC STRIPE
+catch (stripeError) {
+  await logError(
+    'PAYOUT_REQUEST_STRIPE_CREATION_ERROR',
+    LogActor.SYSTEM,
+    `Échec de création du payout Stripe: ${stripeError.message}`,
+    creatorId,
+    {
+      creatorId,
+      amount,
+      stripeErrorType: stripeError.type,
+      stripeErrorCode: stripeError.code,
+      stripeErrorMessage: stripeError.message,
+    }
+  );
+  // return error
+}
+
+// ✅ FINALISATION : Log de succès complet
+await logPayoutEvent(
+  'REQUESTED',
+  stripePayout.id,
+  creatorId,
+  amount,
+  'EUR',
+  LogLevel.INFO,
+  {
+    creatorId,
+    stripePayoutId: stripePayout.id,
+    status: stripePayout.status,
+    triggeredBy: 'creator',
+    processingTimeMs: Date.now() - startTime,
+  }
+);
+```
+
+#### 2. Approbation/Rejet par l'Admin
+
+```typescript
+// ✅ APPROBATION : Log d'initiation
+await logAdminAction(
+  'PAYOUT_APPROVAL_INITIATED',
+  adminId,
+  'Approbation de payout initiée par l\'administrateur',
+  LogLevel.INFO,
+  { payoutId, adminId, adminEmail: admin.email }
+);
+
+// ✅ VALIDATION : Log de validation réussie
+await logAdminAction(
+  'PAYOUT_APPROVAL_VALIDATED',
+  adminId,
+  'Payout validé et prêt pour approbation',
+  LogLevel.INFO,
+  {
+    payoutId,
+    adminId,
+    creatorId,
+    amount,
+    currency: 'EUR',
+  }
+);
+
+// ✅ APPROBATION : Log du changement de statut
+await logPayoutEvent(
+  'APPROVED',
+  payoutId,
+  creatorId,
+  amount,
+  'EUR',
+  LogLevel.INFO,
+  {
+    payoutId,
+    adminId,
+    previousStatus: 'REQUESTED',
+    newStatus: 'APPROVED',
+  }
+);
+
+// ✅ CRÉATION STRIPE APRÈS APPROBATION
+await logInfo(
+  'PAYOUT_APPROVAL_STRIPE_CREATION',
+  LogActor.SYSTEM,
+  'Création du payout Stripe après approbation admin',
+  creatorId,
+  { payoutId, adminId, amount, stripeAccountId }
+);
+
+// ✅ SUCCÈS FINAL
+await logAdminAction(
+  'PAYOUT_APPROVAL_SUCCESS',
+  adminId,
+  'Payout approuvé et transfert Stripe déclenché',
+  LogLevel.INFO,
+  {
+    payoutId,
+    stripePayoutId,
+    amount,
+    processingTimeMs: Date.now() - startTime,
+  }
+);
+
+// ❌ REJET : Log de rejet
+await logPayoutEvent(
+  'REJECTED',
+  payoutId,
+  creatorId,
+  amount,
+  'EUR',
+  LogLevel.WARNING,
+  {
+    payoutId,
+    adminId,
+    rejectionReason: reason,
+    previousStatus: 'REQUESTED',
+    newStatus: 'REJECTED',
+  }
+);
+```
+
+#### 3. Webhooks Stripe (payout.paid, payout.failed)
+
+```typescript
+// ✅ PAYOUT PAYÉ (webhook)
+await logPayoutEvent(
+  'PAID',
+  payoutId,
+  creatorId,
+  amount,
+  'EUR',
+  LogLevel.INFO,
+  {
+    payoutId,
+    stripePayoutId,
+    paidAt: new Date(),
+    source: 'stripe_webhook',
+  }
+);
+
+// ❌ PAYOUT ÉCHOUÉ (webhook)
+await logPayoutEvent(
+  'FAILED',
+  payoutId,
+  creatorId,
+  amount,
+  'EUR',
+  LogLevel.ERROR,
+  {
+    payoutId,
+    stripePayoutId,
+    failureCode: stripePayout.failure_code,
+    failureMessage: stripePayout.failure_message,
+    failedAt: new Date(),
+    source: 'stripe_webhook',
+  }
+);
+```
+
+---
+
+### 🤖 CRON JOBS (Tâches Automatiques)
+
+```typescript
+// ✅ DÉBUT DU CRON
+const startTime = Date.now();
+await logSystem(
+  'CRON_PAYOUT_STARTED',
+  '🤖 Cron de traitement automatique des payouts démarré',
+  LogLevel.INFO,
+  {
+    startTime: new Date().toISOString(),
+    endpoint: '/api/cron/process-payouts',
+  }
+);
+
+// ✅ PROGRESSION (optionnel, pour les gros traitements)
+await logInfo(
+  'CRON_PAYOUT_PROGRESS',
+  LogActor.SYSTEM,
+  `Cron de payouts : ${processedCount}/${totalCount} créateurs traités`,
+  undefined,
+  { processedCount, totalCount, elapsedMs: Date.now() - startTime }
+);
+
+// ✅ FIN DU CRON (SUCCÈS)
+const duration = Date.now() - startTime;
+await logSystem(
+  'CRON_PAYOUT_COMPLETED',
+  '✅ Cron de traitement automatique des payouts terminé avec succès',
+  LogLevel.INFO,
+  {
+    endTime: new Date().toISOString(),
+    durationMs: duration,
+    durationSeconds: Math.round(duration / 1000),
+    processed: summary.processed,
+    succeeded: summary.succeeded,
+    failed: summary.failed,
+    skipped: summary.skipped,
+  }
+);
+
+// ❌ ERREUR FATALE DU CRON
+await logError(
+  'CRON_PAYOUT_FATAL_ERROR',
+  LogActor.SYSTEM,
+  `❌ Erreur fatale dans le cron de traitement des payouts`,
+  undefined,
+  {
+    errorMessage: error.message,
+    errorStack: error.stack,
+    durationMs: Date.now() - startTime,
+    summary,
+  }
+);
+```
+
+---
+
+### 🔔 WEBHOOKS Stripe
+
+```typescript
+// ✅ RÉCEPTION DU WEBHOOK
+await logInfo(
+  'WEBHOOK_RECEIVED',
+  LogActor.SYSTEM,
+  `Webhook Stripe reçu : ${event.type}`,
+  undefined,
+  {
+    eventId: event.id,
+    eventType: event.type,
+    livemode: event.livemode,
+    apiVersion: event.api_version,
+  }
+);
+
+// ✅ TRAITEMENT RÉUSSI
 await logWebhookEvent(
   'STRIPE',
-  'payout.failed',
-  false,
-  { eventId: 'evt_xxxxx', error: 'Insufficient funds' }
+  event.type,
+  true, // success
+  {
+    eventId: event.id,
+    objectType: event.data.object.object,
+    processingTimeMs: Date.now() - startTime,
+  }
+);
+
+// ❌ TRAITEMENT ÉCHOUÉ
+await logWebhookEvent(
+  'STRIPE',
+  event.type,
+  false, // failed
+  {
+    eventId: event.id,
+    objectType: event.data.object.object,
+    errorMessage: error.message,
+  }
+);
+
+// ❌ SIGNATURE INVALIDE
+await logError(
+  'WEBHOOK_SIGNATURE_INVALID',
+  LogActor.SYSTEM,
+  'Signature de webhook Stripe invalide',
+  undefined,
+  {
+    providedSignature: signature ? '***' : null,
+    eventType: event.type,
+  }
 );
 ```
 
-#### 7. Logs d'erreurs API
+---
+
+### 💳 PAIEMENTS
 
 ```typescript
-await logApiError(
-  '/api/bookings',
-  new Error('Database connection failed'),
-  LogActor.USER,
-  userId,
-  { action: 'CREATE_BOOKING', bookingData: {...} }
-);
+// ✅ CRÉATION DU PAYMENT INTENT
+await logPayment(TransactionEventType.PAYMENT_CREATED, {
+  paymentId: payment.id,
+  amount,
+  currency: 'EUR',
+  status: 'PENDING',
+  stripePaymentIntentId: paymentIntent.id,
+  metadata: {
+    bookingId,
+    userId,
+    creatorId,
+    platformFee,
+    creatorAmount,
+  },
+});
+
+// ✅ PAIEMENT RÉUSSI (webhook)
+await logPayment(TransactionEventType.PAYMENT_SUCCEEDED, {
+  paymentId: payment.id,
+  amount,
+  currency: 'EUR',
+  status: 'SUCCEEDED',
+  stripePaymentIntentId: paymentIntent.id,
+  metadata: {
+    bookingId,
+    creatorId,
+  },
+});
+
+// ❌ PAIEMENT ÉCHOUÉ
+await logPayment(TransactionEventType.PAYMENT_FAILED, {
+  paymentId: payment.id,
+  amount,
+  currency: 'EUR',
+  status: 'FAILED',
+  stripePaymentIntentId: paymentIntent.id,
+  errorMessage: paymentIntent.last_payment_error?.message,
+});
 ```
 
-#### 8. Logs système
+---
+
+### 🔒 ACTIONS SENSIBLES
 
 ```typescript
-await logSystem(
-  'DATABASE_BACKUP',
-  'Daily database backup completed',
+// ✅ BLOCAGE DE PAYOUTS
+await logAdminAction(
+  'CREATOR_PAYOUT_BLOCKED',
+  adminId,
+  `Payouts bloqués pour le créateur ${creatorName}`,
+  LogLevel.WARNING,
+  {
+    creatorId,
+    creatorEmail,
+    blockReason: reason,
+    blockedBy: adminId,
+    blockedAt: new Date(),
+  }
+);
+
+// ✅ DÉBLOCAGE DE PAYOUTS
+await logAdminAction(
+  'CREATOR_PAYOUT_UNBLOCKED',
+  adminId,
+  `Payouts débloqués pour le créateur ${creatorName}`,
   LogLevel.INFO,
-  { backupSize: '2.5GB', duration: 1200 }
+  {
+    creatorId,
+    unblockedBy: adminId,
+    unblockedAt: new Date(),
+  }
+);
+
+// ✅ REMBOURSEMENT CRÉÉ
+await logRefund(TransactionEventType.REFUND_CREATED, {
+  refundId: refund.id,
+  paymentId: payment.id,
+  amount: refundAmount,
+  currency: 'EUR',
+  status: 'PENDING',
+  reason: refundReason,
+  metadata: {
+    initiatedBy: adminId,
+    bookingId,
+  },
+});
+
+// ✅ VALIDATION DE COMPTE CRÉATEUR
+await logAdminAction(
+  'CREATOR_ACCOUNT_VALIDATED',
+  adminId,
+  `Compte créateur validé pour ${creatorName}`,
+  LogLevel.INFO,
+  {
+    creatorId,
+    validatedBy: adminId,
+    validatedAt: new Date(),
+  }
 );
 ```
 
 ---
 
-## Page d'administration
+## 🎨 Bonnes Pratiques
 
-### Accès
+### 1. Niveaux de Gravité
 
-La page d'administration des logs système est accessible à l'adresse :
+- **INFO** : Opérations normales et attendues (succès, démarrages, fins)
+- **WARNING** : Anomalies non critiques (solde bas, tentatives multiples)
+- **ERROR** : Erreurs nécessitant attention (échecs API, validations)
+- **CRITICAL** : Erreurs critiques bloquantes (DB down, config manquante)
 
-```
-/dashboard/admin/system-logs
-```
+### 2. Métadonnées Riches
 
-### Fonctionnalités
-
-#### Visualisation
-
-- 📊 **Tableau des logs** : 100 logs par page par défaut (configurable)
-- 🔍 **Filtres avancés** :
-  - Niveau (INFO, WARNING, ERROR, CRITICAL)
-  - Acteur (USER, CREATOR, ADMIN, SYSTEM, GUEST)
-  - Type (recherche partielle)
-  - Recherche globale (message, type, actorId)
-  - Plage de dates (startDate, endDate)
-- 📈 **Statistiques** : Nombre total de logs, page actuelle, filtres actifs
-- 🔄 **Auto-actualisation** : Optionnelle, toutes les 30 secondes
-- 👁️ **Détails** : Vue détaillée de chaque log avec métadonnées complètes
-
-#### Suppression
-
-- 🗑️ **Suppression par date** : Sélectionner une plage de dates pour supprimer les logs
-- ⚠️ **Avertissement** : Action irréversible, confirmation requise
-- 🎯 **Suppression ciblée** : Appliquer les filtres actifs à la suppression
-
-### Logs financiers séparés
-
-Les logs financiers (TransactionLog) restent sur la page :
-
-```
-/dashboard/admin/logs
-```
-
----
-
-## Système de rétention automatique
-
-### Cron Job Vercel
-
-Le nettoyage automatique est configuré dans `vercel.json` :
-
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/cleanup-logs",
-      "schedule": "0 3 * * *"
-    }
-  ]
-}
-```
-
-**Fréquence** : Quotidienne à 3h du matin (UTC)
-
-### Script manuel
-
-Vous pouvez également exécuter le nettoyage manuellement :
-
-```bash
-npm run cleanup-logs
-```
-
-Ou directement :
-
-```bash
-npx tsx scripts/cleanup-logs.ts
-```
-
-### Sécurité du cron
-
-Le cron job est protégé par un secret dans les variables d'environnement :
-
-```env
-CRON_SECRET=your-secret-token-here
-```
-
-Le header `Authorization: Bearer <CRON_SECRET>` doit être présent pour autoriser l'exécution.
-
----
-
-## Exemples d'intégration
-
-### Exemple 1 : Login
-
+✅ **BON** : Métadonnées complètes
 ```typescript
-// app/api/auth/login/route.ts
-import { logAuth } from '@/lib/system-logger';
-
-export async function POST(request: NextRequest) {
-  try {
-    const user = await authenticateUser(email, password);
-    
-    // Log connexion réussie
-    await logAuth('LOGIN', user.id, true, {
-      email: user.email,
-      role: user.role,
-      ipAddress: request.headers.get('x-forwarded-for'),
-      userAgent: request.headers.get('user-agent'),
-    });
-    
-    return NextResponse.json({ success: true, user });
-  } catch (error) {
-    // Log connexion échouée
-    await logAuth('LOGIN', 'unknown', false, {
-      email,
-      reason: error.message,
-      ipAddress: request.headers.get('x-forwarded-for'),
-    });
-    
-    return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
+await logError(
+  'PAYOUT_REQUEST_FAILED',
+  LogActor.CREATOR,
+  'Échec de la demande de payout',
+  creatorId,
+  {
+    creatorId,
+    creatorEmail: creator.email,
+    requestedAmount: 500,
+    availableBalance: 450,
+    currency: 'EUR',
+    stripeAccountId: creator.stripeAccountId,
+    errorType: 'insufficient_funds',
+    errorCode: 'balance_insufficient',
+    errorMessage: 'Available balance is less than requested amount',
   }
-}
+);
 ```
 
-### Exemple 2 : Création de booking
-
+❌ **MAUVAIS** : Métadonnées pauvres
 ```typescript
-// app/api/bookings/route.ts
-import { logBooking, logApiError } from '@/lib/system-logger';
-import { LogActor } from '@prisma/client';
-
-export async function POST(request: NextRequest) {
-  try {
-    const booking = await createBooking(userId, callOfferId);
-    
-    // Log création de booking
-    await logBooking(
-      'CREATED',
-      booking.id,
-      userId,
-      booking.callOffer.creatorId,
-      {
-        callOfferId,
-        price: booking.totalPrice,
-        currency: booking.callOffer.currency,
-        dateTime: booking.callOffer.dateTime,
-      }
-    );
-    
-    return NextResponse.json({ booking }, { status: 201 });
-  } catch (error) {
-    // Log erreur
-    await logApiError(
-      '/api/bookings',
-      error,
-      LogActor.USER,
-      userId,
-      { action: 'CREATE_BOOKING', callOfferId }
-    );
-    
-    return NextResponse.json({ error: 'Booking failed' }, { status: 500 });
-  }
-}
+await logError(
+  'PAYOUT_REQUEST_FAILED',
+  LogActor.CREATOR,
+  'Échec',
+  creatorId
+);
 ```
 
-### Exemple 3 : Webhook Stripe
+### 3. Messages Descriptifs
 
+✅ **BON** : Message clair et contextualisé
 ```typescript
-// app/api/payments/webhook/route.ts
-import { logWebhookEvent } from '@/lib/system-logger';
-
-export async function POST(request: NextRequest) {
-  try {
-    const event = await verifyStripeWebhook(request);
-    await processWebhookEvent(event);
-    
-    // Log webhook réussi
-    await logWebhookEvent('STRIPE', event.type, true, {
-      eventId: event.id,
-      objectType: event.data.object.object,
-    });
-    
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    // Log webhook échoué
-    await logWebhookEvent('STRIPE', event.type, false, {
-      eventId: event.id,
-      errorMessage: error.message,
-    });
-    
-    return NextResponse.json({ error: 'Webhook failed' }, { status: 500 });
-  }
-}
+await logInfo(
+  'PAYOUT_APPROVED',
+  LogActor.ADMIN,
+  `Payout de ${amount} EUR approuvé par l'admin ${adminName} pour le créateur ${creatorName}`,
+  adminId,
+  metadata
+);
 ```
 
-### Exemple 4 : Action admin
-
+❌ **MAUVAIS** : Message vague
 ```typescript
-// app/api/admin/payouts/[id]/approve/route.ts
-import { logAdminAction } from '@/lib/system-logger';
-import { LogLevel } from '@prisma/client';
-
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const payout = await approvePayout(params.id, adminId);
-    
-    // Log action admin
-    await logAdminAction(
-      'PAYOUT_APPROVED',
-      adminId,
-      `Admin approved payout ${params.id}`,
-      LogLevel.INFO,
-      {
-        payoutId: params.id,
-        creatorId: payout.creatorId,
-        amount: payout.amount,
-        currency: payout.currency,
-      }
-    );
-    
-    return NextResponse.json({ success: true, payout });
-  } catch (error) {
-    // Log erreur critique
-    await logAdminAction(
-      'PAYOUT_APPROVAL_FAILED',
-      adminId,
-      `Failed to approve payout ${params.id}`,
-      LogLevel.CRITICAL,
-      {
-        payoutId: params.id,
-        errorMessage: error.message,
-      }
-    );
-    
-    return NextResponse.json({ error: 'Approval failed' }, { status: 500 });
-  }
-}
+await logInfo(
+  'PAYOUT_APPROVED',
+  LogActor.ADMIN,
+  'Payout approved',
+  adminId
+);
 ```
 
----
+### 4. Gestion des Erreurs
 
-## API Routes
-
-### GET /api/admin/system-logs
-
-Récupérer les logs système avec filtrage et pagination.
-
-**Query Parameters :**
-
-- `level` : LogLevel (INFO, WARNING, ERROR, CRITICAL)
-- `actor` : LogActor (USER, CREATOR, ADMIN, SYSTEM, GUEST)
-- `type` : String (recherche partielle, case-insensitive)
-- `actorId` : String
-- `startDate` : ISO date string
-- `endDate` : ISO date string
-- `search` : String (recherche dans message, type, actorId)
-- `limit` : Number (défaut: 100, max: 500)
-- `page` : Number (défaut: 1)
-- `orderBy` : 'asc' | 'desc' (défaut: 'desc')
-
-**Exemple :**
-
-```bash
-GET /api/admin/system-logs?level=ERROR&actor=USER&page=1&limit=100
-```
-
-**Response :**
-
-```json
-{
-  "success": true,
-  "logs": [
-    {
-      "id": "log_xxxxx",
-      "level": "ERROR",
-      "type": "API_ERROR",
-      "actor": "USER",
-      "actorId": "user_xxxxx",
-      "message": "Failed to create booking",
-      "metadata": { ... },
-      "createdAt": "2024-01-15T10:30:00Z"
-    }
-  ],
-  "pagination": {
-    "totalCount": 1500,
-    "totalPages": 15,
-    "currentPage": 1,
-    "limit": 100,
-    "offset": 0,
-    "hasMore": true
-  }
-}
-```
-
-### DELETE /api/admin/system-logs
-
-Supprimer des logs par plage de dates ou par filtres.
-
-**Request Body :**
-
-```json
-{
-  "deleteType": "dateRange",
-  "startDate": "2024-01-01T00:00:00Z",
-  "endDate": "2024-01-31T23:59:59Z",
-  "level": "INFO"
-}
-```
-
-**Response :**
-
-```json
-{
-  "success": true,
-  "deletedCount": 1500,
-  "message": "1500 log(s) supprimé(s) avec succès"
-}
-```
-
-### POST /api/cron/cleanup-logs
-
-Déclencher le nettoyage automatique des logs.
-
-**Headers :**
-
-```
-Authorization: Bearer <CRON_SECRET>
-```
-
-**Response :**
-
-```json
-{
-  "success": true,
-  "message": "Log cleanup completed successfully",
-  "stats": {
-    "infoDeleted": 1200,
-    "warningDeleted": 300,
-    "errorDeleted": 50,
-    "totalDeleted": 1550,
-    "durationMs": 1234
-  }
-}
-```
-
----
-
-## Optimisations et performances
-
-### Index de base de données
-
-Le modèle Log est optimisé avec plusieurs index pour des requêtes rapides :
-
-```prisma
-@@index([createdAt])        // Tri chronologique
-@@index([level])            // Filtrage par niveau
-@@index([type])             // Filtrage par type
-@@index([actor])            // Filtrage par acteur
-@@index([actorId])          // Recherche par acteur spécifique
-@@index([level, createdAt]) // Requêtes de rétention optimisées
-```
-
-### Pagination obligatoire
-
-- Toutes les requêtes sont paginées côté backend
-- Limite maximale : 500 logs par requête
-- Pas de chargement massif côté frontend
-
-### Logs asynchrones
-
-Toutes les fonctions de logging sont asynchrones et n'attendent pas la confirmation d'écriture pour ne pas bloquer le flux applicatif.
-
-### Gestion d'erreurs
-
-En cas d'erreur lors de l'écriture d'un log, l'erreur est capturée et loggée dans la console mais ne bloque jamais l'application :
-
+✅ **BON** : Try-catch avec logs détaillés
 ```typescript
 try {
-  await prisma.log.create({ data: logEntry });
+  const stripePayout = await stripe.payouts.create({...});
+  
+  await logInfo(
+    'PAYOUT_STRIPE_CREATION_SUCCESS',
+    LogActor.SYSTEM,
+    'Payout Stripe créé avec succès',
+    creatorId,
+    {
+      stripePayoutId: stripePayout.id,
+      amount,
+      status: stripePayout.status,
+    }
+  );
 } catch (error) {
-  // Logging should never crash the application
-  console.error('[SystemLog Error]', error);
+  await logError(
+    'PAYOUT_STRIPE_CREATION_ERROR',
+    LogActor.SYSTEM,
+    `Erreur Stripe: ${error.message}`,
+    creatorId,
+    {
+      errorType: error.type,
+      errorCode: error.code,
+      errorMessage: error.message,
+      errorStack: error.stack,
+    }
+  );
+  
+  throw error;
+}
+```
+
+### 5. Timing et Performance
+
+```typescript
+const startTime = Date.now();
+
+try {
+  // ... traitement ...
+  
+  await logInfo(
+    'OPERATION_SUCCESS',
+    LogActor.SYSTEM,
+    'Opération terminée avec succès',
+    entityId,
+    {
+      processingTimeMs: Date.now() - startTime,
+      itemsProcessed: items.length,
+    }
+  );
+} catch (error) {
+  await logError(
+    'OPERATION_FAILED',
+    LogActor.SYSTEM,
+    `Opération échouée après ${Date.now() - startTime}ms`,
+    entityId,
+    {
+      errorMessage: error.message,
+      processingTimeMs: Date.now() - startTime,
+    }
+  );
 }
 ```
 
 ---
 
-## Évolution future
+## 📊 Exemples de Logs par Cas d'Usage
 
-### Fonctionnalités prévues
+### Cas 1 : Traçabilité d'un Payout Complet
 
-1. **Alertes automatiques** : Envoyer des notifications aux admins pour les logs CRITICAL
-2. **Export de logs** : Télécharger les logs en CSV/JSON pour analyse externe
-3. **Graphiques et statistiques** : Visualisation des tendances d'erreurs
-4. **Intégration avec services externes** : Sentry, DataDog, etc.
-5. **Recherche avancée** : Full-text search avec Elasticsearch
+```
+1. INFO  | PAYOUT_REQUEST_INITIATED          | Demande initiée par créateur X
+2. INFO  | PAYOUT_REQUEST_STRIPE_VERIFICATION | Vérification compte Stripe
+3. INFO  | PAYOUT_REQUEST_BALANCE_CHECK       | Vérification du solde
+4. INFO  | PAYOUT_REQUEST_STRIPE_CREATION     | Création du payout Stripe
+5. INFO  | PAYOUT_REQUEST_STRIPE_CREATION_SUCCESS | Payout Stripe créé avec succès
+6. INFO  | PAYOUT_REQUESTED                   | Payout demandé (log système + financier)
+7. INFO  | PAYOUT_APPROVAL_INITIATED          | Admin démarre l'approbation
+8. INFO  | PAYOUT_APPROVAL_VALIDATED          | Payout validé par admin
+9. INFO  | PAYOUT_APPROVED                    | Statut changé à APPROVED
+10. INFO | PAYOUT_APPROVAL_STRIPE_CREATION    | Création du payout Stripe après approbation
+11. INFO | PAYOUT_APPROVAL_SUCCESS            | Approbation terminée avec succès
+12. INFO | WEBHOOK_RECEIVED                   | Webhook payout.paid reçu
+13. INFO | PAYOUT_PAID                        | Payout payé avec succès
+```
 
-### Extensions possibles
+### Cas 2 : Échec d'un Payout
 
-- Ajouter des logs pour les actions de modération
-- Logger les modifications de configuration
-- Tracer les migrations de données
-- Logger les exports de données RGPD
+```
+1. INFO  | PAYOUT_REQUEST_INITIATED           | Demande initiée
+2. INFO  | PAYOUT_REQUEST_BALANCE_CHECK       | Vérification du solde
+3. ERROR | PAYOUT_REQUEST_INSUFFICIENT_BALANCE| Solde insuffisant
+4. (retour d'erreur au créateur)
+```
 
----
+### Cas 3 : Cron de Traitement Automatique
 
-## Support et maintenance
-
-Pour toute question ou problème concernant le système de logs :
-
-1. Vérifier la page admin : `/dashboard/admin/system-logs`
-2. Exécuter manuellement le cleanup : `npm run cleanup-logs`
-3. Consulter les logs de la console serveur
-4. Vérifier les variables d'environnement (`CRON_SECRET`, `DATABASE_URL`)
-
----
-
-## Résumé des fichiers
-
-### Modèles et migrations
-
-- `prisma/schema.prisma` : Modèle Log et enums
-- `prisma/migrations/*/migration.sql` : Migration SQL
-
-### Services et utilitaires
-
-- `lib/system-logger.ts` : Service de logging centralisé
-
-### API Routes
-
-- `app/api/admin/system-logs/route.ts` : GET et DELETE pour les logs
-- `app/api/cron/cleanup-logs/route.ts` : Cron job de nettoyage
-
-### Pages admin
-
-- `app/dashboard/admin/system-logs/page.tsx` : Interface admin
-
-### Scripts
-
-- `scripts/cleanup-logs.ts` : Script manuel de nettoyage
-
-### Configuration
-
-- `vercel.json` : Configuration des cron jobs
-- `package.json` : Scripts npm
+```
+1. INFO  | CRON_PAYOUT_STARTED                | Cron démarré
+2. INFO  | CRON_PAYOUT_PROGRESS               | 5/20 créateurs traités
+3. INFO  | CRON_PAYOUT_PROGRESS               | 10/20 créateurs traités
+4. INFO  | CRON_PAYOUT_PROGRESS               | 15/20 créateurs traités
+5. INFO  | CRON_PAYOUT_PROGRESS               | 20/20 créateurs traités
+6. INFO  | CRON_PAYOUT_COMPLETED              | Cron terminé : 15 succès, 3 échecs, 2 ignorés
+```
 
 ---
 
-**Version** : 1.0.0  
-**Date** : Décembre 2024  
-**Auteur** : Callastar Team
+## 🔍 Consultation des Logs
+
+### Via l'Interface Admin
+
+1. Accéder à `/dashboard/admin/system-logs` pour les logs système
+2. Filtrer par :
+   - **Niveau** : INFO, WARNING, ERROR, CRITICAL
+   - **Type** : PAYOUT_*, PAYMENT_*, CRON_*, etc.
+   - **Acteur** : USER, CREATOR, ADMIN, SYSTEM
+   - **Date** : Plage de dates
+   - **Recherche** : Texte libre
+
+### Via Prisma Studio
+
+```bash
+npx prisma studio
+```
+
+Puis accéder aux tables `Log` et `TransactionLog`.
+
+### Via SQL Direct
+
+```sql
+-- Tous les logs d'un payout spécifique
+SELECT * FROM "Log" 
+WHERE type LIKE 'PAYOUT_%' 
+  AND metadata::text LIKE '%payoutId%' 
+ORDER BY "createdAt" DESC;
+
+-- Logs d'erreur des dernières 24h
+SELECT * FROM "Log" 
+WHERE level IN ('ERROR', 'CRITICAL') 
+  AND "createdAt" >= NOW() - INTERVAL '24 hours'
+ORDER BY "createdAt" DESC;
+
+-- Résumé des logs par type
+SELECT type, level, COUNT(*) as count
+FROM "Log"
+WHERE "createdAt" >= NOW() - INTERVAL '7 days'
+GROUP BY type, level
+ORDER BY count DESC;
+```
+
+---
+
+## 🔄 Politique de Rétention
+
+Les logs sont automatiquement nettoyés selon la politique de rétention :
+
+- **INFO** : 30 jours
+- **WARNING** : 60 jours
+- **ERROR** : 90 jours
+- **CRITICAL** : Conservés indéfiniment
+
+Le cron de nettoyage s'exécute quotidiennement via `/api/cron/cleanup-logs`.
+
+---
+
+## 📋 Checklist pour Ajouter de Nouveaux Logs
+
+Lors de l'implémentation d'une nouvelle fonctionnalité, assurez-vous de :
+
+✅ **Début de l'opération** : Log INFO de démarrage
+✅ **Validations** : Log ERROR pour chaque validation échouée
+✅ **Étapes intermédiaires** : Log INFO pour les étapes importantes
+✅ **Appels externes** : Log INFO avant/après les appels API (Stripe, etc.)
+✅ **Succès** : Log INFO de fin avec durée et résumé
+✅ **Erreurs** : Log ERROR avec détails (type, code, message, stack)
+✅ **Métadonnées riches** : IDs, montants, statuts, raisons, durées
+✅ **Messages clairs** : Contexte suffisant pour comprendre l'événement
+✅ **Niveau approprié** : INFO, WARNING, ERROR, CRITICAL selon la gravité
+
+---
+
+## 🚀 Fichiers Modifiés avec Logs Exhaustifs
+
+Les fichiers suivants ont été mis à jour avec des logs exhaustifs :
+
+### Payouts (PRIORITÉ 1)
+- ✅ `/app/api/creators/payouts/request/route.ts` - Demande de payout par créateur
+- ✅ `/app/api/admin/payouts/[id]/approve/route.ts` - Approbation par admin
+- ✅ `/app/api/admin/payouts/[id]/reject/route.ts` - Rejet par admin
+
+### Cron Jobs
+- ✅ `/app/api/cron/process-payouts/route.ts` - Traitement automatique des payouts
+- ✅ `/app/api/cron/cleanup-logs/route.ts` - Nettoyage des logs
+
+### Webhooks & Paiements
+- 🔄 `/app/api/payments/webhook/route.ts` - Webhooks Stripe (logs existants, à améliorer)
+- 🔄 `/app/api/payments/create-intent/route.ts` - Création de payment intent (logs existants)
+
+---
+
+## 📚 Références
+
+- **Fichiers de logs** :
+  - `lib/logger.ts` - Logger financier
+  - `lib/system-logger.ts` - Logger système
+  
+- **Modèles Prisma** :
+  - `TransactionLog` - Logs financiers
+  - `Log` - Logs système
+
+- **Pages admin** :
+  - `/dashboard/admin/system-logs` - Consultation des logs système
+  - `/dashboard/admin/logs` - Consultation des logs financiers
+
+---
+
+## 🎯 Critères de Succès
+
+Un administrateur doit pouvoir :
+
+1. ✅ Retracer **tout le cycle de vie d'un payout** en consultant uniquement les logs
+2. ✅ Comprendre **pourquoi un payout a échoué** avec détails (raison, code d'erreur Stripe, montant, solde)
+3. ✅ Voir **qui a effectué quelle action** (admin, créateur, système) avec timestamps
+4. ✅ Suivre l'**exécution des cron jobs** (début, fin, durée, nombre d'items traités)
+5. ✅ Détecter les **anomalies** via les logs WARNING/ERROR
+6. ✅ Auditer les **actions sensibles** (blocage de payouts, remboursements, validations)
+7. ✅ Débugger les **erreurs** avec stack traces et métadonnées complètes
+
+---
+
+*Dernière mise à jour : 28 décembre 2025*

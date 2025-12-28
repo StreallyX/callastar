@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { logPayout } from '@/lib/logger';
-import { TransactionEventType, PayoutStatus } from '@prisma/client';
+import { TransactionEventType, PayoutStatus, LogLevel, LogActor } from '@prisma/client';
 import { createNotification } from '@/lib/notifications';
 import { sendEmail } from '@/lib/email';
+import { logAdminAction, logPayoutEvent, logError as logSystemError } from '@/lib/system-logger';
 
 /**
  * POST /api/admin/payouts/[id]/reject
@@ -20,9 +21,25 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rejectionStartTime = Date.now();
+  
   try {
     const jwtUser = await getUserFromRequest(request);
     if (!jwtUser || jwtUser.role !== 'ADMIN') {
+      // Log unauthorized rejection attempt
+      await logSystemError(
+        'PAYOUT_REJECTION_UNAUTHORIZED',
+        LogActor.GUEST,
+        'Tentative de rejet de payout non autorisée',
+        undefined,
+        {
+          endpoint: '/api/admin/payouts/[id]/reject',
+          payoutId: params.id,
+          hasAuth: !!jwtUser,
+          role: jwtUser?.role,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Non autorisé' },
         { status: 401 }
@@ -36,11 +53,37 @@ export async function POST(
     const { reason } = body;
 
     if (!reason || reason.trim() === '') {
+      // Log missing rejection reason
+      await logSystemError(
+        'PAYOUT_REJECTION_NO_REASON',
+        LogActor.ADMIN,
+        'Tentative de rejet de payout sans raison fournie',
+        jwtUser.userId,
+        {
+          payoutId: payoutId,
+          adminId: jwtUser.userId,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'La raison du rejet est requise' },
         { status: 400 }
       );
     }
+    
+    // Log rejection initiation
+    await logAdminAction(
+      'PAYOUT_REJECTION_INITIATED',
+      jwtUser.userId,
+      `Rejet de payout initiée par l'administrateur`,
+      LogLevel.INFO,
+      {
+        payoutId: payoutId,
+        adminId: jwtUser.userId,
+        adminEmail: jwtUser.email,
+        rejectionReason: reason,
+      }
+    );
 
     // Get the payout
     const payout = await prisma.payout.findUnique({
@@ -55,6 +98,18 @@ export async function POST(
     });
 
     if (!payout) {
+      // Log payout not found
+      await logSystemError(
+        'PAYOUT_REJECTION_NOT_FOUND',
+        LogActor.ADMIN,
+        'Paiement introuvable lors du rejet',
+        jwtUser.userId,
+        {
+          payoutId: payoutId,
+          adminId: jwtUser.userId,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Paiement introuvable' },
         { status: 404 }
@@ -63,6 +118,22 @@ export async function POST(
 
     // ✅ PHASE 3: Verify status is REQUESTED
     if (payout.status !== PayoutStatus.REQUESTED) {
+      // Log invalid status
+      await logSystemError(
+        'PAYOUT_REJECTION_INVALID_STATUS',
+        LogActor.ADMIN,
+        `Tentative de rejet d'un payout avec un statut invalide: ${payout.status}`,
+        jwtUser.userId,
+        {
+          payoutId: payoutId,
+          adminId: jwtUser.userId,
+          currentStatus: payout.status,
+          expectedStatus: PayoutStatus.REQUESTED,
+          creatorId: payout.creatorId,
+          amount: Number(payout.amount),
+        }
+      );
+      
       return NextResponse.json(
         { error: `Ce paiement ne peut pas être rejeté. Statut actuel: ${payout.status}` },
         { status: 400 }
@@ -82,6 +153,26 @@ export async function POST(
         rejectedAt: new Date(), // ✅ PHASE 3: New field
       },
     });
+    
+    // Log rejection with full details
+    await logPayoutEvent(
+      'REJECTED',
+      payout.id,
+      payout.creatorId,
+      payoutAmountEur,
+      stripeCurrency,
+      LogLevel.WARNING,
+      {
+        payoutId: payout.id,
+        adminId: jwtUser.userId,
+        creatorId: payout.creatorId,
+        creatorEmail: payout.creator.user.email,
+        rejectionReason: reason,
+        previousStatus: PayoutStatus.REQUESTED,
+        newStatus: PayoutStatus.REJECTED,
+        rejectedAt: new Date().toISOString(),
+      }
+    );
 
     // Log rejection
     await logPayout(TransactionEventType.PAYOUT_FAILED, {
@@ -174,6 +265,25 @@ export async function POST(
       // Non-critical, continue
     }
 
+    // Log successful rejection completion
+    const rejectionDuration = Date.now() - rejectionStartTime;
+    await logAdminAction(
+      'PAYOUT_REJECTION_SUCCESS',
+      jwtUser.userId,
+      `Payout rejeté avec succès par l'administrateur`,
+      LogLevel.INFO,
+      {
+        payoutId: payout.id,
+        adminId: jwtUser.userId,
+        creatorId: payout.creatorId,
+        creatorEmail: payout.creator.user.email,
+        amount: payoutAmountEur,
+        currency: stripeCurrency,
+        rejectionReason: reason,
+        processingTimeMs: rejectionDuration,
+      }
+    );
+    
     return NextResponse.json({
       success: true,
       message: 'Paiement rejeté',
@@ -187,6 +297,21 @@ export async function POST(
     });
   } catch (error) {
     console.error('Error rejecting payout:', error);
+    
+    // Log fatal error
+    const rejectionDuration = Date.now() - rejectionStartTime;
+    await logSystemError(
+      'PAYOUT_REJECTION_FATAL_ERROR',
+      LogActor.SYSTEM,
+      `Erreur fatale lors du rejet de payout: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      undefined,
+      {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        processingTimeMs: rejectionDuration,
+      }
+    );
+    
     return NextResponse.json(
       { error: 'Erreur lors du rejet du paiement' },
       { status: 500 }
