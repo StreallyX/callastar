@@ -370,7 +370,7 @@ export default function AdminDashboard() {
               <Button
                 variant="outline"
                 className="h-auto flex flex-col items-start p-4 hover:bg-purple-50"
-                onClick={() => router.push('/dashboard/admin/logs')}
+                onClick={() => router.push('/dashboard/admin/system-logs')}
               >
                 <Users className="w-6 h-6 mb-2" />
                 <span className="font-semibold">Logs</span>

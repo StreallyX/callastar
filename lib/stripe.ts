@@ -93,38 +93,38 @@ export async function getCreatorCurrency(creatorId: string): Promise<string> {
  */
 export async function getCreatorCurrencyByStripeAccount(stripeAccountId: string): Promise<string> {
   try {
-    // Try to find creator in DB first
+    // 1. Toujours récupérer depuis Stripe
+    console.log(`[Currency] Fetch depuis Stripe pour ${stripeAccountId}`);
+
+    const stripeAccount = await stripe.accounts.retrieve(stripeAccountId);
+    const stripeCurrency = (stripeAccount.default_currency || 'eur').toUpperCase();
+
+    console.log(`[Currency] Stripe currency = ${stripeCurrency}`);
+
+    // 2. Mettre à jour la DB (overwrite si différent)
     const creator = await prisma.creator.findFirst({
       where: { stripeAccountId },
       select: { id: true, currency: true },
     });
 
-    if (creator?.currency) {
-      console.log(`[getCreatorCurrencyByStripeAccount] Devise trouvée en DB pour ${stripeAccountId}: ${creator.currency}`);
-      return creator.currency.toUpperCase();
-    }
-
-    // Fetch from Stripe
-    console.log(`[getCreatorCurrencyByStripeAccount] Récupération de la devise depuis Stripe pour ${stripeAccountId}...`);
-    const stripeAccount = await stripe.accounts.retrieve(stripeAccountId);
-    const currency = (stripeAccount.default_currency || 'eur').toUpperCase();
-    console.log(`[getCreatorCurrencyByStripeAccount] Devise récupérée depuis Stripe: ${currency}`);
-
-    // Update DB if we found the creator
-    if (creator?.id) {
+    if (creator && creator.currency !== stripeCurrency) {
       await prisma.creator.update({
         where: { id: creator.id },
-        data: { currency },
+        data: { currency: stripeCurrency },
       });
-      console.log(`[getCreatorCurrencyByStripeAccount] ✅ Devise mise à jour en DB pour créateur ${creator.id}: ${currency}`);
+
+      console.warn(
+        `[Currency] 🔄 Devise corrigée en DB (${creator.currency} → ${stripeCurrency})`
+      );
     }
 
-    return currency;
+    return stripeCurrency;
   } catch (error) {
-    console.error(`[getCreatorCurrencyByStripeAccount] ❌ Erreur lors de la récupération de la devise:`, error);
-    return 'EUR';
+    console.error('[Currency] ❌ Erreur Stripe currency', error);
+    throw error; // ⛔ NE PAS retourner EUR silencieusement
   }
 }
+
 
 /**
  * Create a Stripe Payment Intent using Destination Charges (Option 1)
