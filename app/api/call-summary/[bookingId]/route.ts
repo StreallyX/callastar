@@ -71,27 +71,96 @@ export async function GET(
       },
     });
 
-    // Find call start and end times
-    const startLog = logs.find(log => log.type === 'CALL_CALL_STARTED');
-    const endLog = logs.find(log => log.type === 'CALL_CALL_ENDED');
-
-    let actualDuration = 0;
-    let startTime = null;
-    let endTime = null;
-    let callStatus = 'unknown';
-
-    if (startLog && endLog) {
-      startTime = startLog.createdAt;
-      endTime = endLog.createdAt;
-      actualDuration = Math.floor((endTime.getTime() - startTime.getTime()) / 1000); // in seconds
-      callStatus = 'completed';
-    } else if (startLog && !endLog) {
-      callStatus = 'interrupted';
-      startTime = startLog.createdAt;
-      actualDuration = Math.floor((Date.now() - startTime.getTime()) / 1000);
-    } else {
-      callStatus = 'no-show';
+    // Calculer la durée totale cumulée à partir des sessions
+    // Une session = CALL_JOIN -> CALL_LEAVE (ou SESSION_START -> SESSION_END)
+    // On supporte aussi l'ancien format CALL_STARTED -> CALL_ENDED
+    
+    interface CallSession {
+      start: Date;
+      end: Date | null;
+      actorId: string | null;
+      duration: number; // en secondes
     }
+    
+    const sessions: CallSession[] = [];
+    const sessionMap = new Map<string, { start: Date; actorId: string | null }>();
+    
+    let firstStartTime: Date | null = null;
+    let lastEndTime: Date | null = null;
+    
+    // Parser les logs pour identifier les sessions
+    for (const log of logs) {
+      const actorId = log.actorId || 'unknown';
+      const logTime = log.createdAt;
+      
+      // Événements de début de session
+      if (
+        log.type === 'CALL_CALL_JOIN' || 
+        log.type === 'CALL_SESSION_START' || 
+        log.type === 'CALL_CALL_JOINED' ||
+        log.type === 'CALL_CALL_STARTED'
+      ) {
+        if (!sessionMap.has(actorId)) {
+          sessionMap.set(actorId, { start: logTime, actorId });
+          if (!firstStartTime) {
+            firstStartTime = logTime;
+          }
+        }
+      }
+      
+      // Événements de fin de session
+      if (
+        log.type === 'CALL_CALL_LEAVE' ||
+        log.type === 'CALL_SESSION_END' ||
+        log.type === 'CALL_DISCONNECTION_VOLUNTARY' ||
+        log.type === 'CALL_DISCONNECTION_INVOLUNTARY' ||
+        log.type === 'CALL_CALL_ENDED'
+      ) {
+        const sessionStart = sessionMap.get(actorId);
+        if (sessionStart) {
+          const duration = Math.floor((logTime.getTime() - sessionStart.start.getTime()) / 1000);
+          sessions.push({
+            start: sessionStart.start,
+            end: logTime,
+            actorId: sessionStart.actorId,
+            duration,
+          });
+          sessionMap.delete(actorId);
+          lastEndTime = logTime;
+        }
+      }
+    }
+    
+    // Gérer les sessions non terminées (encore en cours ou crash)
+    for (const [actorId, sessionStart] of sessionMap.entries()) {
+      const duration = Math.floor((Date.now() - sessionStart.start.getTime()) / 1000);
+      sessions.push({
+        start: sessionStart.start,
+        end: null,
+        actorId: sessionStart.actorId,
+        duration,
+      });
+    }
+    
+    // Calculer la durée totale cumulée
+    const totalDuration = sessions.reduce((sum, session) => sum + session.duration, 0);
+    
+    // Déterminer le statut
+    let callStatus = 'unknown';
+    if (sessions.length === 0) {
+      callStatus = 'no-show';
+    } else if (sessions.some(s => s.end === null)) {
+      callStatus = 'in-progress';
+    } else if (sessions.length > 1) {
+      callStatus = 'completed-multiple-sessions';
+    } else {
+      callStatus = 'completed';
+    }
+    
+    // Pour compatibilité avec l'ancien format
+    const startTime = firstStartTime;
+    const endTime = lastEndTime;
+    const actualDuration = totalDuration;
 
     const summary = {
       booking: {
@@ -117,14 +186,23 @@ export async function GET(
       callDetails: {
         actualStartTime: startTime,
         actualEndTime: endTime,
-        actualDuration, // in seconds
+        actualDuration, // in seconds (durée totale cumulée)
         scheduledDuration: booking.callOffer.duration * 60, // in seconds
         status: callStatus,
+        sessionsCount: sessions.length,
+        sessions: sessions.map(s => ({
+          start: s.start,
+          end: s.end,
+          duration: s.duration,
+          actorId: s.actorId,
+        })),
       },
       logs: logs.map(log => ({
         event: log.type,
         timestamp: log.createdAt,
         actor: log.actor,
+        actorId: log.actorId,
+        metadata: log.metadata,
       })),
     };
 

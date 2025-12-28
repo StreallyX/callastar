@@ -4,18 +4,48 @@ import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { LogActor, LogLevel } from '@prisma/client';
 
+// Événements d'appel enrichis pour tracking complet
 const callLogSchema = z.object({
   bookingId: z.string().cuid(),
+  callId: z.string().optional(), // ID de session Daily.co
   event: z.enum([
+    // Lifecycle events
     'PRE_CALL_ENTERED',
+    'CALL_JOIN', // Participant entre dans la room
+    'CALL_LEAVE', // Participant quitte la room (volontaire ou non)
+    'CALL_RECONNECT', // Participant se reconnecte après déconnexion
+    'CALL_START', // Premier participant démarre effectivement l'appel
+    'CALL_END', // Appel réellement terminé
+    'CALL_ERROR', // Erreur technique
+    
+    // Session events
+    'SESSION_START', // Début d'une session d'appel
+    'SESSION_END', // Fin d'une session d'appel
+    
+    // Participant events
+    'PARTICIPANT_JOINED',
+    'PARTICIPANT_LEFT',
+    'PARTICIPANT_RECONNECTED',
+    
+    // Media events
+    'CAMERA_TOGGLED',
+    'MIC_TOGGLED',
+    'SCREEN_SHARE_STARTED',
+    'SCREEN_SHARE_STOPPED',
+    
+    // UI events
+    'SUMMARY_VIEW', // Consultation du summary
+    'FULLSCREEN_ENTERED',
+    'FULLSCREEN_EXITED',
+    
+    // Disconnection events
+    'DISCONNECTION_VOLUNTARY', // Déconnexion volontaire (bouton quitter)
+    'DISCONNECTION_INVOLUNTARY', // Déconnexion involontaire (perte réseau, crash, etc.)
+    
+    // Legacy events (maintien de la compatibilité)
     'CALL_JOINED',
     'CALL_STARTED',
     'CALL_ENDED',
-    'CALL_ERROR',
-    'PARTICIPANT_JOINED',
-    'PARTICIPANT_LEFT',
-    'CAMERA_TOGGLED',
-    'MIC_TOGGLED',
   ]),
   metadata: z.record(z.string(), z.any()).optional(),
   message: z.string().optional(),
@@ -90,8 +120,11 @@ export async function POST(request: NextRequest) {
         message: validatedData.message || `Call event: ${validatedData.event}`,
         metadata: {
           bookingId: validatedData.bookingId,
+          callId: validatedData.callId || null,
           event: validatedData.event,
           userRole: isCreator ? 'CREATOR' : 'USER',
+          userName: (user as any).name || 'Unknown',
+          timestamp: new Date().toISOString(),
           ...validatedData.metadata,
         },
       },
