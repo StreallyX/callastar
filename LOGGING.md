@@ -1055,9 +1055,450 @@ Les fichiers suivants ont été mis à jour avec des logs exhaustifs :
 - ✅ `/app/api/cron/process-payouts/route.ts` - Traitement automatique des payouts
 - ✅ `/app/api/cron/cleanup-logs/route.ts` - Nettoyage des logs
 
-### Webhooks & Paiements
-- 🔄 `/app/api/payments/webhook/route.ts` - Webhooks Stripe (logs existants, à améliorer)
-- 🔄 `/app/api/payments/create-intent/route.ts` - Création de payment intent (logs existants)
+### Bookings (PHASE 1 - COMPLÉTÉE)
+- ✅ `/app/api/bookings/route.ts` - Création de booking avec logs détaillés
+- ✅ `/app/api/payments/webhook/route.ts` - Confirmation de booking via webhook (ligne 551-566)
+- ✅ `/app/api/call-offers/[id]/route.ts` - Modification, annulation et complétion de bookings/call offers
+
+### Webhooks & Paiements (PHASES 2 & 3 - COMPLÉTÉES)
+- ✅ `/app/api/payments/webhook/route.ts` - Webhooks Stripe avec logs exhaustifs :
+  - Validation de signature avec timing
+  - Traitement des événements avec durée
+  - Logs de début et fin de traitement
+  - Logs d'erreurs détaillés
+- ✅ `/app/api/payments/create-intent/route.ts` - Création de payment intent avec logs exhaustifs :
+  - Logs d'initiation
+  - Logs de validation (booking, ownership, déjà payé)
+  - Logs de succès avec timing
+  - Logs d'erreurs détaillés
+
+### Actions Sensibles Admin (PHASE 4 - COMPLÉTÉE)
+- ✅ `/app/api/admin/payouts/block/route.ts` - Blocage de payouts avec logs complets :
+  - Logs d'initiation par admin
+  - Logs de validation (créateur, raison)
+  - Logs d'avertissement (déjà bloqué)
+  - Logs de succès avec détails complets
+  - Logs d'erreurs avec timing
+- ✅ `/app/api/admin/payouts/unblock/route.ts` - Déblocage de payouts avec logs complets :
+  - Logs d'initiation par admin
+  - Logs de validation (créateur)
+  - Logs d'avertissement (non bloqué)
+  - Logs de succès avec détails complets
+  - Logs d'erreurs avec timing
+
+---
+
+## 📋 Nouveaux Événements Loggés (Phase 2)
+
+### 🛏️ BOOKINGS (Rendez-vous)
+
+```typescript
+// ✅ CRÉATION DE BOOKING
+await logBooking(
+  'CREATED',
+  booking.id,
+  user.userId,
+  callOffer.creatorId,
+  {
+    callOfferId: validatedData.callOfferId,
+    price: callOffer.price.toString(),
+    currency: callOffer.currency,
+    dateTime: callOffer.dateTime.toISOString(),
+  }
+);
+
+// ✅ CONFIRMATION DE BOOKING (via webhook)
+await logBooking(
+  'CONFIRMED',
+  booking.id,
+  booking.userId,
+  booking.callOffer.creatorId,
+  {
+    previousStatus: 'PENDING',
+    newStatus: 'CONFIRMED',
+    dailyRoomUrl: room.url,
+    dailyRoomName: room.name,
+    confirmedVia: 'payment_intent_succeeded_webhook',
+    paymentIntentId: paymentIntent.id,
+    amount: amount,
+    currency: currency,
+  }
+);
+
+// ✅ ANNULATION DE BOOKING (via call offer update)
+await logBooking(
+  'CANCELLED',
+  updated.booking.id,
+  updated.booking.userId,
+  updated.creator.id,
+  {
+    callOfferId: id,
+    previousStatus: callOffer.status,
+    newStatus: 'CANCELLED',
+    cancelledBy: 'creator',
+    cancelledByUserId: user.userId,
+    cancelledAt: new Date().toISOString(),
+    reason: 'Cancelled by creator via call offer update',
+  }
+);
+
+// ✅ COMPLÉTION DE BOOKING (via call offer update)
+await logBooking(
+  'COMPLETED',
+  updated.booking.id,
+  updated.booking.userId,
+  updated.creator.id,
+  {
+    callOfferId: id,
+    previousStatus: callOffer.status,
+    newStatus: 'COMPLETED',
+    completedAt: new Date().toISOString(),
+    completedBy: 'creator',
+  }
+);
+
+// ❌ ERREURS LORS DE LA CRÉATION
+await logApiError(
+  '/api/bookings',
+  error instanceof Error ? error : 'Unknown error',
+  LogActor.USER,
+  user?.userId,
+  { action: 'CREATE_BOOKING' }
+);
+```
+
+### 🔔 WEBHOOKS STRIPE (Améliorations)
+
+```typescript
+// ✅ VALIDATION DE SIGNATURE RÉUSSIE
+await logInfo(
+  'WEBHOOK_SIGNATURE_VERIFIED',
+  LogActor.SYSTEM,
+  'Signature webhook Stripe vérifiée avec succès',
+  undefined,
+  {
+    verificationTimeMs: 15,
+    signaturePresent: true,
+  }
+);
+
+// ❌ VALIDATION DE SIGNATURE ÉCHOUÉE
+await logError(
+  'WEBHOOK_SIGNATURE_VERIFICATION_FAILED',
+  LogActor.SYSTEM,
+  'Échec de la vérification de la signature du webhook Stripe',
+  undefined,
+  {
+    verificationTimeMs: 12,
+    errorMessage: 'Invalid signature',
+    signatureProvided: true,
+  }
+);
+
+// ⚠️ WEBHOOK SANS SIGNATURE
+await logWarning(
+  'WEBHOOK_NO_SIGNATURE',
+  LogActor.SYSTEM,
+  'Webhook Stripe reçu sans signature',
+  undefined,
+  { headersPresent: true }
+);
+
+// ✅ DÉBUT DU TRAITEMENT
+await logInfo(
+  'WEBHOOK_PROCESSING_STARTED',
+  LogActor.SYSTEM,
+  `Début du traitement du webhook Stripe : payment_intent.succeeded`,
+  undefined,
+  {
+    eventId: 'evt_xxx',
+    eventType: 'payment_intent.succeeded',
+    objectType: 'payment_intent',
+    livemode: true,
+  }
+);
+
+// ✅ TRAITEMENT RÉUSSI
+await logInfo(
+  'WEBHOOK_PROCESSING_SUCCESS',
+  LogActor.SYSTEM,
+  `Webhook Stripe traité avec succès : payment_intent.succeeded`,
+  undefined,
+  {
+    eventId: 'evt_xxx',
+    eventType: 'payment_intent.succeeded',
+    processingTimeMs: 450,
+    totalTimeMs: 520,
+  }
+);
+```
+
+### 💳 PAIEMENTS (Améliorations)
+
+```typescript
+// ✅ INITIATION DE CRÉATION PAYMENT INTENT
+await logInfo(
+  'PAYMENT_INTENT_CREATION_INITIATED',
+  LogActor.USER,
+  'Création de payment intent initiée',
+  user.userId,
+  { bookingId: validatedData.bookingId }
+);
+
+// ❌ NON AUTHENTIFIÉ
+await logError(
+  'PAYMENT_INTENT_UNAUTHORIZED',
+  LogActor.GUEST,
+  'Tentative de création de payment intent sans authentification',
+  undefined,
+  { endpoint: '/api/payments/create-intent' }
+);
+
+// ❌ RÉSERVATION INTROUVABLE
+await logError(
+  'PAYMENT_INTENT_BOOKING_NOT_FOUND',
+  LogActor.USER,
+  'Tentative de paiement pour une réservation introuvable',
+  user.userId,
+  { bookingId: validatedData.bookingId }
+);
+
+// ❌ ACCÈS REFUSÉ
+await logError(
+  'PAYMENT_INTENT_ACCESS_DENIED',
+  LogActor.USER,
+  'Tentative de paiement pour une réservation non possédée',
+  user.userId,
+  {
+    bookingId: validatedData.bookingId,
+    bookingOwnerId: booking.userId,
+  }
+);
+
+// ❌ DÉJÀ PAYÉ
+await logError(
+  'PAYMENT_INTENT_ALREADY_PAID',
+  LogActor.USER,
+  'Tentative de paiement pour une réservation déjà payée',
+  user.userId,
+  {
+    bookingId: validatedData.bookingId,
+    bookingStatus: 'CONFIRMED',
+  }
+);
+
+// ✅ SUCCÈS AVEC TIMING
+await logPaymentEvent(
+  'INITIATED',
+  payment.id,
+  user.userId,
+  amount,
+  creatorCurrency,
+  LogLevel.INFO,
+  {
+    paymentId: payment.id,
+    bookingId: booking.id,
+    creatorId: booking.callOffer.creatorId,
+    paymentIntentId: paymentIntent.id,
+    amount,
+    currency: creatorCurrency,
+    platformFee,
+    creatorAmount,
+    processingTimeMs: 234,
+    useStripeConnect: true,
+  }
+);
+```
+
+### 🔒 ACTIONS SENSIBLES ADMIN
+
+```typescript
+// ✅ BLOCAGE DE PAYOUTS - INITIATION
+await logAdminAction(
+  'PAYOUT_BLOCK_INITIATED',
+  adminId,
+  'Blocage de payout initié par administrateur',
+  LogLevel.INFO,
+  {
+    adminId,
+    adminEmail: 'admin@example.com',
+    creatorId,
+    reason: 'Activité suspecte détectée',
+  }
+);
+
+// ❌ BLOCAGE - VALIDATION ÉCHOUÉE
+await logError(
+  'PAYOUT_BLOCK_VALIDATION_ERROR',
+  LogActor.ADMIN,
+  'ID du créateur manquant pour blocage de payout',
+  adminId,
+  { error: 'missing_creator_id' }
+);
+
+// ⚠️ BLOCAGE - DÉJÀ BLOQUÉ
+await logWarning(
+  'PAYOUT_BLOCK_ALREADY_BLOCKED',
+  LogActor.ADMIN,
+  'Tentative de blocage pour un créateur déjà bloqué',
+  adminId,
+  {
+    creatorId,
+    creatorName: 'John Doe',
+    creatorEmail: 'john@example.com',
+    currentReason: 'Compte en révision',
+  }
+);
+
+// ✅ BLOCAGE - SUCCÈS
+await logAdminAction(
+  'CREATOR_PAYOUT_BLOCKED',
+  adminId,
+  `Payouts bloqués avec succès pour le créateur John Doe`,
+  LogLevel.WARNING,
+  {
+    creatorId,
+    creatorName: 'John Doe',
+    creatorEmail: 'john@example.com',
+    blockReason: 'Activité suspecte détectée',
+    adminId,
+    adminEmail: 'admin@example.com',
+    processingTimeMs: 145,
+    auditLogId: 'audit_xxx',
+  }
+);
+
+// ✅ DÉBLOCAGE DE PAYOUTS - INITIATION
+await logAdminAction(
+  'PAYOUT_UNBLOCK_INITIATED',
+  adminId,
+  'Déblocage de payout initié par administrateur',
+  LogLevel.INFO,
+  {
+    adminId,
+    adminEmail: 'admin@example.com',
+    creatorId,
+  }
+);
+
+// ⚠️ DÉBLOCAGE - NON BLOQUÉ
+await logWarning(
+  'PAYOUT_UNBLOCK_NOT_BLOCKED',
+  LogActor.ADMIN,
+  'Tentative de déblocage pour un créateur non bloqué',
+  adminId,
+  {
+    creatorId,
+    creatorName: 'Jane Doe',
+    creatorEmail: 'jane@example.com',
+  }
+);
+
+// ✅ DÉBLOCAGE - SUCCÈS
+await logAdminAction(
+  'CREATOR_PAYOUT_UNBLOCKED',
+  adminId,
+  `Payouts débloqués avec succès pour le créateur Jane Doe`,
+  LogLevel.INFO,
+  {
+    creatorId,
+    creatorName: 'Jane Doe',
+    creatorEmail: 'jane@example.com',
+    previousBlockReason: 'Vérification terminée',
+    adminId,
+    adminEmail: 'admin@example.com',
+    processingTimeMs: 98,
+    auditLogId: 'audit_yyy',
+  }
+);
+```
+
+### 🎨 CALL OFFERS (Modifications)
+
+```typescript
+// ✅ MODIFICATION D'OFFRE - INITIATION
+await logCreatorAction(
+  'OFFER_UPDATE_INITIATED',
+  creatorId,
+  `Modification d'offre initiée pour Appel 30min`,
+  {
+    offerId: 'offer_xxx',
+    changes: { price: 150, duration: 60 },
+    previousStatus: 'AVAILABLE',
+  }
+);
+
+// ✅ MODIFICATION D'OFFRE - SUCCÈS
+await logCreatorAction(
+  'OFFER_UPDATED',
+  creatorId,
+  `Offre d'appel modifiée avec succès : Appel 30min`,
+  {
+    offerId: 'offer_xxx',
+    changes: ['price: 100 → 150', 'duration: 30 → 60'],
+    newStatus: 'AVAILABLE',
+  }
+);
+
+// ✅ SUPPRESSION D'OFFRE - INITIATION
+await logCreatorAction(
+  'OFFER_DELETE_INITIATED',
+  creatorId,
+  `Suppression d'offre initiée pour Appel 30min`,
+  {
+    offerId: 'offer_xxx',
+    offerTitle: 'Appel 30min',
+    offerStatus: 'AVAILABLE',
+  }
+);
+
+// ✅ SUPPRESSION D'OFFRE - SUCCÈS
+await logCreatorAction(
+  'OFFER_DELETED',
+  creatorId,
+  `Offre d'appel supprimée avec succès : Appel 30min`,
+  {
+    offerId: 'offer_xxx',
+    offerTitle: 'Appel 30min',
+    deletedAt: new Date().toISOString(),
+  }
+);
+```
+
+---
+
+## 🎯 Nouveaux Critères de Traçabilité
+
+Avec les logs de la Phase 2, un administrateur peut maintenant :
+
+1. ✅ **Tracer tout le cycle de vie d'un booking** :
+   - Création par l'utilisateur
+   - Confirmation automatique via webhook Stripe
+   - Annulation par le créateur
+   - Complétion après l'appel
+
+2. ✅ **Surveiller les webhooks Stripe en temps réel** :
+   - Temps de validation de signature
+   - Temps de traitement des événements
+   - Échecs de signature
+   - Événements traités avec succès/échec
+
+3. ✅ **Auditer les paiements** :
+   - Toutes les tentatives de paiement
+   - Validations échouées (booking introuvable, accès refusé, déjà payé)
+   - Temps de traitement de chaque paiement
+   - Détails complets (montant, devise, fees, créateur)
+
+4. ✅ **Suivre les actions sensibles des admins** :
+   - Qui a bloqué/débloqué les payouts d'un créateur
+   - Quand et pourquoi
+   - Tentatives de blocage sur créateurs déjà bloqués
+   - Temps de traitement de chaque action
+
+5. ✅ **Monitorer les modifications de call offers** :
+   - Modifications de prix, durée, description
+   - Suppressions d'offres
+   - Historique complet des changements
 
 ---
 
@@ -1091,4 +1532,4 @@ Un administrateur doit pouvoir :
 
 ---
 
-*Dernière mise à jour : 28 décembre 2025*
+*Dernière mise à jour : 28 décembre 2025 - Phase 2 complétée (Bookings, Webhooks, Paiements, Actions Admin)*

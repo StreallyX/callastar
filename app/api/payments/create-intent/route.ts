@@ -5,17 +5,28 @@ import { db } from '@/lib/db';
 import { createPaymentIntent } from '@/lib/stripe'; // ✅ CORRECTION #2: Suppression de calculateFees (obsolète)
 import { getPlatformSettings } from '@/lib/settings';
 import { logPayment } from '@/lib/logger';
-import { TransactionEventType } from '@prisma/client';
+import { logInfo, logError, logPaymentEvent, logApiError } from '@/lib/system-logger';
+import { TransactionEventType, LogActor } from '@prisma/client';
 
 const createIntentSchema = z.object({
   bookingId: z.string().cuid(),
 });
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     const user = await getUserFromRequest(request);
 
     if (!user) {
+      await logError(
+        'PAYMENT_INTENT_UNAUTHORIZED',
+        LogActor.GUEST,
+        'Tentative de création de payment intent sans authentification',
+        undefined,
+        { endpoint: '/api/payments/create-intent' }
+      );
+      
       return NextResponse.json(
         { error: 'Non authentifié' },
         { status: 401 }
@@ -24,6 +35,17 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = createIntentSchema.parse(body);
+
+    // Log payment intent creation initiation
+    await logInfo(
+      'PAYMENT_INTENT_CREATION_INITIATED',
+      LogActor.USER,
+      'Création de payment intent initiée',
+      user.userId,
+      {
+        bookingId: validatedData.bookingId,
+      }
+    );
 
     // Get platform settings
     const settings = await getPlatformSettings();
@@ -56,6 +78,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!booking) {
+      await logError(
+        'PAYMENT_INTENT_BOOKING_NOT_FOUND',
+        LogActor.USER,
+        'Tentative de paiement pour une réservation introuvable',
+        user.userId,
+        { bookingId: validatedData.bookingId }
+      );
+      
       return NextResponse.json(
         { error: 'Réservation introuvable' },
         { status: 404 }
@@ -64,6 +94,17 @@ export async function POST(request: NextRequest) {
 
     // Check ownership
     if (booking.userId !== user.userId) {
+      await logError(
+        'PAYMENT_INTENT_ACCESS_DENIED',
+        LogActor.USER,
+        'Tentative de paiement pour une réservation non possédée',
+        user.userId,
+        {
+          bookingId: validatedData.bookingId,
+          bookingOwnerId: booking.userId,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Accès refusé' },
         { status: 403 }
@@ -72,6 +113,17 @@ export async function POST(request: NextRequest) {
 
     // Check if already paid
     if (booking.status === 'CONFIRMED') {
+      await logError(
+        'PAYMENT_INTENT_ALREADY_PAID',
+        LogActor.USER,
+        'Tentative de paiement pour une réservation déjà payée',
+        user.userId,
+        {
+          bookingId: validatedData.bookingId,
+          bookingStatus: booking.status,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Cette réservation est déjà payée' },
         { status: 400 }
@@ -134,7 +186,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Log payment creation
+    // Log payment creation (TransactionLog)
     await logPayment(TransactionEventType.PAYMENT_CREATED, {
       paymentId: payment.id,
       amount,
@@ -151,6 +203,30 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const processingTime = Date.now() - startTime;
+
+    // Log payment intent creation success (SystemLog)
+    await logPaymentEvent(
+      'INITIATED',
+      payment.id,
+      user.userId,
+      amount,
+      creatorCurrency,
+      LogActor.INFO,
+      {
+        paymentId: payment.id,
+        bookingId: booking.id,
+        creatorId: booking.callOffer.creatorId,
+        paymentIntentId: paymentIntent.id,
+        amount,
+        currency: creatorCurrency,
+        platformFee,
+        creatorAmount,
+        processingTimeMs: processingTime,
+        useStripeConnect: useStripeConnect,
+      }
+    );
+
     return NextResponse.json(
       {
         clientSecret: paymentIntent.client_secret,
@@ -163,7 +239,31 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Create payment intent error:', error);
 
+    // Log API error
+    const user = await getUserFromRequest(request).catch(() => null);
+    await logApiError(
+      '/api/payments/create-intent',
+      error instanceof Error ? error : 'Unknown error',
+      LogActor.USER,
+      user?.userId,
+      {
+        action: 'CREATE_PAYMENT_INTENT',
+        errorType: error instanceof z.ZodError ? 'validation' : 'unknown',
+        processingTimeMs: Date.now() - startTime,
+      }
+    );
+
     if (error instanceof z.ZodError) {
+      await logError(
+        'PAYMENT_INTENT_VALIDATION_ERROR',
+        LogActor.USER,
+        'Erreur de validation lors de la création du payment intent',
+        user?.userId,
+        {
+          validationErrors: error.issues,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Données invalides', details: error.issues },
         { status: 400 }

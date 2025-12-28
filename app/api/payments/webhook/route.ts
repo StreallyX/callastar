@@ -7,7 +7,7 @@ import { createDailyRoom } from '@/lib/daily';
 import { sendEmail, generateBookingConfirmationEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
 import { logWebhook, logPayment, logPayout, logRefund, logDispute } from '@/lib/logger';
-import { logWebhookEvent } from '@/lib/system-logger';
+import { logWebhookEvent, logBooking, logInfo, logError, logWarning } from '@/lib/system-logger';
 import { TransactionEventType, EntityType, RefundStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
 import { stripeAmountToUnits, formatDbAmount } from '@/lib/currency-utils';
 import Stripe from 'stripe';
@@ -19,12 +19,25 @@ import Stripe from 'stripe';
  * Handles all critical Stripe events with idempotency and proper logging
  */
 export async function POST(request: NextRequest) {
+  const webhookStartTime = Date.now();
+  
   try {
     const body = await request.text();
     const headersList = await headers();
     const signature = headersList.get('stripe-signature');
 
     if (!signature) {
+      // Log missing signature
+      await logWarning(
+        'WEBHOOK_NO_SIGNATURE',
+        LogActor.SYSTEM,
+        'Webhook Stripe reçu sans signature',
+        undefined,
+        {
+          headersPresent: !!headersList,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'No signature provided' },
         { status: 400 }
@@ -42,10 +55,42 @@ export async function POST(request: NextRequest) {
 
     // Verify webhook signature
     let event: Stripe.Event;
+    const signatureVerificationStart = Date.now();
+    
     try {
       event = verifyWebhookSignature(body, signature, webhookSecret);
+      
+      const signatureVerificationTime = Date.now() - signatureVerificationStart;
+      
+      // Log successful signature verification
+      await logInfo(
+        'WEBHOOK_SIGNATURE_VERIFIED',
+        LogActor.SYSTEM,
+        'Signature webhook Stripe vérifiée avec succès',
+        undefined,
+        {
+          verificationTimeMs: signatureVerificationTime,
+          signaturePresent: true,
+        }
+      );
     } catch (error) {
       console.error('Webhook signature verification failed:', error);
+      
+      const signatureVerificationTime = Date.now() - signatureVerificationStart;
+      
+      // Log signature verification failure
+      await logError(
+        'WEBHOOK_SIGNATURE_VERIFICATION_FAILED',
+        LogActor.SYSTEM,
+        'Échec de la vérification de la signature du webhook Stripe',
+        undefined,
+        {
+          verificationTimeMs: signatureVerificationTime,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          signatureProvided: !!signature,
+        }
+      );
+      
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 400 }
@@ -88,15 +133,49 @@ export async function POST(request: NextRequest) {
 
     // Process webhook event
     console.log(`[Webhook] Processing event: ${event.type} (${event.id})`);
+    const processingStartTime = Date.now();
+
+    // Log webhook processing start
+    await logInfo(
+      'WEBHOOK_PROCESSING_STARTED',
+      LogActor.SYSTEM,
+      `Début du traitement du webhook Stripe : ${event.type}`,
+      undefined,
+      {
+        eventId: event.id,
+        eventType: event.type,
+        objectType: event.data.object.object,
+        livemode: event.livemode,
+      }
+    );
 
     try {
       await processWebhookEvent(event);
+      
+      const processingTime = Date.now() - processingStartTime;
+      const totalTime = Date.now() - webhookStartTime;
       
       // Log successful webhook processing
       await logWebhookEvent('STRIPE', event.type, true, {
         eventId: event.id,
         objectType: event.data.object.object,
+        processingTimeMs: processingTime,
+        totalTimeMs: totalTime,
       });
+
+      // Log detailed success
+      await logInfo(
+        'WEBHOOK_PROCESSING_SUCCESS',
+        LogActor.SYSTEM,
+        `Webhook Stripe traité avec succès : ${event.type}`,
+        undefined,
+        {
+          eventId: event.id,
+          eventType: event.type,
+          processingTimeMs: processingTime,
+          totalTimeMs: totalTime,
+        }
+      );
     } catch (processingError) {
       // Log the error but return 200 to prevent Stripe retries for non-retryable errors
       console.error(`[Webhook] Error processing event ${event.type}:`, processingError);
@@ -537,6 +616,7 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     });
 
     // Update booking with room info and status
+    const previousStatus = booking.status;
     await prisma.booking.update({
       where: { id: bookingId },
       data: {
@@ -545,6 +625,24 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
         dailyRoomName: room.name,
       },
     });
+
+    // Log booking confirmation
+    await logBooking(
+      'CONFIRMED',
+      booking.id,
+      booking.userId,
+      booking.callOffer.creatorId,
+      {
+        previousStatus,
+        newStatus: 'CONFIRMED',
+        dailyRoomUrl: room.url,
+        dailyRoomName: room.name,
+        confirmedVia: 'payment_intent_succeeded_webhook',
+        paymentIntentId: paymentIntent.id,
+        amount: amount,
+        currency: currency,
+      }
+    );
   } catch (error) {
     console.error('[Webhook] Error creating Daily room:', error);
   }
