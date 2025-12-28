@@ -51,6 +51,10 @@ export default function CallPage({
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   
+  // Real call start time (from first participant join)
+  const [realCallStartTime, setRealCallStartTime] = useState<Date | null>(null);
+  const [isFirstParticipant, setIsFirstParticipant] = useState<boolean>(false);
+  
   // Media controls
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
@@ -110,8 +114,18 @@ export default function CallPage({
               logCallEvent(bookingId, 'PRE_CALL_ENTERED', { timestamp: new Date().toISOString() });
             }
           }
-        } else if (callState.phase === 'in-call' && sessionStartTimeRef.current) {
-          const elapsed = Math.floor((now - sessionStartTimeRef.current.getTime()) / 1000);
+        } else if (callState.phase === 'in-call') {
+          // Calcul du temps écoulé basé sur l'heure de début réelle de l'appel
+          let elapsed = 0;
+          
+          if (realCallStartTime) {
+            // L'appel a déjà commencé : calculer le temps depuis le début réel
+            elapsed = Math.floor((now - realCallStartTime.getTime()) / 1000);
+          } else if (sessionStartTimeRef.current) {
+            // Premier participant : utiliser l'heure de session locale
+            elapsed = Math.floor((now - sessionStartTimeRef.current.getTime()) / 1000);
+          }
+          
           setElapsedTime(elapsed);
           
           const scheduledDuration = booking.callOffer.duration * 60;
@@ -127,7 +141,7 @@ export default function CallPage({
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [booking, callState]);
+  }, [booking, callState, realCallStartTime]);
 
   // Gestion des déconnexions involontaires
   useEffect(() => {
@@ -269,6 +283,29 @@ export default function CallPage({
       debugLog('Joining call...');
       setCallState({ phase: 'loading' });
 
+      // Récupérer l'heure de début réelle de l'appel
+      debugLog('Fetching real call start time...');
+      const startTimeResponse = await fetch(`/api/call-start-time/${bookingId}`);
+      
+      if (startTimeResponse.ok) {
+        const startTimeData = await startTimeResponse.json();
+        debugLog('Start time data:', startTimeData);
+        
+        if (startTimeData.hasStarted && startTimeData.realStartTime) {
+          // L'appel a déjà commencé, utiliser l'heure réelle
+          setRealCallStartTime(new Date(startTimeData.realStartTime));
+          setIsFirstParticipant(false);
+          debugLog('Call already started at:', startTimeData.realStartTime);
+        } else {
+          // Premier participant
+          setIsFirstParticipant(true);
+          debugLog('This is the first participant');
+        }
+      } else {
+        debugLog('Could not fetch start time, assuming first participant');
+        setIsFirstParticipant(true);
+      }
+
       // Get meeting token
       const tokenResponse = await fetch('/api/daily/get-token', {
         method: 'POST',
@@ -329,6 +366,13 @@ export default function CallPage({
       debugLog('Call joined successfully, callId:', dailyCallId);
       
       sessionStartTimeRef.current = new Date();
+      
+      // Si c'est le premier participant, définir l'heure de début réelle
+      if (isFirstParticipant) {
+        setRealCallStartTime(sessionStartTimeRef.current);
+        debugLog('First participant - setting real start time to now');
+      }
+      
       setCallState({ 
         phase: 'in-call',
         callStartTime: sessionStartTimeRef.current,
@@ -337,6 +381,7 @@ export default function CallPage({
       await logCallEvent(bookingId, 'CALL_JOIN', { 
         callId: dailyCallId,
         roomUrl: booking.dailyRoomUrl,
+        isFirstParticipant,
       });
 
     } catch (error: any) {
@@ -822,10 +867,20 @@ export default function CallPage({
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 <span className="font-mono text-lg">{formatTime(elapsedTime)}</span>
+                {!isFirstParticipant && realCallStartTime && (
+                  <span className="text-xs text-yellow-300 ml-2">
+                    (rejoint en cours)
+                  </span>
+                )}
               </div>
               {!booking?.isTestBooking && (
                 <div className="text-sm text-gray-300 border-l border-gray-500 pl-4">
                   Restant: {formatTime(timeRemaining)}
+                </div>
+              )}
+              {booking?.isTestBooking && (
+                <div className="text-xs text-blue-300 border-l border-gray-500 pl-4">
+                  Mode Test - Pas de limite
                 </div>
               )}
             </div>
