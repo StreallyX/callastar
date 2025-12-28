@@ -5,7 +5,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cleanup-logs": "tsx scripts/cleanup-logs.ts"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/seed.ts"

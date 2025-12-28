@@ -7,6 +7,7 @@ import { createDailyRoom } from '@/lib/daily';
 import { sendEmail, generateBookingConfirmationEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
 import { logWebhook, logPayment, logPayout, logRefund, logDispute } from '@/lib/logger';
+import { logWebhookEvent } from '@/lib/system-logger';
 import { TransactionEventType, EntityType, RefundStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
 import { stripeAmountToUnits, formatDbAmount } from '@/lib/currency-utils';
 import Stripe from 'stripe';
@@ -90,17 +91,30 @@ export async function POST(request: NextRequest) {
 
     try {
       await processWebhookEvent(event);
+      
+      // Log successful webhook processing
+      await logWebhookEvent('STRIPE', event.type, true, {
+        eventId: event.id,
+        objectType: event.data.object.object,
+      });
     } catch (processingError) {
       // Log the error but return 200 to prevent Stripe retries for non-retryable errors
       console.error(`[Webhook] Error processing event ${event.type}:`, processingError);
       console.error(`[Webhook] Error stack:`, processingError instanceof Error ? processingError.stack : 'No stack trace');
       
-      // Log the error to database
+      // Log the error to database (TransactionLog)
       await logWebhook({
         stripeEventId: event.id,
         eventType: event.type,
         entityType: EntityType.PAYMENT,
         metadata: { event: event.data.object },
+        errorMessage: processingError instanceof Error ? processingError.message : String(processingError),
+      });
+      
+      // Log webhook failure (SystemLog)
+      await logWebhookEvent('STRIPE', event.type, false, {
+        eventId: event.id,
+        objectType: event.data.object.object,
         errorMessage: processingError instanceof Error ? processingError.message : String(processingError),
       });
     }

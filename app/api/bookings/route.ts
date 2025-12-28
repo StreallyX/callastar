@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { logBooking, logApiError } from '@/lib/system-logger';
+import { LogActor } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -144,12 +146,36 @@ export async function POST(request: NextRequest) {
       data: { status: 'BOOKED' },
     });
 
+    // Log booking creation
+    await logBooking(
+      'CREATED',
+      booking.id,
+      user.userId,
+      callOffer.creatorId,
+      {
+        callOfferId: validatedData.callOfferId,
+        price: callOffer.price.toString(),
+        currency: callOffer.currency,
+        dateTime: callOffer.dateTime.toISOString(),
+      }
+    );
+
     return NextResponse.json(
       { booking },
       { status: 201 }
     );
   } catch (error) {
     console.error('Create booking error:', error);
+
+    // Log API error
+    const user = await getUserFromRequest(request).catch(() => null);
+    await logApiError(
+      '/api/bookings',
+      error instanceof Error ? error : 'Unknown error',
+      LogActor.USER,
+      user?.userId,
+      { action: 'CREATE_BOOKING' }
+    );
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

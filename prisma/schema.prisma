@@ -2,10 +2,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // Enums
@@ -42,13 +41,13 @@ enum CallRequestStatus {
 }
 
 enum PayoutStatus {
-  REQUESTED   // Demande créée par le créateur
-  APPROVED    // Approuvée par l'admin
-  PROCESSING  // Payout Stripe en cours
-  PAID        // Payout réussi
-  FAILED      // Payout échoué
-  REJECTED    // Refusée par l'admin
-  CANCELED    // Annulée
+  REQUESTED // Demande créée par le créateur
+  APPROVED // Approuvée par l'admin
+  PROCESSING // Payout Stripe en cours
+  PAID // Payout réussi
+  FAILED // Payout échoué
+  REJECTED // Refusée par l'admin
+  CANCELED // Annulée
 }
 
 enum NotificationType {
@@ -115,6 +114,22 @@ enum TransactionEventType {
   DISPUTE_CLOSED
 }
 
+// System-wide logging enums
+enum LogLevel {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum LogActor {
+  USER
+  CREATOR
+  ADMIN
+  SYSTEM
+  GUEST
+}
+
 enum EntityType {
   PAYMENT
   PAYOUT
@@ -161,7 +176,7 @@ model User {
   notifications   Notification[]
   accounts        Account[]
   sessions        Session[]
-  payoutsApproved Payout[]     @relation("PayoutApprovedBy")
+  payoutsApproved Payout[]       @relation("PayoutApprovedBy")
 
   @@index([email])
 }
@@ -205,38 +220,38 @@ model VerificationToken {
 }
 
 model Creator {
-  id                 String          @id @default(cuid())
-  userId             String          @unique
-  bio                String?         @db.Text
-  profileImage       String?
-  stripeAccountId    String?
-  isStripeOnboarded  Boolean         @default(false)
-  
+  id                String  @id @default(cuid())
+  userId            String  @unique
+  bio               String? @db.Text
+  profileImage      String?
+  stripeAccountId   String?
+  isStripeOnboarded Boolean @default(false)
+
   // ✅ NEW: Creator's currency (automatically detected from Stripe Connect account)
-  currency           String          @default("EUR") // EUR, CHF, USD, GBP, etc.
-  
+  currency String @default("EUR") // EUR, CHF, USD, GBP, etc.
+
   // User's payout settings (from feature branch)
-  payoutSchedule     PayoutSchedule  @default(WEEKLY)
-  payoutMinimum      Decimal         @default(10) @db.Decimal(10, 2)
-  isPayoutBlocked    Boolean         @default(false)
-  payoutBlockReason  String?
-  
+  payoutSchedule    PayoutSchedule @default(WEEKLY)
+  payoutMinimum     Decimal        @default(10) @db.Decimal(10, 2)
+  isPayoutBlocked   Boolean        @default(false)
+  payoutBlockReason String?
+
   // Payment system fields
-  payoutBlocked        Boolean  @default(false)
-  payoutBlockedReason  String?  @db.Text
-  
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  payoutBlocked       Boolean @default(false)
+  payoutBlockedReason String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   callOffers           CallOffer[]
-  callRequestsReceived CallRequest[]       @relation("CreatorRequests")
-  reviewsReceived      Review[]            @relation("CreatorReviews")
+  callRequestsReceived CallRequest[]      @relation("CreatorRequests")
+  reviewsReceived      Review[]           @relation("CreatorReviews")
   payouts              Payout[]
   payoutAuditLogs      PayoutAuditLog[]
   payoutScheduleNew    PayoutScheduleNew?
-  refundsInitiated     Refund[]            @relation("RefundInitiator")
+  refundsInitiated     Refund[]           @relation("RefundInitiator")
 
   @@index([userId])
   @@index([isPayoutBlocked])
@@ -244,17 +259,17 @@ model Creator {
 }
 
 model CallOffer {
-  id              String          @id @default(cuid())
-  creatorId       String
-  title           String
-  description     String          @db.Text
-  price           Decimal         @db.Decimal(10, 2)
-  
+  id          String  @id @default(cuid())
+  creatorId   String
+  title       String
+  description String  @db.Text
+  price       Decimal @db.Decimal(10, 2)
+
   // ✅ NEW: Offer currency (same as creator's currency)
-  currency        String          @default("EUR") // EUR, CHF, USD, GBP, etc.
-  
+  currency String @default("EUR") // EUR, CHF, USD, GBP, etc.
+
   dateTime        DateTime
-  duration        Int             // in minutes
+  duration        Int // in minutes
   status          CallOfferStatus @default(AVAILABLE)
   maxParticipants Int             @default(1)
   createdAt       DateTime        @default(now())
@@ -271,20 +286,20 @@ model CallOffer {
 }
 
 model Booking {
-  id                     String        @id @default(cuid())
-  userId                 String
-  callOfferId            String        @unique
-  status                 BookingStatus @default(PENDING)
-  totalPrice             Decimal       @db.Decimal(10, 2)
-  stripePaymentIntentId  String?
-  dailyRoomUrl           String?
-  dailyRoomName          String?
-  createdAt              DateTime      @default(now())
-  updatedAt              DateTime      @updatedAt
+  id                    String        @id @default(cuid())
+  userId                String
+  callOfferId           String        @unique
+  status                BookingStatus @default(PENDING)
+  totalPrice            Decimal       @db.Decimal(10, 2)
+  stripePaymentIntentId String?
+  dailyRoomUrl          String?
+  dailyRoomName         String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   // Relations
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  callOffer CallOffer  @relation(fields: [callOfferId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  callOffer CallOffer @relation(fields: [callOfferId], references: [id], onDelete: Cascade)
   payment   Payment?
   review    Review?
 
@@ -293,35 +308,35 @@ model Booking {
 }
 
 model Payment {
-  id                     String        @id @default(cuid())
-  bookingId              String        @unique
-  amount                 Decimal       @db.Decimal(10, 2)
-  
+  id        String  @id @default(cuid())
+  bookingId String  @unique
+  amount    Decimal @db.Decimal(10, 2)
+
   // ✅ NEW: Payment currency (same as creator's currency)
-  currency               String        @default("EUR") // EUR, CHF, USD, GBP, etc.
-  
-  stripePaymentIntentId  String
-  status                 PaymentStatus @default(PENDING)
-  platformFee            Decimal       @db.Decimal(10, 2)
-  creatorAmount          Decimal       @db.Decimal(10, 2)
-  refundedAmount         Decimal       @db.Decimal(10, 2) @default(0)
-  disputeStatus          String?
-  createdAt              DateTime      @default(now())
-  
+  currency String @default("EUR") // EUR, CHF, USD, GBP, etc.
+
+  stripePaymentIntentId String
+  status                PaymentStatus @default(PENDING)
+  platformFee           Decimal       @db.Decimal(10, 2)
+  creatorAmount         Decimal       @db.Decimal(10, 2)
+  refundedAmount        Decimal       @default(0) @db.Decimal(10, 2)
+  disputeStatus         String?
+  createdAt             DateTime      @default(now())
+
   // Payout tracking fields
-  payoutStatus           PayoutStatus  @default(REQUESTED)
-  payoutReleaseDate      DateTime?     // Date when funds can be transferred (payment date + 7 days)
-  stripeTransferId       String?       // Stripe transfer ID when payout is completed
-  payoutDate             DateTime?     // Date when payout was actually transferred
-  
+  payoutStatus      PayoutStatus @default(REQUESTED)
+  payoutReleaseDate DateTime? // Date when funds can be transferred (payment date + 7 days)
+  stripeTransferId  String? // Stripe transfer ID when payout is completed
+  payoutDate        DateTime? // Date when payout was actually transferred
+
   // ✅ NEW: Separate Charges and Transfers fields
-  transferId             String?       // Stripe Transfer ID (from stripe.transfers.create)
-  transferStatus         String?       // Transfer status: "PENDING", "SUCCEEDED", "FAILED"
+  transferId     String? // Stripe Transfer ID (from stripe.transfers.create)
+  transferStatus String? // Transfer status: "PENDING", "SUCCEEDED", "FAILED"
 
   // Relations
-  booking        Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  refunds        Refund[]
-  disputes       Dispute[]
+  booking         Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  refunds         Refund[]
+  disputes        Dispute[]
   transactionLogs TransactionLog[] @relation("PaymentLogs")
 
   @@index([stripePaymentIntentId])
@@ -355,7 +370,7 @@ model Review {
   bookingId String   @unique
   userId    String
   creatorId String
-  rating    Int      // 1-5
+  rating    Int // 1-5
   comment   String   @db.Text
   createdAt DateTime @default(now())
 
@@ -377,9 +392,9 @@ model Notification {
   message   String           @db.Text
   link      String?
   read      Boolean          @default(false)
-  metadata  Json?            // Données additionnelles (paymentId, payoutId, amount, etc.)
+  metadata  Json? // Données additionnelles (paymentId, payoutId, amount, etc.)
   createdAt DateTime         @default(now())
-  readAt    DateTime?        // Date when notification was marked as read
+  readAt    DateTime? // Date when notification was marked as read
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -390,37 +405,37 @@ model Notification {
 }
 
 model Payout {
-  id              String       @id @default(cuid())
-  creatorId       String
-  amount          Decimal      @db.Decimal(10, 2)
-  currency        String       @default("EUR")
-  status          PayoutStatus @default(REQUESTED)
-  
+  id        String       @id @default(cuid())
+  creatorId String
+  amount    Decimal      @db.Decimal(10, 2)
+  currency  String       @default("EUR")
+  status    PayoutStatus @default(REQUESTED)
+
   // Stripe
-  stripePayoutId  String?      @unique
-  
+  stripePayoutId String? @unique
+
   // Dates
-  requestedAt     DateTime     @default(now())
-  approvedAt      DateTime?
-  paidAt          DateTime?
-  failedAt        DateTime?
-  rejectedAt      DateTime?
-  
+  requestedAt DateTime  @default(now())
+  approvedAt  DateTime?
+  paidAt      DateTime?
+  failedAt    DateTime?
+  rejectedAt  DateTime?
+
   // Relations
-  approvedById    String?
-  approvedBy      User?        @relation("PayoutApprovedBy", fields: [approvedById], references: [id])
-  
+  approvedById String?
+  approvedBy   User?   @relation("PayoutApprovedBy", fields: [approvedById], references: [id])
+
   // Raisons
-  rejectionReason String?      @db.Text
-  failureReason   String?      @db.Text
-  
+  rejectionReason String? @db.Text
+  failureReason   String? @db.Text
+
   // Metadata
-  metadata        Json?
-  
+  metadata Json?
+
   // Audit
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
   creator         Creator          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   auditLogs       PayoutAuditLog[]
@@ -443,18 +458,18 @@ model AdminSettings {
 
 // User's audit log model
 model PayoutAuditLog {
-  id               String        @id @default(cuid())
-  creatorId        String
-  payoutId         String?       // Reference to the Payout entity
-  action           PayoutAction
-  amount           Decimal?      @db.Decimal(10, 2)
-  status           PayoutStatus?
-  stripePayoutId   String?
-  adminId          String?
-  reason           String?       @db.Text
-  metadata         String?       @db.Text // JSON string for additional data
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  creatorId      String
+  payoutId       String? // Reference to the Payout entity
+  action         PayoutAction
+  amount         Decimal?      @db.Decimal(10, 2)
+  status         PayoutStatus?
+  stripePayoutId String?
+  adminId        String?
+  reason         String?       @db.Text
+  metadata       String?       @db.Text // JSON string for additional data
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   // Relations
   creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
@@ -468,40 +483,40 @@ model PayoutAuditLog {
 
 // Platform-wide financial settings (singleton pattern - should have only one row)
 model PlatformSettings {
-  id                      String   @id @default(cuid())
-  platformFeePercentage   Decimal  @db.Decimal(5, 2) // e.g., 15.00 for 15%
-  platformFeeFixed        Decimal? @db.Decimal(10, 2) // Optional fixed fee in addition to percentage
-  minimumPayoutAmount     Decimal  @db.Decimal(10, 2) // e.g., 10.00 EUR
-  holdingPeriodDays       Int      // e.g., 7 days
-  payoutMode              PayoutMode @default(AUTOMATIC)
-  payoutFrequencyOptions  String[] // e.g., ["DAILY", "WEEKLY", "MONTHLY"]
-  currency                String   @default("EUR")
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  id                     String     @id @default(cuid())
+  platformFeePercentage  Decimal    @db.Decimal(5, 2) // e.g., 15.00 for 15%
+  platformFeeFixed       Decimal?   @db.Decimal(10, 2) // Optional fixed fee in addition to percentage
+  minimumPayoutAmount    Decimal    @db.Decimal(10, 2) // e.g., 10.00 EUR
+  holdingPeriodDays      Int // e.g., 7 days
+  payoutMode             PayoutMode @default(AUTOMATIC)
+  payoutFrequencyOptions String[] // e.g., ["DAILY", "WEEKLY", "MONTHLY"]
+  currency               String     @default("EUR")
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
 }
 
 // Comprehensive audit log for all financial transactions
 model TransactionLog {
-  id              String               @id @default(cuid())
-  eventType       TransactionEventType
-  entityType      EntityType
-  entityId        String               // ID of the related entity (payment, payout, refund, etc.)
-  stripeEventId   String?              // Stripe event ID for webhook events
-  amount          Decimal?             @db.Decimal(10, 2)
-  currency        String?
-  status          String?
-  metadata        Json?                // Additional structured data
-  errorMessage    String?              @db.Text
-  createdAt       DateTime             @default(now())
+  id            String               @id @default(cuid())
+  eventType     TransactionEventType
+  entityType    EntityType
+  entityId      String // ID of the related entity (payment, payout, refund, etc.)
+  stripeEventId String? // Stripe event ID for webhook events
+  amount        Decimal?             @db.Decimal(10, 2)
+  currency      String?
+  status        String?
+  metadata      Json? // Additional structured data
+  errorMessage  String?              @db.Text
+  createdAt     DateTime             @default(now())
 
   // Optional relations
-  paymentId       String?
-  payoutId        String?
-  refundId        String?
+  paymentId String?
+  payoutId  String?
+  refundId  String?
 
-  payment         Payment?  @relation("PaymentLogs", fields: [paymentId], references: [id], onDelete: SetNull)
-  payout          Payout?   @relation("PayoutLogs", fields: [payoutId], references: [id], onDelete: SetNull)
-  refund          Refund?   @relation("RefundLogs", fields: [refundId], references: [id], onDelete: SetNull)
+  payment Payment? @relation("PaymentLogs", fields: [paymentId], references: [id], onDelete: SetNull)
+  payout  Payout?  @relation("PayoutLogs", fields: [payoutId], references: [id], onDelete: SetNull)
+  refund  Refund?  @relation("RefundLogs", fields: [refundId], references: [id], onDelete: SetNull)
 
   @@index([eventType])
   @@index([entityType])
@@ -512,25 +527,25 @@ model TransactionLog {
 
 // Refund tracking
 model Refund {
-  id              String       @id @default(cuid())
-  paymentId       String
-  amount          Decimal      @db.Decimal(10, 2)
-  currency        String       @default("EUR")
-  reason          String       @db.Text
-  status          RefundStatus @default(PENDING)
-  stripeRefundId  String?      @unique
-  initiatedById   String       // Admin/Creator who initiated the refund
-  
+  id             String       @id @default(cuid())
+  paymentId      String
+  amount         Decimal      @db.Decimal(10, 2)
+  currency       String       @default("EUR")
+  reason         String       @db.Text
+  status         RefundStatus @default(PENDING)
+  stripeRefundId String?      @unique
+  initiatedById  String // Admin/Creator who initiated the refund
+
   // ✅ NEW: Separate Charges and Transfers - Creator debt tracking
-  creatorDebt     Decimal      @default(0) @db.Decimal(10, 2) // Amount creator owes (85% of refund)
-  reconciled      Boolean      @default(false) // Whether the debt has been recovered
-  reconciledAt    DateTime?    // When the debt was reconciled
-  reconciledBy    String?      // How it was reconciled: "TRANSFER_REVERSAL", "PAYOUT_DEDUCTION", "MANUAL"
-  reversalId      String?      // Stripe Transfer Reversal ID if applicable
-  
-  metadata        Json?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  creatorDebt  Decimal   @default(0) @db.Decimal(10, 2) // Amount creator owes (85% of refund)
+  reconciled   Boolean   @default(false) // Whether the debt has been recovered
+  reconciledAt DateTime? // When the debt was reconciled
+  reconciledBy String? // How it was reconciled: "TRANSFER_REVERSAL", "PAYOUT_DEDUCTION", "MANUAL"
+  reversalId   String? // Stripe Transfer Reversal ID if applicable
+
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   payment         Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
@@ -545,27 +560,27 @@ model Refund {
 
 // Dispute/Chargeback tracking
 model Dispute {
-  id                String        @id @default(cuid())
-  paymentId         String
-  stripeDisputeId   String        @unique
-  amount            Decimal       @db.Decimal(10, 2)
-  currency          String        @default("EUR")
-  reason            String
-  status            DisputeStatus
-  evidenceDetails   Json?         // Store evidence submission details
-  
+  id              String        @id @default(cuid())
+  paymentId       String
+  stripeDisputeId String        @unique
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("EUR")
+  reason          String
+  status          DisputeStatus
+  evidenceDetails Json? // Store evidence submission details
+
   // ✅ NEW: Separate Charges and Transfers - Creator debt tracking
-  creatorDebt       Decimal       @default(0) @db.Decimal(10, 2) // Amount creator owes (85% of dispute)
-  reconciled        Boolean       @default(false) // Whether the debt has been recovered
-  reconciledAt      DateTime?     // When the debt was reconciled
-  reconciledBy      String?       // How it was reconciled: "TRANSFER_REVERSAL", "PAYOUT_DEDUCTION", "MANUAL"
-  reversalId        String?       // Stripe Transfer Reversal ID if applicable
-  
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  creatorDebt  Decimal   @default(0) @db.Decimal(10, 2) // Amount creator owes (85% of dispute)
+  reconciled   Boolean   @default(false) // Whether the debt has been recovered
+  reconciledAt DateTime? // When the debt was reconciled
+  reconciledBy String? // How it was reconciled: "TRANSFER_REVERSAL", "PAYOUT_DEDUCTION", "MANUAL"
+  reversalId   String? // Stripe Transfer Reversal ID if applicable
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  payment           Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
   @@index([paymentId])
   @@index([status])
@@ -575,19 +590,40 @@ model Dispute {
 
 // Per-creator payout scheduling (renamed to avoid conflict with enum)
 model PayoutScheduleNew {
-  id              String          @id @default(cuid())
-  creatorId       String          @unique
-  mode            PayoutMode      @default(AUTOMATIC)
-  frequency       PayoutFrequency @default(WEEKLY)
-  nextPayoutDate  DateTime?
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  creatorId      String          @unique
+  mode           PayoutMode      @default(AUTOMATIC)
+  frequency      PayoutFrequency @default(WEEKLY)
+  nextPayoutDate DateTime?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   // Relations
-  creator         Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@index([creatorId])
   @@index([nextPayoutDate])
   @@index([isActive])
+}
+
+// System-wide activity logs (distinct from TransactionLog)
+// Tracks all user, creator, admin actions and system events
+model Log {
+  id        String   @id @default(cuid())
+  level     LogLevel @default(INFO)
+  type      String // e.g., "USER_LOGIN", "BOOKING_CREATED", "PAYOUT_REQUESTED", "ADMIN_ACTION", "SYSTEM_ERROR"
+  actor     LogActor // Who performed the action: USER, CREATOR, ADMIN, SYSTEM, GUEST
+  actorId   String? // User/Creator/Admin ID (null for SYSTEM/GUEST)
+  message   String   @db.Text // Human-readable message
+  metadata  Json? // Additional structured data (bookingId, paymentId, ipAddress, userAgent, etc.)
+  createdAt DateTime @default(now())
+
+  // Performance indexes
+  @@index([createdAt])
+  @@index([level])
+  @@index([type])
+  @@index([actor])
+  @@index([actorId])
+  @@index([level, createdAt]) // Composite index for retention queries
 }
