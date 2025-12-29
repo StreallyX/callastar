@@ -165,6 +165,7 @@ model User {
   emailVerified DateTime?
   image         String?
   role          Role      @default(USER)
+  timezone      String    @default("Europe/Paris") // User's timezone (IANA format)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -229,6 +230,9 @@ model Creator {
 
   // ✅ NEW: Creator's currency (automatically detected from Stripe Connect account)
   currency String @default("EUR") // EUR, CHF, USD, GBP, etc.
+  
+  // ✅ NEW: Creator's timezone (IANA format, e.g., "Europe/Paris", "America/New_York")
+  timezone String @default("Europe/Paris")
 
   // User's payout settings (from feature branch)
   payoutSchedule    PayoutSchedule @default(WEEKLY)

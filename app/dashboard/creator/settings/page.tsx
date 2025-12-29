@@ -9,10 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Save, User, DollarSign, ExternalLink, Bell, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Save, User, DollarSign, ExternalLink, Bell, CheckCircle, XCircle, Globe, Clock } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getCommonTimezones, detectUserTimezone, getTimezoneAbbreviation } from '@/lib/timezone';
 
 export default function CreatorSettings() {
   const router = useRouter();
@@ -33,6 +35,8 @@ export default function CreatorSettings() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [timezone, setTimezone] = useState('Europe/Paris');
+  const [detectedTimezone, setDetectedTimezone] = useState('');
   const [notifications, setNotifications] = useState({
     email: true,
     newBooking: true,
@@ -40,8 +44,14 @@ export default function CreatorSettings() {
     callReminder: true,
   });
 
+  const timezones = getCommonTimezones();
+
   useEffect(() => {
     fetchData();
+    
+    // Auto-detect timezone
+    const detected = detectUserTimezone();
+    setDetectedTimezone(detected);
     
     // ✅ FIX: Check if returning from Stripe onboarding
     const params = new URLSearchParams(window.location.search);
@@ -87,6 +97,7 @@ export default function CreatorSettings() {
         newPassword: '',
         confirmPassword: '',
       });
+      setTimezone(userData?.user?.creator?.timezone || userData?.user?.timezone || 'Europe/Paris');
 
       // Check Stripe Connect onboarding status
       const onboardingResponse = await fetch('/api/stripe/connect-onboard');
@@ -109,13 +120,14 @@ export default function CreatorSettings() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      // Update user info
+      // Update user info (including timezone)
       const userResponse = await fetch('/api/auth/update-profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
+          timezone: timezone,
         }),
       });
 
@@ -126,6 +138,7 @@ export default function CreatorSettings() {
         body: JSON.stringify({
           bio: formData.bio,
           expertise: formData.expertise,
+          timezone: timezone,
         }),
       });
 
@@ -140,6 +153,12 @@ export default function CreatorSettings() {
     } finally {
       setSaving(false);
     }
+  };
+  
+  const handleAutoDetect = () => {
+    const detected = detectUserTimezone();
+    setTimezone(detected);
+    toast.success(`Fuseau horaire détecté : ${detected}`);
   };
 
   const handleChangePassword = async () => {
@@ -284,22 +303,87 @@ export default function CreatorSettings() {
                     placeholder="ex: Musique, Comédie, Sport..."
                   />
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleSaveProfile}
-                    disabled={saving}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600"
-                  >
-                    {saving ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement...</>
-                    ) : (
-                      <><Save className="w-4 h-4 mr-2" />Enregistrer</>
-                    )}
-                  </Button>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Fuseau horaire
+                </CardTitle>
+                <CardDescription>
+                  Configurez votre fuseau horaire pour afficher correctement les horaires des appels
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                  <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900 mb-1">
+                      Fuseau horaire détecté automatiquement
+                    </p>
+                    <p className="text-blue-700">
+                      {detectedTimezone} ({getTimezoneAbbreviation(detectedTimezone)})
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="timezone">Fuseau horaire actuel</Label>
+                  <div className="flex gap-2">
+                    <Select value={timezone} onValueChange={setTimezone}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Sélectionner un fuseau horaire" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {timezones.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={handleAutoDetect} 
+                      variant="outline"
+                      type="button"
+                    >
+                      Auto-détecter
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Tous les horaires seront affichés dans ce fuseau horaire
+                  </p>
+                </div>
+
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <p className="text-sm text-purple-900">
+                    <strong>Aperçu :</strong> Il est actuellement{' '}
+                    {new Date().toLocaleTimeString('fr-FR', {
+                      timeZone: timezone,
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}{' '}
+                    ({getTimezoneAbbreviation(timezone)}) dans votre fuseau horaire
+                  </p>
                 </div>
               </CardContent>
             </Card>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="bg-gradient-to-r from-purple-600 to-pink-600"
+              >
+                {saving ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement...</>
+                ) : (
+                  <><Save className="w-4 h-4 mr-2" />Enregistrer</>
+                )}
+              </Button>
+            </div>
           </TabsContent>
 
           {/* Payments Tab */}

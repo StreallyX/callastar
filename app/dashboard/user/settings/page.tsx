@@ -5,119 +5,98 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Save, User, Bell, CreditCard } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, ArrowLeft, Save, Globe, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
+import { getCommonTimezones, detectUserTimezone, getTimezoneAbbreviation } from '@/lib/timezone';
 
-export default function UserSettings() {
+export default function UserSettingsPage() {
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [notifications, setNotifications] = useState({
-    email: true,
-    bookingConfirmation: true,
-    bookingReminder: true,
-    marketingEmails: false,
-  });
+  
+  // Form state
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [timezone, setTimezone] = useState('Europe/Paris');
+  const [detectedTimezone, setDetectedTimezone] = useState('');
+
+  const timezones = getCommonTimezones();
 
   useEffect(() => {
-    fetchData();
+    fetchUserData();
+    
+    // Auto-detect timezone
+    const detected = detectUserTimezone();
+    setDetectedTimezone(detected);
   }, []);
 
-  const fetchData = async () => {
+  const fetchUserData = async () => {
     try {
-      const userResponse = await fetch('/api/auth/me');
-      if (!userResponse.ok) {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
         router.push('/auth/login');
         return;
       }
-      const userData = await userResponse.json();
-      setUser(userData?.user);
-      setFormData({
-        name: userData?.user?.name || '',
-        email: userData?.user?.email || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
+      
+      const data = await response.json();
+      const userData = data?.user;
+      
+      setUser(userData);
+      setName(userData?.name || '');
+      setEmail(userData?.email || '');
+      setTimezone(userData?.timezone || 'Europe/Paris');
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching user data:', error);
+      toast.error('Erreur lors du chargement des données');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveProfile = async () => {
+  const handleSave = async () => {
     setSaving(true);
+    
     try {
       const response = await fetch('/api/auth/update-profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
         body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
+          name,
+          timezone,
         }),
       });
-
-      if (response.ok) {
-        toast.success('Profil mis à jour avec succès');
-        fetchData();
-      } else {
-        const error = await response.json();
-        toast.error(error?.error ?? 'Erreur lors de la mise à jour');
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la sauvegarde');
       }
+      
+      toast.success('Paramètres sauvegardés avec succès !');
+      
+      // Refresh user data
+      await fetchUserData();
     } catch (error) {
-      toast.error('Une erreur est survenue');
+      console.error('Error saving settings:', error);
+      toast.error('Erreur lors de la sauvegarde des paramètres');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleChangePassword = async () => {
-    if (formData.newPassword !== formData.confirmPassword) {
-      toast.error('Les mots de passe ne correspondent pas');
-      return;
-    }
-
-    if (formData.newPassword.length < 8) {
-      toast.error('Le mot de passe doit contenir au moins 8 caractères');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const response = await fetch('/api/auth/change-password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success('Mot de passe modifié avec succès');
-        setFormData({ ...formData, currentPassword: '', newPassword: '', confirmPassword: '' });
-      } else {
-        const error = await response.json();
-        toast.error(error?.error ?? 'Erreur lors du changement de mot de passe');
-      }
-    } catch (error) {
-      toast.error('Une erreur est survenue');
-    } finally {
-      setSaving(false);
-    }
+  const handleAutoDetect = () => {
+    const detected = detectUserTimezone();
+    setTimezone(detected);
+    toast.success(`Fuseau horaire détecté : ${detected}`);
   };
 
   if (loading) {
@@ -136,194 +115,147 @@ export default function UserSettings() {
       <Navbar />
 
       <div className="container mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <User className="w-8 h-8" />
-            Paramètres du compte
-          </h1>
-          <p className="text-gray-600">Gérez votre profil et vos préférences</p>
+        <div className="mb-6">
+          <Link href="/dashboard/user">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour au dashboard
+            </Button>
+          </Link>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="profile">Profil</TabsTrigger>
-            <TabsTrigger value="security">Sécurité</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          </TabsList>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Paramètres du compte</h1>
+          <p className="text-gray-600">Gérez vos préférences et informations personnelles</p>
+        </div>
 
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations personnelles</CardTitle>
-                <CardDescription>
-                  Mettez à jour vos informations de profil
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nom complet</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
+        <div className="space-y-6">
+          {/* Informations de base */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations de base</CardTitle>
+              <CardDescription>Vos informations personnelles</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nom</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Votre nom"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  disabled
+                  className="bg-gray-100"
+                />
+                <p className="text-xs text-gray-500">
+                  L'email ne peut pas être modifié. Contactez le support si nécessaire.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Fuseau horaire */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Fuseau horaire
+              </CardTitle>
+              <CardDescription>
+                Configurez votre fuseau horaire pour afficher correctement les horaires des appels
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900 mb-1">
+                    Fuseau horaire détecté automatiquement
+                  </p>
+                  <p className="text-blue-700">
+                    {detectedTimezone} ({getTimezoneAbbreviation(detectedTimezone)})
+                  </p>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleSaveProfile}
-                    disabled={saving}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600"
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Fuseau horaire actuel</Label>
+                <div className="flex gap-2">
+                  <Select value={timezone} onValueChange={setTimezone}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Sélectionner un fuseau horaire" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {timezones.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    onClick={handleAutoDetect} 
+                    variant="outline"
+                    type="button"
                   >
-                    {saving ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement...</>
-                    ) : (
-                      <><Save className="w-4 h-4 mr-2" />Enregistrer</>
-                    )}
+                    Auto-détecter
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <p className="text-xs text-gray-500">
+                  Tous les horaires seront affichés dans ce fuseau horaire
+                </p>
+              </div>
 
-          {/* Security Tab */}
-          <TabsContent value="security" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Changer le mot de passe</CardTitle>
-                <CardDescription>
-                  Assurez-vous d'utiliser un mot de passe fort et unique
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Mot de passe actuel</Label>
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    value={formData.currentPassword}
-                    onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                  />
-                </div>
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <p className="text-sm text-purple-900">
+                  <strong>Aperçu :</strong> Il est actuellement{' '}
+                  {new Date().toLocaleTimeString('fr-FR', {
+                    timeZone: timezone,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}{' '}
+                  ({getTimezoneAbbreviation(timezone)}) dans votre fuseau horaire
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nouveau mot de passe</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={formData.newPassword}
-                    onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmer le nouveau mot de passe</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleChangePassword}
-                    disabled={saving || !formData.currentPassword || !formData.newPassword}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600"
-                  >
-                    {saving ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Modification...</>
-                    ) : (
-                      <>Changer le mot de passe</>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5" />
-                  Préférences de notification
-                </CardTitle>
-                <CardDescription>
-                  Choisissez comment vous souhaitez être notifié
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Notifications par email</Label>
-                    <p className="text-sm text-gray-500">Recevoir des emails de notification</p>
-                  </div>
-                  <Switch
-                    checked={notifications.email}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, email: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Confirmation de réservation</Label>
-                    <p className="text-sm text-gray-500">Email de confirmation après chaque réservation</p>
-                  </div>
-                  <Switch
-                    checked={notifications.bookingConfirmation}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, bookingConfirmation: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Rappels d'appel</Label>
-                    <p className="text-sm text-gray-500">Recevoir un rappel avant vos appels programmés</p>
-                  </div>
-                  <Switch
-                    checked={notifications.bookingReminder}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, bookingReminder: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Emails marketing</Label>
-                    <p className="text-sm text-gray-500">Recevoir des nouvelles et des offres spéciales</p>
-                  </div>
-                  <Switch
-                    checked={notifications.marketingEmails}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, marketingEmails: checked })}
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={() => toast.success('Préférences enregistrées')}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Enregistrer les préférences
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          {/* Actions */}
+          <div className="flex gap-4">
+            <Button 
+              onClick={handleSave} 
+              disabled={saving}
+              className="bg-gradient-to-r from-purple-600 to-pink-600"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sauvegarde...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Sauvegarder
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={() => router.push('/dashboard/user')} 
+              variant="outline"
+            >
+              Annuler
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
