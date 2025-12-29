@@ -9,12 +9,192 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Save, User, DollarSign, ExternalLink, Bell, CheckCircle, XCircle, Globe, Clock } from 'lucide-react';
+import { Loader2, Save, User, DollarSign, ExternalLink, Bell, CheckCircle, XCircle, Globe, Clock, Upload, ImageIcon, AlertCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getCommonTimezones, detectUserTimezone, getTimezoneAbbreviation } from '@/lib/timezone';
+
+// Image Upload Component
+interface ImageUploadProps {
+  label: string;
+  description: string;
+  imageUrl: string;
+  onUrlChange: (url: string) => void;
+  imageType: 'profile' | 'banner';
+  previewClassName?: string;
+}
+
+function ImageUpload({ label, description, imageUrl, onUrlChange, imageType, previewClassName }: ImageUploadProps) {
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(imageUrl);
+  const [imageError, setImageError] = useState(false);
+
+  // Update preview when imageUrl changes
+  useEffect(() => {
+    setPreviewUrl(imageUrl);
+    setImageError(false);
+  }, [imageUrl]);
+
+  // Update preview when input changes
+  useEffect(() => {
+    if (imageUrl && imageUrl !== previewUrl) {
+      setPreviewUrl(imageUrl);
+      setImageError(false);
+    }
+  }, [imageUrl]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Format non accepté. Utilisez JPG, PNG ou WEBP');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Fichier trop volumineux. Maximum 5MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('imageType', imageType);
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erreur lors de l\'upload');
+      }
+
+      const data = await response.json();
+      
+      // Update URL input and preview
+      onUrlChange(data.url);
+      setPreviewUrl(data.url);
+      setImageError(false);
+      
+      toast.success('Image uploadée avec succès');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Erreur lors de l\'upload');
+    } finally {
+      setUploading(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  };
+
+  const handleUrlChange = (url: string) => {
+    onUrlChange(url);
+    setPreviewUrl(url);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label>{label}</Label>
+        <p className="text-sm text-gray-500">{description}</p>
+      </div>
+
+      {/* URL Input and Upload Button */}
+      <div className="flex gap-2">
+        <Input
+          placeholder="https://i.ytimg.com/vi/SqJZD0OdT1g/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBXH_0noVUYopA5FSlfQFjMxj-fbQ"
+          value={imageUrl}
+          onChange={(e) => handleUrlChange(e.target.value)}
+          className="flex-1"
+        />
+        <div className="relative">
+          <input
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={handleFileUpload}
+            className="hidden"
+            id={`upload-${imageType}`}
+            disabled={uploading}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => document.getElementById(`upload-${imageType}`)?.click()}
+            disabled={uploading}
+            className="whitespace-nowrap"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Upload...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload image
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Preview */}
+      {previewUrl && (
+        <div className="mt-3">
+          <Label className="text-xs text-gray-500 mb-2 block">Preview:</Label>
+          {!imageError ? (
+            <div className={previewClassName || 'relative w-full h-32 border rounded-lg overflow-hidden bg-gray-50'}>
+              <img
+                src={previewUrl}
+                alt={label}
+                className="w-full h-full object-cover"
+                onError={handleImageError}
+              />
+            </div>
+          ) : (
+            <div className="relative w-full h-32 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+              <div className="text-center text-gray-400">
+                <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+                <p className="text-sm">Impossible de charger l'image</p>
+                <p className="text-xs">Vérifiez l'URL</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!previewUrl && (
+        <div className="mt-3">
+          <div className="relative w-full h-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+            <div className="text-center text-gray-400">
+              <ImageIcon className="w-8 h-8 mx-auto mb-2" />
+              <p className="text-sm">Aucune image</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-500">
+        Formats acceptés: JPG, PNG, WEBP (max 5MB)
+      </p>
+    </div>
+  );
+}
 
 export default function CreatorSettings() {
   const router = useRouter();
@@ -31,6 +211,8 @@ export default function CreatorSettings() {
     email: '',
     bio: '',
     expertise: '',
+    profileImage: '',
+    bannerImage: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -100,11 +282,15 @@ export default function CreatorSettings() {
       
       setUser(userData?.user);
       setCreator(userData?.user?.creator);
+      
+      // ✅ FIX: Always sync formData with database values
       setFormData({
         name: userData?.user?.name || '',
         email: userData?.user?.email || '',
         bio: userData?.user?.creator?.bio || '',
         expertise: userData?.user?.creator?.expertise || '',
+        profileImage: userData?.user?.creator?.profileImage || '',
+        bannerImage: userData?.user?.creator?.bannerImage || '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
@@ -166,6 +352,8 @@ export default function CreatorSettings() {
           bio: formData.bio,
           expertise: formData.expertise,
           timezone: timezone,
+          profileImage: formData.profileImage,
+          bannerImage: formData.bannerImage,
         }),
       });
 
@@ -333,7 +521,7 @@ export default function CreatorSettings() {
                   Ces informations seront visibles sur votre profil public
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nom complet</Label>
                   <Input
@@ -588,7 +776,27 @@ export default function CreatorSettings() {
                   />
                 </div>
 
-                <div className="flex justify-end">
+                {/* Profile Image Upload */}
+                <ImageUpload
+                  label="Photo de profil"
+                  description="Votre photo sera affichée de manière circulaire"
+                  imageUrl={formData.profileImage}
+                  onUrlChange={(url) => setFormData({ ...formData, profileImage: url })}
+                  imageType="profile"
+                  previewClassName="relative w-32 h-32 border rounded-full overflow-hidden bg-gray-50 mx-auto"
+                />
+
+                {/* Banner Image Upload */}
+                <ImageUpload
+                  label="Image de bannière"
+                  description="Image de couverture de votre profil (format paysage recommandé)"
+                  imageUrl={formData.bannerImage}
+                  onUrlChange={(url) => setFormData({ ...formData, bannerImage: url })}
+                  imageType="banner"
+                  previewClassName="relative w-full h-40 border rounded-lg overflow-hidden bg-gray-50"
+                />
+
+                <div className="flex justify-end pt-4">
                   <Button
                     onClick={handleSavePublicProfile}
                     disabled={saving}

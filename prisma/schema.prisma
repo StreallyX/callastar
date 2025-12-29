@@ -224,8 +224,9 @@ model Creator {
   id                String  @id @default(cuid())
   userId            String  @unique
   bio               String? @db.Text
+  expertise         String?
   profileImage      String?
-  bannerImage       String? // ✅ NEW: Banner image URL
+  bannerImage       String?
   stripeAccountId   String?
   isStripeOnboarded Boolean @default(false)
 
