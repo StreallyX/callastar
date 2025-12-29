@@ -7,20 +7,21 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { locales } from '@/i18n';
+import { locales } from '@/i18n-config';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Call a Star - Connectez-vous avec vos créateurs préférés',
-  description: 'Plateforme SaaS permettant aux influenceurs de monétiser leur audience en offrant des appels vidéo payants à leurs fans',
+  description:
+    'Plateforme SaaS permettant aux influenceurs de monétiser leur audience en offrant des appels vidéo payants à leurs fans',
   icons: {
     icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
+    shortcut: '/favicon.svg'
   },
   openGraph: {
-    images: ['/og-image.png'],
-  },
+    images: ['/og-image.png']
+  }
 };
 
 export function generateStaticParams() {
@@ -29,23 +30,20 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({
   children,
-  params,
+  params
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
+  params: { locale: string };
 }) {
-  // Await the params to get the locale
-  const { locale } = await params;
-  
-  // Validate that the incoming locale is valid
+  const { locale } = params;
+
   if (!locales.includes(locale as any)) {
     notFound();
   }
 
-  // Providing all messages to the client side is the easiest way to get started
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-  
+
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>

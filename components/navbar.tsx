@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import NotificationBell from '@/components/NotificationBell';
 import { useLocale, useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
 
 interface UserData {
   id: string;
@@ -25,7 +24,6 @@ interface UserData {
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const params = useParams();
   const locale = useLocale();
   const t = useTranslations('navbar');
   const [user, setUser] = useState<UserData | null>(null);
@@ -75,11 +73,10 @@ export function Navbar() {
     return '/dashboard/user/settings';
   };
 
-  const switchLanguage = (newLocale: string) => {
-    // Use Next.js router to navigate to the same path with new locale
-    const currentPath = pathname;
-    router.push(currentPath, { locale: newLocale as any });
+  const switchLanguage = (newLocale: 'fr' | 'en') => {
+    router.replace(pathname, { locale: newLocale });
   };
+
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
