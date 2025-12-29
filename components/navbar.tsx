@@ -33,7 +33,14 @@ interface UserData {
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const locale = useLocale();
+  const localeFromContext = useLocale();
+
+  // 🔑 SOURCE DE VÉRITÉ = URL
+  const currentLocale =
+    pathname.startsWith('/en') ? 'en'
+    : pathname.startsWith('/fr') ? 'fr'
+    : localeFromContext;
+
   const t = useTranslations('navbar');
 
   const [user, setUser] = useState<UserData | null>(null);
@@ -45,15 +52,15 @@ export function Navbar() {
 
   const fetchUser = async () => {
     try {
-      const response = await fetch('/api/auth/me');
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
         setUser(data?.user ?? null);
-      } else if (response.status === 401) {
+      } else {
         setUser(null);
       }
     } catch {
-      // ignore
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -63,10 +70,7 @@ export function Navbar() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
-
-      // ✅ PAS de refresh
-      // ✅ navigation propre avec locale conservée
-      router.push('/', { locale });
+      router.push('/', { locale: currentLocale });
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -85,19 +89,18 @@ export function Navbar() {
   };
 
   const switchLanguage = (newLocale: 'fr' | 'en') => {
-    // Supprime toute locale existante du pathname
+    // Nettoie le pathname (retire /fr ou /en)
     const cleanPathname = pathname.replace(/^\/(fr|en)(\/|$)/, '/');
-
     router.replace(cleanPathname, { locale: newLocale });
   };
-
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto max-w-7xl px-4">
         <div className="flex h-16 items-center justify-between">
+
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80">
+          <Link href="/" locale={currentLocale} className="flex items-center gap-2 hover:opacity-80">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-600">
               <Star className="h-6 w-6 fill-white text-white" />
             </div>
@@ -107,7 +110,9 @@ export function Navbar() {
           </Link>
 
           <div className="flex items-center gap-4">
-            <Link href="/creators">
+
+            {/* Creators */}
+            <Link href="/creators" locale={currentLocale}>
               <Button variant="ghost">{t('creators')}</Button>
             </Link>
 
@@ -116,7 +121,7 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Languages className="h-4 w-4" />
-                  {locale.toUpperCase()}
+                  {currentLocale.toUpperCase()}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -134,6 +139,7 @@ export function Navbar() {
                 {user ? (
                   <>
                     <NotificationBell />
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="gap-2">
@@ -141,32 +147,50 @@ export function Navbar() {
                           {user.name}
                         </Button>
                       </DropdownMenuTrigger>
+
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(getDashboardPath())}>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(getDashboardPath(), { locale: currentLocale })
+                          }
+                        >
                           <LayoutDashboard className="mr-2 h-4 w-4" />
                           {t('dashboard')}
                         </DropdownMenuItem>
 
                         {user.role === 'CREATOR' && (
-                          <DropdownMenuItem onClick={() => router.push('/dashboard/creator/payouts')}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push('/dashboard/creator/payouts', { locale: currentLocale })
+                            }
+                          >
                             <Wallet className="mr-2 h-4 w-4" />
                             {t('payments')}
                           </DropdownMenuItem>
                         )}
 
-                        <DropdownMenuItem onClick={() => router.push(getSettingsPath())}>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(getSettingsPath(), { locale: currentLocale })
+                          }
+                        >
                           <Settings className="mr-2 h-4 w-4" />
                           {t('settings')}
                         </DropdownMenuItem>
 
                         {user.role === 'ADMIN' && (
-                          <DropdownMenuItem onClick={() => router.push('/dashboard/admin/testing')}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push('/dashboard/admin/testing', { locale: currentLocale })
+                            }
+                          >
                             <TestTube2 className="mr-2 h-4 w-4" />
                             {t('testsTools')}
                           </DropdownMenuItem>
                         )}
 
                         <DropdownMenuSeparator />
+
                         <DropdownMenuItem onClick={handleLogout}>
                           <LogOut className="mr-2 h-4 w-4" />
                           {t('logout')}
@@ -176,10 +200,11 @@ export function Navbar() {
                   </>
                 ) : (
                   <>
-                    <Link href="/auth/login">
+                    <Link href="/auth/login" locale={currentLocale}>
                       <Button variant="ghost">{t('login')}</Button>
                     </Link>
-                    <Link href="/auth/register">
+
+                    <Link href="/auth/register" locale={currentLocale}>
                       <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
                         {t('register')}
                       </Button>

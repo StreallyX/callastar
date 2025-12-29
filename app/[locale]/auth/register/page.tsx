@@ -241,8 +241,13 @@ export default function RegisterPage() {
               </Link>
             </p>
 
-            <Link href="/" className="text-center text-sm text-gray-600 hover:text-gray-900">
-              {t('backToHome')}
+            <Link href="/" className="w-full">
+              <Button
+                variant="ghost"
+                className="w-full border border-gray-200 text-gray-700 hover:bg-gray-100"
+              >
+                ← {t('backToHome')}
+              </Button>
             </Link>
           </CardFooter>
         </form>

@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/navbar';
 import { CreatorCard } from '@/components/creator-card';
 import { Link } from '@/navigation';
-import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 
 async function getCreators() {
@@ -12,9 +11,9 @@ async function getCreators() {
       `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/creators?limit=6`,
       { cache: 'no-store' }
     );
-    
+
     if (!response.ok) return { creators: [] };
-    
+
     const data = await response.json();
     return data ?? { creators: [] };
   } catch (error) {
@@ -23,48 +22,68 @@ async function getCreators() {
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'homepage.meta' });
-  
+export async function generateMetadata({
+  params
+}: {
+  params: { locale: string };
+}) {
+  const t = await getTranslations({
+    locale: params.locale,
+    namespace: 'homepage.meta'
+  });
+
   return {
     title: t('title'),
-    description: t('description'),
+    description: t('description')
   };
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  params
+}: {
+  params: { locale: string };
+}) {
+  const { locale } = params;
+
   const data = await getCreators();
   const creators = data?.creators ?? [];
-  const t = await getTranslations('homepage');
+
+  const t = await getTranslations({
+    locale,
+    namespace: 'homepage'
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
       <Navbar />
 
-      {/* Hero Section */}
+      {/* Hero */}
       <section className="container mx-auto max-w-7xl px-4 py-20">
         <div className="text-center space-y-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 mb-4">
-            <Star className="w-10 h-10 text-white fill-white" />
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-600 mb-4">
+            <Star className="h-10 w-10 fill-white text-white" />
           </div>
-          
+
           <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             {t('hero.title')}
           </h1>
-          
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+
+          <p className="mx-auto max-w-2xl text-xl text-gray-600">
             {t('hero.description')}
           </p>
 
-          <div className="flex items-center justify-center gap-4 pt-4">
-            <Link href="/auth/register">
-              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                <Sparkles className="w-5 h-5 mr-2" />
+          <div className="flex justify-center gap-4 pt-4">
+            <Link href="/auth/register" locale={locale}>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              >
+                <Sparkles className="mr-2 h-5 w-5" />
                 {t('hero.becomeCreator')}
               </Button>
             </Link>
-            <Link href="/creators">
+
+            <Link href="/creators" locale={locale}>
               <Button size="lg" variant="outline">
                 {t('hero.exploreCreators')}
               </Button>
@@ -73,34 +92,40 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Features */}
       <section className="container mx-auto max-w-7xl px-4 py-16">
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="p-6 rounded-xl bg-white shadow-sm border">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
-              <Video className="w-6 h-6 text-purple-600" />
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="rounded-xl border bg-white p-6 shadow-sm">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+              <Video className="h-6 w-6 text-purple-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">{t('features.videoCall.title')}</h3>
+            <h3 className="mb-2 text-xl font-semibold">
+              {t('features.videoCall.title')}
+            </h3>
             <p className="text-gray-600">
               {t('features.videoCall.description')}
             </p>
           </div>
 
-          <div className="p-6 rounded-xl bg-white shadow-sm border">
-            <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center mb-4">
-              <Calendar className="w-6 h-6 text-pink-600" />
+          <div className="rounded-xl border bg-white p-6 shadow-sm">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-pink-100">
+              <Calendar className="h-6 w-6 text-pink-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">{t('features.easyBooking.title')}</h3>
+            <h3 className="mb-2 text-xl font-semibold">
+              {t('features.easyBooking.title')}
+            </h3>
             <p className="text-gray-600">
               {t('features.easyBooking.description')}
             </p>
           </div>
 
-          <div className="p-6 rounded-xl bg-white shadow-sm border">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
-              <Sparkles className="w-6 h-6 text-purple-600" />
+          <div className="rounded-xl border bg-white p-6 shadow-sm">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+              <Sparkles className="h-6 w-6 text-purple-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">{t('features.uniqueExperience.title')}</h3>
+            <h3 className="mb-2 text-xl font-semibold">
+              {t('features.uniqueExperience.title')}
+            </h3>
             <p className="text-gray-600">
               {t('features.uniqueExperience.description')}
             </p>
@@ -108,22 +133,26 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Creators Section */}
-      {creators?.length > 0 && (
+      {/* Creators */}
+      {creators.length > 0 && (
         <section className="container mx-auto max-w-7xl px-4 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">{t('popularCreators.title')}</h2>
-            <p className="text-gray-600">{t('popularCreators.description')}</p>
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 text-3xl font-bold">
+              {t('popularCreators.title')}
+            </h2>
+            <p className="text-gray-600">
+              {t('popularCreators.description')}
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {creators.map((creator: any) => (
-              <CreatorCard key={creator?.id} creator={creator} />
+              <CreatorCard key={creator.id} creator={creator} />
             ))}
           </div>
 
-          <div className="text-center mt-12">
-            <Link href="/creators">
+          <div className="mt-12 text-center">
+            <Link href="/creators" locale={locale}>
               <Button size="lg" variant="outline">
                 {t('popularCreators.seeAll')}
               </Button>
@@ -133,10 +162,10 @@ export default async function HomePage() {
       )}
 
       {/* Footer */}
-      <footer className="border-t mt-20">
+      <footer className="mt-20 border-t">
         <div className="container mx-auto max-w-7xl px-4 py-8">
           <div className="flex items-center justify-center gap-2 text-gray-600">
-            <Star className="w-5 h-5" />
+            <Star className="h-5 w-5" />
             <span>{t('footer.copyright')}</span>
           </div>
         </div>
