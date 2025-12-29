@@ -6,8 +6,7 @@ import { locales, defaultLocale } from './i18n-config';
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'as-needed',
-  localeDetection: false
+  localePrefix: 'as-needed'
 });
 
 const publicPaths = ['/', '/auth/login', '/auth/register', '/creators', '/legal'];

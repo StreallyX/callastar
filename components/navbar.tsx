@@ -74,7 +74,10 @@ export function Navbar() {
   };
 
   const switchLanguage = (newLocale: 'fr' | 'en') => {
+    // pathname from usePathname() is already without locale prefix
+    // router.replace will add the new locale automatically
     router.replace(pathname, { locale: newLocale });
+    router.refresh();
   };
 
 
