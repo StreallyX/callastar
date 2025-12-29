@@ -3,23 +3,48 @@ import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { z } from 'zod';
 
+/**
+ * Helpers
+ */
+const nullableUrl = z
+  .string()
+  .optional()
+  .transform((v) => {
+    if (!v || v.trim() === '') return null;
+    return v.trim();
+  })
+  .nullable()
+  .refine(
+    (v) => v === null || /^https?:\/\//.test(v),
+    { message: 'URL invalide' }
+  );
+
+
+/**
+ * Validation schema
+ */
 const updateCreatorProfileSchema = z.object({
   bio: z.string().optional(),
   expertise: z.string().optional(),
   timezone: z.string().optional(),
-  profileImage: z.string().url().optional().nullable(),
-  bannerImage: z.string().url().optional().nullable(),
+
+  profileImage: nullableUrl,
+  bannerImage: nullableUrl,
+
   socialLinks: z
     .object({
-      instagram: z.string().url().optional().nullable(),
-      tiktok: z.string().url().optional().nullable(),
-      twitter: z.string().url().optional().nullable(),
-      youtube: z.string().url().optional().nullable(),
-      other: z.string().url().optional().nullable(),
+      instagram: nullableUrl,
+      tiktok: nullableUrl,
+      twitter: nullableUrl,
+      youtube: nullableUrl,
+      other: nullableUrl,
     })
     .optional(),
 });
 
+/**
+ * PUT — Update creator profile
+ */
 export async function PUT(request: NextRequest) {
   try {
     const jwtUser = await getUserFromRequest(request);
@@ -27,7 +52,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    // Check if user is a creator
     const user = await db.user.findUnique({
       where: { id: jwtUser.userId },
       include: { creator: true },
@@ -41,32 +65,21 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('[PUT /creators/profile] body:', body);
+
     const validatedData = updateCreatorProfileSchema.parse(body);
 
-    // Build update data dynamically
-    const updateData: any = {};
+    /**
+     * Build update payload safely
+     */
+    const updateData: Record<string, any> = {};
 
-    if (validatedData.bio !== undefined) {
-      updateData.bio = validatedData.bio;
+    for (const [key, value] of Object.entries(validatedData)) {
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
     }
 
-    if (validatedData.timezone !== undefined) {
-      updateData.timezone = validatedData.timezone;
-    }
-
-    if (validatedData.profileImage !== undefined) {
-      updateData.profileImage = validatedData.profileImage;
-    }
-
-    if (validatedData.bannerImage !== undefined) {
-      updateData.bannerImage = validatedData.bannerImage;
-    }
-
-    if (validatedData.socialLinks !== undefined) {
-      updateData.socialLinks = validatedData.socialLinks;
-    }
-
-    // Update creator profile
     const updatedCreator = await db.creator.update({
       where: { id: user.creator.id },
       data: updateData,
@@ -90,8 +103,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ creator: updatedCreator });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
+      console.error('[ZOD ERROR]', error.issues);
       return NextResponse.json(
-        { error: error.issues[0].message },
+        { error: error.issues },
         { status: 400 }
       );
     }
@@ -104,6 +118,9 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+/**
+ * GET — Fetch creator profile
+ */
 export async function GET(request: NextRequest) {
   try {
     const jwtUser = await getUserFromRequest(request);
@@ -120,6 +137,8 @@ export async function GET(request: NextRequest) {
             bio: true,
             timezone: true,
             profileImage: true,
+            bannerImage: true,
+            socialLinks: true,
           },
         },
       },

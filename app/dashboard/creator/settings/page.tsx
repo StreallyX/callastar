@@ -187,6 +187,19 @@ export default function CreatorSettings() {
     setTimezone(detected);
     toast.success(`Fuseau horaire détecté : ${detected}`);
   };
+
+  const cleanSocialLinks = (links: Record<string, string>) => {
+    const cleaned: Record<string, string | null> = {};
+
+    for (const [key, value] of Object.entries(links)) {
+      if (value && value.trim() !== '') {
+        cleaned[key] = value.trim();
+      }
+    }
+
+    return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+  };
+
   
   const handleSavePublicProfile = async () => {
     setSaving(true);
@@ -195,10 +208,10 @@ export default function CreatorSettings() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          profileImage: profileData.profileImage || null,
-          bannerImage: profileData.bannerImage || null,
+          profileImage: profileData.profileImage?.trim() || null,
+          bannerImage: profileData.bannerImage?.trim() || null,
           bio: profileData.bio,
-          socialLinks: profileData.socialLinks,
+          socialLinks: cleanSocialLinks(profileData.socialLinks),
         }),
       });
 
@@ -206,7 +219,8 @@ export default function CreatorSettings() {
         toast.success('Profil public mis à jour avec succès !');
         await fetchData();
       } else {
-        toast.error('Erreur lors de la mise à jour du profil public');
+        const err = await response.json();
+        toast.error(err?.error ?? 'Erreur lors de la mise à jour');
       }
     } catch (error) {
       toast.error('Une erreur est survenue');
@@ -214,6 +228,7 @@ export default function CreatorSettings() {
       setSaving(false);
     }
   };
+
 
   const handleChangePassword = async () => {
     if (formData.newPassword !== formData.confirmPassword) {
