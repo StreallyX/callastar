@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 interface CreatorCardProps {
   creator: {
     id: string;
-    bio?: string;
-    profileImage?: string;
+    bio?: string | null;
+    profileImage?: string | null;
     user: {
       id: string;
       name: string;
@@ -19,7 +19,6 @@ interface CreatorCardProps {
     callOffers?: Array<{
       id: string;
       title: string;
-      price: number;
     }>;
   };
 }

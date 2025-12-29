@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             bio: true,
-            expertise: true,
             profileImage: true,
             bannerImage: true,
             socialLinks: true,
