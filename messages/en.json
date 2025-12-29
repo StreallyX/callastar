@@ -361,5 +361,77 @@
       "title": "Legal Notice",
       "lastUpdated": "Last updated"
     }
+  },
+  "dashboard": {
+    "common": {
+      "loading": "Loading...",
+      "welcome": "Welcome",
+      "myDashboard": "My Dashboard"
+    },
+    "user": {
+      "title": "User Dashboard",
+      "welcome": "Welcome, {name}",
+      "stats": {
+        "upcomingCalls": "Upcoming Calls",
+        "sentRequests": "Sent Requests",
+        "completedCalls": "Completed Calls",
+        "notifications": "Notifications"
+      },
+      "tabs": {
+        "upcoming": "Upcoming",
+        "requests": "My Requests",
+        "history": "History"
+      },
+      "upcoming": {
+        "title": "My Upcoming Calls",
+        "description": "Your scheduled upcoming calls",
+        "noBookings": "No upcoming calls",
+        "noBookingsDescription": "Explore our creators to book your first call",
+        "exploreCreators": "Explore Creators",
+        "joinCall": "Join Call",
+        "downloadCalendar": "Download Calendar",
+        "leaveReview": "Leave a Review",
+        "calendarDownloadSuccess": "Calendar file downloaded!",
+        "calendarDownloadError": "Unable to download calendar file"
+      },
+      "requests": {
+        "title": "My Call Requests",
+        "description": "Requests awaiting response",
+        "noRequests": "No pending requests",
+        "noRequestsDescription": "You can send a custom request to a creator from their profile"
+      },
+      "history": {
+        "title": "Call History",
+        "description": "All your past calls",
+        "noHistory": "No completed calls",
+        "noHistoryDescription": "Your call history will appear here",
+        "viewSummary": "View Summary"
+      },
+      "booking": {
+        "with": "with",
+        "duration": "Duration",
+        "minutes": "minutes",
+        "scheduledFor": "Scheduled for",
+        "price": "Price",
+        "status": "Status"
+      },
+      "status": {
+        "confirmed": "Confirmed",
+        "pending": "Pending",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "review": {
+        "title": "Leave a Review",
+        "description": "Share your experience with",
+        "rating": "Rating",
+        "comment": "Comment (optional)",
+        "commentPlaceholder": "Share your experience...",
+        "submit": "Submit Review",
+        "submitting": "Submitting...",
+        "success": "Review published successfully!",
+        "error": "Error publishing review"
+      }
+    }
   }
 }

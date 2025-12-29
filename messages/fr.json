@@ -361,5 +361,77 @@
       "title": "Mentions Légales",
       "lastUpdated": "Dernière mise à jour"
     }
+  },
+  "dashboard": {
+    "common": {
+      "loading": "Chargement...",
+      "welcome": "Bienvenue",
+      "myDashboard": "Mon Dashboard"
+    },
+    "user": {
+      "title": "Dashboard Utilisateur",
+      "welcome": "Bienvenue, {name}",
+      "stats": {
+        "upcomingCalls": "Appels à venir",
+        "sentRequests": "Demandes envoyées",
+        "completedCalls": "Appels terminés",
+        "notifications": "Notifications"
+      },
+      "tabs": {
+        "upcoming": "À venir",
+        "requests": "Mes demandes",
+        "history": "Historique"
+      },
+      "upcoming": {
+        "title": "Mes appels à venir",
+        "description": "Vos prochains appels programmés",
+        "noBookings": "Aucun appel à venir",
+        "noBookingsDescription": "Explorez nos créateurs pour réserver votre premier appel",
+        "exploreCreators": "Explorer les créateurs",
+        "joinCall": "Rejoindre l'appel",
+        "downloadCalendar": "Télécharger calendrier",
+        "leaveReview": "Laisser un avis",
+        "calendarDownloadSuccess": "Fichier calendrier téléchargé !",
+        "calendarDownloadError": "Impossible de télécharger le fichier calendrier"
+      },
+      "requests": {
+        "title": "Mes demandes d'appel",
+        "description": "Demandes en attente de réponse",
+        "noRequests": "Aucune demande en cours",
+        "noRequestsDescription": "Vous pouvez envoyer une demande personnalisée à un créateur depuis son profil"
+      },
+      "history": {
+        "title": "Historique des appels",
+        "description": "Tous vos appels passés",
+        "noHistory": "Aucun appel terminé",
+        "noHistoryDescription": "Votre historique d'appels apparaîtra ici",
+        "viewSummary": "Voir le résumé"
+      },
+      "booking": {
+        "with": "avec",
+        "duration": "Durée",
+        "minutes": "minutes",
+        "scheduledFor": "Prévu le",
+        "price": "Prix",
+        "status": "Statut"
+      },
+      "status": {
+        "confirmed": "Confirmé",
+        "pending": "En attente",
+        "completed": "Terminé",
+        "cancelled": "Annulé"
+      },
+      "review": {
+        "title": "Laisser un avis",
+        "description": "Partagez votre expérience avec",
+        "rating": "Note",
+        "comment": "Commentaire (optionnel)",
+        "commentPlaceholder": "Partagez votre expérience...",
+        "submit": "Envoyer l'avis",
+        "submitting": "Envoi en cours...",
+        "success": "Avis publié avec succès !",
+        "error": "Erreur lors de la publication de l'avis"
+      }
+    }
   }
 }

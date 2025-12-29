@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,8 @@ import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 export default function UserDashboard() {
   const router = useRouter();
+  const t = useTranslations('dashboard.user');
+  const tCommon = useTranslations('dashboard.common');
   const [user, setUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [callRequests, setCallRequests] = useState<any[]>([]);
@@ -108,7 +111,7 @@ export default function UserDashboard() {
     try {
       const response = await fetch(`/api/bookings/${bookingId}/calendar`);
       if (!response.ok) {
-        throw new Error('Impossible de télécharger le fichier calendrier');
+        throw new Error(t('upcoming.calendarDownloadError'));
       }
 
       const blob = await response.blob();
@@ -121,9 +124,9 @@ export default function UserDashboard() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      toast.success('Fichier calendrier téléchargé !');
+      toast.success(t('upcoming.calendarDownloadSuccess'));
     } catch (error) {
-      toast.error('Erreur lors du téléchargement');
+      toast.error(t('upcoming.calendarDownloadError'));
     }
   };
 
@@ -153,13 +156,13 @@ export default function UserDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'CONFIRMED':
-        return <Badge className="bg-green-500">Confirmé</Badge>;
+        return <Badge className="bg-green-500">{t('status.confirmed')}</Badge>;
       case 'PENDING':
-        return <Badge className="bg-yellow-500">En attente</Badge>;
+        return <Badge className="bg-yellow-500">{t('status.pending')}</Badge>;
       case 'COMPLETED':
-        return <Badge variant="outline">Terminé</Badge>;
+        return <Badge variant="outline">{t('status.completed')}</Badge>;
       case 'CANCELLED':
-        return <Badge variant="destructive">Annulé</Badge>;
+        return <Badge variant="destructive">{t('status.cancelled')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -184,8 +187,8 @@ export default function UserDashboard() {
 
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Mon Dashboard</h1>
-          <p className="text-gray-600">Bienvenue, {user?.name}</p>
+          <h1 className="text-3xl font-bold mb-2">{tCommon('myDashboard')}</h1>
+          <p className="text-gray-600">{t('welcome', { name: user?.name })}</p>
         </div>
 
         {/* Quick Actions */}
@@ -193,7 +196,7 @@ export default function UserDashboard() {
           <Link href="/dashboard/user/calls">
             <Card className="cursor-pointer hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
-                <CardDescription>Appels à venir</CardDescription>
+                <CardDescription>{t('stats.upcomingCalls')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-purple-600">{upcomingBookings.length}</div>
@@ -204,7 +207,7 @@ export default function UserDashboard() {
           <Link href="/dashboard/user/requests">
             <Card className="cursor-pointer hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
-                <CardDescription>Demandes envoyées</CardDescription>
+                <CardDescription>{t('stats.sentRequests')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-blue-600">{callRequests.length}</div>
@@ -215,7 +218,7 @@ export default function UserDashboard() {
           <Link href="/dashboard/user/history">
             <Card className="cursor-pointer hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
-                <CardDescription>Appels terminés</CardDescription>
+                <CardDescription>{t('stats.completedCalls')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-gray-600">{pastBookings.length}</div>
@@ -226,7 +229,7 @@ export default function UserDashboard() {
           <Link href="/dashboard/user/notifications">
             <Card className="cursor-pointer hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
-                <CardDescription>Notifications</CardDescription>
+                <CardDescription>{t('stats.notifications')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-orange-600">0</div>
@@ -238,16 +241,16 @@ export default function UserDashboard() {
         {/* Tabs */}
         <Tabs defaultValue="upcoming" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upcoming">À venir</TabsTrigger>
-            <TabsTrigger value="requests">Mes demandes</TabsTrigger>
-            <TabsTrigger value="history">Historique</TabsTrigger>
+            <TabsTrigger value="upcoming">{t('tabs.upcoming')}</TabsTrigger>
+            <TabsTrigger value="requests">{t('tabs.requests')}</TabsTrigger>
+            <TabsTrigger value="history">{t('tabs.history')}</TabsTrigger>
           </TabsList>
 
           {/* Upcoming Bookings Tab */}
           <TabsContent value="upcoming">
             <Card>
               <CardHeader>
-                <CardTitle>Mes appels à venir</CardTitle>
+                <CardTitle>{t('upcoming.title')}</CardTitle>
                 <CardDescription>Appels confirmés et payés</CardDescription>
               </CardHeader>
               <CardContent>
@@ -292,7 +295,7 @@ export default function UserDashboard() {
                                     className="bg-gradient-to-r from-purple-600 to-pink-600"
                                   >
                                     <Video className="w-4 h-4 mr-2" />
-                                    Rejoindre
+                                    {t('upcoming.joinCall')}
                                   </Button>
                                 )}
                                 <Button
@@ -313,7 +316,7 @@ export default function UserDashboard() {
                 ) : (
                   <div className="py-12 text-center">
                     <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Aucun appel à venir</p>
+                    <p className="text-gray-500">{t('upcoming.noBookings')}</p>
                     <Link href="/creators">
                       <Button variant="outline" className="mt-4">
                         Parcourir les créateurs
@@ -382,7 +385,7 @@ export default function UserDashboard() {
                 ) : (
                   <div className="py-12 text-center">
                     <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Aucune demande envoyée</p>
+                    <p className="text-gray-500">{t('requests.noRequests')}</p>
                     <p className="text-sm text-gray-400 mt-2">Visitez un profil de créateur pour proposer un appel</p>
                   </div>
                 )}
@@ -435,7 +438,7 @@ export default function UserDashboard() {
                                   variant="outline"
                                 >
                                   <Star className="w-4 h-4 mr-2" />
-                                  Laisser un avis
+                                  {t('review.title')}
                                 </Button>
                               )}
                             </div>
@@ -447,7 +450,7 @@ export default function UserDashboard() {
                 ) : (
                   <div className="py-12 text-center">
                     <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Aucun appel terminé</p>
+                    <p className="text-gray-500">{t('history.noHistory')}</p>
                   </div>
                 )}
               </CardContent>
@@ -461,7 +464,7 @@ export default function UserDashboard() {
         <DialogContent className="sm:max-w-[500px]">
           <form onSubmit={handleSubmitReview}>
             <DialogHeader>
-              <DialogTitle>Laisser un avis</DialogTitle>
+              <DialogTitle>{t('review.title')}</DialogTitle>
               <DialogDescription>
                 Partagez votre expérience avec {selectedBooking?.callOffer?.creator?.user?.name}
               </DialogDescription>
