@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CallRequestDialog } from '@/components/call-request-dialog';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { db } from '@/lib/db';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 import { getCreatorCurrency } from '@/lib/stripe';
 import { CreatorProfileImage } from '@/components/creator-profile-image';
 import { CreatorBannerImage } from '@/components/creator-banner-image';
+import { getTranslations } from 'next-intl/server';
 
 async function getCreator(id: string) {
   try {
@@ -91,6 +92,7 @@ export default async function CreatorProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations('creators.profile');
   const creator = await getCreator(id);
   const reviewsData = await getCreatorReviews(id);
 
@@ -99,9 +101,9 @@ export default async function CreatorProfilePage({
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
         <div className="container mx-auto max-w-7xl px-4 py-12 text-center">
-          <h1 className="text-2xl font-bold mb-4">Créateur introuvable</h1>
+          <h1 className="text-2xl font-bold mb-4">{t('notFound')}</h1>
           <Link href="/creators">
-            <Button variant="outline">Retour aux créateurs</Button>
+            <Button variant="outline">{t('backToCreators')}</Button>
           </Link>
         </div>
       </div>
@@ -169,13 +171,13 @@ export default async function CreatorProfilePage({
                       ))}
                     </div>
                     <span className="font-semibold text-lg">{averageRating.toFixed(1)}</span>
-                    <span className="text-gray-500">({totalReviews} avis)</span>
+                    <span className="text-gray-500">({totalReviews} {t('rating')})</span>
                   </div>
                 )}
 
                 {/* Bio with better formatting */}
                 <div className="text-gray-600 mb-4 whitespace-pre-wrap leading-relaxed">
-                  {creator?.bio ?? 'Pas de bio disponible'}
+                  {creator?.bio ?? t('noBio')}
                 </div>
                 
                 {/* Social Links */}
@@ -232,14 +234,14 @@ export default async function CreatorProfilePage({
                         className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-full hover:opacity-90 transition"
                       >
                         <ExternalLink className="w-4 h-4" />
-                        <span className="text-sm font-medium">Site web</span>
+                        <span className="text-sm font-medium">{t('other')}</span>
                       </a>
                     )}
                   </div>
                 )}
                 
                 <Badge className="bg-gradient-to-r from-purple-600 to-pink-600">
-                  {availableOffers.length} offre{availableOffers.length !== 1 ? 's' : ''} disponible{availableOffers.length !== 1 ? 's' : ''}
+                  {availableOffers.length} {t('offersAvailable')}
                 </Badge>
               </div>
             </div>
@@ -248,7 +250,7 @@ export default async function CreatorProfilePage({
 
         {/* Available Call Offers */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Appels disponibles</h2>
+          <h2 className="text-2xl font-bold mb-6">{t('availableOffers')}</h2>
 
           {availableOffers.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -282,7 +284,7 @@ export default async function CreatorProfilePage({
 
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Clock className="w-4 h-4" />
-                          <span>{formattedTime} - {offer?.duration ?? 0} minutes</span>
+                          <span>{formattedTime} - {offer?.duration ?? 0} {t('minutes')}</span>
                         </div>
 
                         <div className="flex items-center gap-2 text-sm font-semibold text-purple-600">
@@ -298,7 +300,7 @@ export default async function CreatorProfilePage({
                     <CardFooter>
                       <Link href={`/book/${offer?.id}`} className="w-full">
                         <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                          Réserver
+                          {t('reserve')}
                         </Button>
                       </Link>
                     </CardFooter>
@@ -309,8 +311,8 @@ export default async function CreatorProfilePage({
           ) : (
             <div className="text-center py-12 bg-white rounded-xl shadow-sm border">
               <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">Aucun appel disponible pour le moment</p>
-              <p className="text-sm text-gray-400">Utilisez le bouton &quot;Proposer un appel&quot; pour envoyer une demande personnalisée</p>
+              <p className="text-gray-500 mb-4">{t('noOffers')}</p>
+              <p className="text-sm text-gray-400">{t('noOffersDescription')}</p>
             </div>
           )}
         </div>
@@ -318,14 +320,14 @@ export default async function CreatorProfilePage({
         {/* Reviews Section */}
         {totalReviews > 0 && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">Avis des utilisateurs</h2>
+            <h2 className="text-2xl font-bold mb-6">{t('reviews')}</h2>
             <div className="grid gap-4">
               {reviews.slice(0, 6).map((review) => (
                 <Card key={review.id} className="bg-white">
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <p className="font-semibold">{review?.user?.name ?? 'Anonyme'}</p>
+                        <p className="font-semibold">{review?.user?.name ?? t('anonymous')}</p>
                         <p className="text-xs text-gray-500">
                           {new Date(review.createdAt).toLocaleDateString('fr-FR', {
                             year: 'numeric',

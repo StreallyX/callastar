@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import DailyIframe, { DailyCall, DailyEvent, DailyEventObjectParticipant } from '@daily-co/daily-js';
 import { logCallEvent, formatDuration } from '@/lib/call-types';
+import { useTranslations } from 'next-intl';
 
 // Debug flag
 const DEBUG_MODE = process.env.NODE_ENV === 'development';
@@ -38,6 +39,7 @@ export default function CallPage({
 }) {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations('call.room');
   
   // State
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -209,8 +211,8 @@ export default function CallPage({
       });
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: error?.message ?? 'Une erreur est survenue',
+        title: t('error'),
+        description: error?.message ?? t('callError'),
       });
       
       await logCallEvent(bookingId, 'CALL_ERROR', {
@@ -238,15 +240,15 @@ export default function CallPage({
       
       debugLog('Media devices test successful');
       toast({
-        title: 'Test réussi',
-        description: 'Votre caméra et micro fonctionnent correctement',
+        title: t('testSuccess'),
+        description: t('testSuccessDesc'),
       });
     } catch (error) {
       debugLog('Media devices test error:', error);
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible d\'accéder à la caméra ou au micro',
+        title: t('testError'),
+        description: t('testErrorDesc'),
       });
       
       await logCallEvent(bookingId!, 'CALL_ERROR', {
@@ -374,8 +376,8 @@ export default function CallPage({
       });
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: error?.message ?? 'Impossible de rejoindre l\'appel',
+        title: t('error'),
+        description: error?.message ?? t('callError'),
       });
       
       await logCallEvent(bookingId, 'CALL_ERROR', {
@@ -405,8 +407,8 @@ export default function CallPage({
     });
     
     toast({
-      title: 'Participant rejoint',
-      description: `${event?.participant?.user_name || 'Un participant'} a rejoint l'appel`,
+      title: t('participantJoined'),
+      description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantJoinedDesc')}`,
     });
   };
 
@@ -418,8 +420,8 @@ export default function CallPage({
     });
     
     toast({
-      title: 'Participant parti',
-      description: `${event?.participant?.user_name || 'Un participant'} a quitté l'appel`,
+      title: t('participantLeft'),
+      description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantLeftDesc')}`,
       variant: 'default',
     });
   };
@@ -457,8 +459,8 @@ export default function CallPage({
     
     toast({
       variant: 'destructive',
-      title: 'Erreur durant l\'appel',
-      description: event?.errorMsg || 'Une erreur est survenue',
+      title: t('callErrorDuring'),
+      description: event?.errorMsg || t('callError'),
     });
   };
 
@@ -466,8 +468,8 @@ export default function CallPage({
     debugLog('Network quality change:', event);
     if (event?.threshold === 'low') {
       toast({
-        title: 'Connexion faible',
-        description: 'Votre connexion internet est instable',
+        title: t('weakConnection'),
+        description: t('weakConnectionDesc'),
         variant: 'default',
       });
     }
@@ -486,8 +488,8 @@ export default function CallPage({
       });
       
       toast({
-        title: 'Connexion perdue',
-        description: 'Tentative de reconnexion...',
+        title: t('connectionLost'),
+        description: t('connectionLostDesc'),
         variant: 'destructive',
       });
     } else if (event?.type === 'connected') {
@@ -500,8 +502,8 @@ export default function CallPage({
       });
       
       toast({
-        title: 'Reconnecté',
-        description: 'Vous êtes de nouveau connecté',
+        title: t('reconnected'),
+        description: t('reconnectedDesc'),
       });
     }
   };
@@ -624,16 +626,16 @@ export default function CallPage({
     let statusColor = '';
     
     if (isPast) {
-      callStatus = 'L\'appel est terminé';
+      callStatus = t('callEnded');
       statusColor = 'text-gray-600';
     } else if (isCallTime) {
-      callStatus = 'L\'appel peut commencer maintenant !';
+      callStatus = t('canStartNow');
       statusColor = 'text-green-600';
     } else if (timeUntilCall < 900) { // Less than 15 minutes
-      callStatus = `Commence dans ${formatCountdown(timeUntilCall)}`;
+      callStatus = `${t('startsIn')} ${formatCountdown(timeUntilCall)}`;
       statusColor = 'text-orange-600';
     } else {
-      callStatus = `Commence dans ${formatCountdown(timeUntilCall)}`;
+      callStatus = `${t('startsIn')} ${formatCountdown(timeUntilCall)}`;
       statusColor = 'text-purple-600';
     }
     

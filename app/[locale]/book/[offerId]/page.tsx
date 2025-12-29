@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useToast } from '@/hooks/use-toast';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { useTranslations } from 'next-intl';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -17,6 +18,7 @@ function CheckoutForm({ bookingId, onSuccess }: { bookingId: string; onSuccess: 
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
+  const t = useTranslations('booking');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,21 +40,21 @@ function CheckoutForm({ bookingId, onSuccess }: { bookingId: string; onSuccess: 
       if (error) {
         toast({
           variant: 'destructive',
-          title: 'Erreur de paiement',
+          title: t('paymentError'),
           description: error.message,
         });
       } else {
         toast({
-          title: 'Paiement réussi !',
-          description: 'Votre réservation est confirmée',
+          title: t('paymentSuccess'),
+          description: t('bookingConfirmed'),
         });
         onSuccess();
       }
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: 'Une erreur est survenue lors du paiement',
+        title: t('paymentError'),
+        description: t('genericError'),
       });
     } finally {
       setLoading(false);
@@ -70,12 +72,12 @@ function CheckoutForm({ bookingId, onSuccess }: { bookingId: string; onSuccess: 
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Traitement...
+            {t('processing')}
           </>
         ) : (
           <>
             <CreditCard className="w-4 h-4 mr-2" />
-            Payer et réserver
+            {t('payAndBook')}
           </>
         )}
       </Button>
@@ -86,6 +88,7 @@ function CheckoutForm({ bookingId, onSuccess }: { bookingId: string; onSuccess: 
 export default function BookOfferPage({ params }: { params: { offerId: string } }) {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations('booking');
   const [offer, setOffer] = useState<any>(null);
   const [booking, setBooking] = useState<any>(null);
   const [existingBooking, setExistingBooking] = useState<any>(null);
@@ -116,7 +119,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
       // Get offer details
       const offerResponse = await fetch(`/api/call-offers/${offerId}`);
       if (!offerResponse.ok) {
-        throw new Error('Offre introuvable');
+        throw new Error(t('offerNotFound'));
       }
       const offerData = await offerResponse.json();
       setOffer(offerData?.callOffer);
@@ -138,7 +141,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
 
       if (!bookingResponse.ok) {
         const error = await bookingResponse.json();
-        throw new Error(error?.error ?? 'Erreur lors de la réservation');
+        throw new Error(error?.error ?? t('bookingError'));
       }
 
       const bookingData = await bookingResponse.json();
@@ -152,7 +155,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
       });
 
       if (!intentResponse.ok) {
-        throw new Error('Erreur lors de la création du paiement');
+        throw new Error(t('paymentError'));
       }
 
       const intentData = await intentResponse.json();
@@ -160,8 +163,8 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: error?.message ?? 'Une erreur est survenue',
+        title: t('paymentError'),
+        description: error?.message ?? t('genericError'),
       });
       setTimeout(() => router.push('/creators'), 2000);
     } finally {
@@ -208,12 +211,12 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle className="text-center">
-                {isUserBooking ? '✅ Votre réservation' : '❌ Offre indisponible'}
+                {isUserBooking ? t('yourBooking') : t('offerUnavailable')}
               </CardTitle>
               <CardDescription className="text-center">
                 {isUserBooking
-                  ? 'Cette réservation vous appartient'
-                  : 'Cette offre a déjà été réservée par un autre utilisateur'}
+                  ? t('yourBookingDesc')
+                  : t('offerUnavailableDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -228,7 +231,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="w-4 h-4 text-purple-600" />
-                    <span className="font-medium">{formattedTime} ({offer?.duration} minutes)</span>
+                    <span className="font-medium">{formattedTime} ({offer?.duration} {t('minutes')})</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-medium">
@@ -245,9 +248,9 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
                 <div className="space-y-4">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <p className="text-sm text-green-800">
-                      <strong>Statut:</strong>{' '}
-                      {existingBooking.status === 'CONFIRMED' ? 'Confirmé ✓' : 
-                       existingBooking.status === 'PENDING' ? 'En attente de paiement' :
+                      <strong>{t('status')}:</strong>{' '}
+                      {existingBooking.status === 'CONFIRMED' ? t('confirmed') : 
+                       existingBooking.status === 'PENDING' ? t('pending') :
                        existingBooking.status}
                     </p>
                   </div>
@@ -257,7 +260,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
                       onClick={() => router.push('/dashboard/user')}
                       className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600"
                     >
-                      Voir mes réservations
+                      {t('viewBookings')}
                     </Button>
                     {existingBooking.status === 'CONFIRMED' && (
                       <Button
@@ -265,7 +268,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
                         variant="outline"
                         className="flex-1"
                       >
-                        Rejoindre l'appel
+                        {t('joinCall')}
                       </Button>
                     )}
                   </div>
@@ -274,7 +277,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
                 <div className="space-y-4">
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-sm text-yellow-800">
-                      Cette offre n'est plus disponible. Explorez d'autres opportunités !
+                      {t('offerNotAvailable')}
                     </p>
                   </div>
                   
@@ -284,13 +287,13 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
                       variant="outline"
                       className="flex-1"
                     >
-                      Voir le profil du créateur
+                      {t('viewCreatorProfile')}
                     </Button>
                     <Button
                       onClick={() => router.push('/creators')}
                       className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600"
                     >
-                      Explorer d'autres créateurs
+                      {t('exploreCreators')}
                     </Button>
                   </div>
                 </div>
@@ -307,9 +310,9 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
         <div className="container mx-auto max-w-4xl px-4 py-12 text-center">
-          <h1 className="text-2xl font-bold mb-4">Erreur de réservation</h1>
+          <h1 className="text-2xl font-bold mb-4">{t('error')}</h1>
           <Button onClick={() => router.push('/creators')} variant="outline">
-            Retour aux créateurs
+            {t('backToCreators')}
           </Button>
         </div>
       </div>
@@ -333,14 +336,14 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
       <Navbar />
 
       <div className="container mx-auto max-w-4xl px-4 py-12">
-        <h1 className="text-3xl font-bold mb-8 text-center">Réservation et paiement</h1>
+        <h1 className="text-3xl font-bold mb-8 text-center">{t('title')}</h1>
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Offer Details */}
           <Card>
             <CardHeader>
-              <CardTitle>Détails de l'appel</CardTitle>
-              <CardDescription>Vérifiez les informations avant de payer</CardDescription>
+              <CardTitle>{t('callDetails')}</CardTitle>
+              <CardDescription>{t('verifyInfo')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -356,13 +359,13 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
 
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="w-4 h-4 text-gray-400" />
-                  <span>{formattedTime} ({offer?.duration} minutes)</span>
+                  <span>{formattedTime} ({offer?.duration} {t('minutes')})</span>
                 </div>
               </div>
 
               <div className="pt-4 border-t">
                 <div className="flex items-center justify-between text-lg font-semibold">
-                  <span>Total</span>
+                  <span>{t('total')}</span>
                   <div className="text-purple-600">
                     <CurrencyDisplay 
                       amount={Number(offer?.price ?? 0)} 
@@ -374,7 +377,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
 
               <div className="pt-4">
                 <p className="text-xs text-gray-500">
-                  Créateur: {offer?.creator?.user?.name ?? 'Unknown'}
+                  {t('creator')}: {offer?.creator?.user?.name ?? 'Unknown'}
                 </p>
               </div>
             </CardContent>
@@ -383,8 +386,8 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
           {/* Payment Form */}
           <Card>
             <CardHeader>
-              <CardTitle>Paiement</CardTitle>
-              <CardDescription>Entrez vos informations de paiement</CardDescription>
+              <CardTitle>{t('payment')}</CardTitle>
+              <CardDescription>{t('paymentInfo')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Elements

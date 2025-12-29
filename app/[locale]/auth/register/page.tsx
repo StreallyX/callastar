@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter } from '@/navigation';
+import { Link } from '@/navigation';
 import { Star, Mail, Lock, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,10 +11,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { signIn } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations('auth.register');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -39,8 +41,8 @@ export default function RegisterPage() {
 
       if (response.ok) {
         toast({
-          title: 'Inscription réussie !',
-          description: 'Votre compte a été créé avec succès',
+          title: t('successTitle'),
+          description: t('successDescription'),
         });
 
         // Use window.location.href to force a full page reload
@@ -53,15 +55,15 @@ export default function RegisterPage() {
       } else {
         toast({
           variant: 'destructive',
-          title: 'Erreur d\'inscription',
-          description: data?.error ?? 'Une erreur est survenue',
+          title: t('errorTitle'),
+          description: data?.error ?? t('errorDescription'),
         });
       }
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: 'Une erreur est survenue lors de l\'inscription',
+        title: t('errorTitle'),
+        description: t('genericError'),
       });
     } finally {
       setLoading(false);
@@ -78,8 +80,8 @@ export default function RegisterPage() {
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: 'Erreur lors de la connexion avec Google',
+        title: t('errorTitle'),
+        description: t('googleError'),
       });
       setGoogleLoading(false);
     }
@@ -92,22 +94,22 @@ export default function RegisterPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 mb-4 mx-auto">
             <Star className="w-8 h-8 text-white fill-white" />
           </div>
-          <CardTitle className="text-2xl">Inscription</CardTitle>
+          <CardTitle className="text-2xl">{t('title')}</CardTitle>
           <CardDescription>
-            Créez votre compte pour commencer
+            {t('description')}
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nom complet</Label>
+              <Label htmlFor="name">{t('fullName')}</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   id="name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder={t('fullNamePlaceholder')}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="pl-10"
@@ -117,13 +119,13 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="votre@email.com"
+                  placeholder={t('emailPlaceholder')}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="pl-10"
@@ -133,13 +135,13 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={t('passwordPlaceholder')}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="pl-10"
@@ -150,17 +152,17 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Type de compte</Label>
+              <Label htmlFor="role">{t('accountType')}</Label>
               <Select
                 value={formData.role}
                 onValueChange={(value) => setFormData({ ...formData, role: value as 'USER' | 'CREATOR' })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez un type" />
+                  <SelectValue placeholder={t('accountTypePlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USER">Utilisateur (Fan)</SelectItem>
-                  <SelectItem value="CREATOR">Créateur (Influenceur)</SelectItem>
+                  <SelectItem value="USER">{t('userRole')}</SelectItem>
+                  <SelectItem value="CREATOR">{t('creatorRole')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -175,10 +177,10 @@ export default function RegisterPage() {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Inscription...
+                  {t('registering')}
                 </>
               ) : (
-                'S\'inscrire'
+                t('registerButton')
               )}
             </Button>
 
@@ -189,7 +191,7 @@ export default function RegisterPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-white px-2 text-gray-500">
-                  Ou continuer avec
+                  {t('orContinueWith')}
                 </span>
               </div>
             </div>
@@ -205,7 +207,7 @@ export default function RegisterPage() {
               {googleLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Connexion...
+                  {t('registering')}
                 </>
               ) : (
                 <>
@@ -227,20 +229,20 @@ export default function RegisterPage() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  S'inscrire avec Google
+                  {t('googleRegister')}
                 </>
               )}
             </Button>
 
             <p className="text-center text-sm text-gray-600">
-              Déjà un compte ?{' '}
+              {t('haveAccount')}{' '}
               <Link href="/auth/login" className="text-purple-600 hover:underline font-medium">
-                Se connecter
+                {t('loginLink')}
               </Link>
             </p>
 
             <Link href="/" className="text-center text-sm text-gray-600 hover:text-gray-900">
-              Retour à l'accueil
+              {t('backToHome')}
             </Link>
           </CardFooter>
         </form>

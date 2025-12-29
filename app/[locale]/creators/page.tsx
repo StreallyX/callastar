@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/navbar';
 import { CreatorCard } from '@/components/creator-card';
 import { db } from '@/lib/db';
+import { getTranslations } from 'next-intl/server';
 
 async function getCreators() {
   try {
@@ -36,6 +37,7 @@ async function getCreators() {
 }
 
 export default async function CreatorsPage() {
+  const t = await getTranslations('creators.list');
   const data = await getCreators();
   const creators = data?.creators ?? [];
 
@@ -46,10 +48,10 @@ export default async function CreatorsPage() {
       <div className="container mx-auto max-w-7xl px-4 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Nos Créateurs
+            {t('title')}
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Découvrez tous nos créateurs et réservez un appel vidéo privé avec votre star préférée
+            {t('description')}
           </p>
         </div>
 
@@ -61,7 +63,7 @@ export default async function CreatorsPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-500">Aucun créateur disponible pour le moment</p>
+            <p className="text-gray-500">{t('noCreators')}</p>
           </div>
         )}
       </div>
