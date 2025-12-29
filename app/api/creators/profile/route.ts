@@ -22,14 +22,15 @@ const nullableUrl = z
 
 /**
  * Validation schema
+ * ✅ REFACTORED: Removed profileImage and bannerImage (handled by /api/upload/image)
  */
 const updateCreatorProfileSchema = z.object({
   bio: z.string().optional(),
   expertise: z.string().optional(),
   timezone: z.string().optional(),
 
-  profileImage: nullableUrl,
-  bannerImage: nullableUrl,
+  // ❌ REMOVED: profileImage and bannerImage
+  // Images are now managed exclusively by /api/upload/image
 
   socialLinks: z
     .object({

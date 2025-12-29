@@ -16,33 +16,23 @@ import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getCommonTimezones, detectUserTimezone, getTimezoneAbbreviation } from '@/lib/timezone';
 
-// Image Upload Component
+// ✅ REFACTORED: Image Upload Component - Simplified version
 interface ImageUploadProps {
   label: string;
   description: string;
   imageUrl: string;
-  onUrlChange: (url: string) => void;
+  onUploadSuccess: () => void; // Callback to refresh data after upload
   imageType: 'profile' | 'banner';
   previewClassName?: string;
 }
 
-function ImageUpload({ label, description, imageUrl, onUrlChange, imageType, previewClassName }: ImageUploadProps) {
+function ImageUpload({ label, description, imageUrl, onUploadSuccess, imageType, previewClassName }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(imageUrl);
   const [imageError, setImageError] = useState(false);
 
-  // Update preview when imageUrl changes
+  // Update error state when imageUrl changes
   useEffect(() => {
-    setPreviewUrl(imageUrl);
     setImageError(false);
-  }, [imageUrl]);
-
-  // Update preview when input changes
-  useEffect(() => {
-    if (imageUrl && imageUrl !== previewUrl) {
-      setPreviewUrl(imageUrl);
-      setImageError(false);
-    }
   }, [imageUrl]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,12 +71,11 @@ function ImageUpload({ label, description, imageUrl, onUrlChange, imageType, pre
 
       const data = await response.json();
       
-      // Update URL input and preview
-      onUrlChange(data.url);
-      setPreviewUrl(data.url);
-      setImageError(false);
+      // ✅ Success: DB is already updated by the API
+      toast.success('Image uploadée et profil mis à jour avec succès !');
       
-      toast.success('Image uploadée avec succès');
+      // ✅ Refresh data from database to get the new image
+      onUploadSuccess();
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || 'Erreur lors de l\'upload');
@@ -95,12 +84,6 @@ function ImageUpload({ label, description, imageUrl, onUrlChange, imageType, pre
       // Reset file input
       e.target.value = '';
     }
-  };
-
-  const handleUrlChange = (url: string) => {
-    onUrlChange(url);
-    setPreviewUrl(url);
-    setImageError(false);
   };
 
   const handleImageError = () => {
@@ -114,53 +97,14 @@ function ImageUpload({ label, description, imageUrl, onUrlChange, imageType, pre
         <p className="text-sm text-gray-500">{description}</p>
       </div>
 
-      {/* URL Input and Upload Button */}
-      <div className="flex gap-2">
-        <Input
-          placeholder="https://i.ytimg.com/vi/SqJZD0OdT1g/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBXH_0noVUYopA5FSlfQFjMxj-fbQ"
-          value={imageUrl}
-          onChange={(e) => handleUrlChange(e.target.value)}
-          className="flex-1"
-        />
-        <div className="relative">
-          <input
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp"
-            onChange={handleFileUpload}
-            className="hidden"
-            id={`upload-${imageType}`}
-            disabled={uploading}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => document.getElementById(`upload-${imageType}`)?.click()}
-            disabled={uploading}
-            className="whitespace-nowrap"
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Upload...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload image
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-
       {/* Preview */}
-      {previewUrl && (
+      {imageUrl ? (
         <div className="mt-3">
-          <Label className="text-xs text-gray-500 mb-2 block">Preview:</Label>
+          <Label className="text-xs text-gray-500 mb-2 block">Aperçu actuel :</Label>
           {!imageError ? (
             <div className={previewClassName || 'relative w-full h-32 border rounded-lg overflow-hidden bg-gray-50'}>
               <img
-                src={previewUrl}
+                src={imageUrl}
                 alt={label}
                 className="w-full h-full object-cover"
                 onError={handleImageError}
@@ -171,15 +115,13 @@ function ImageUpload({ label, description, imageUrl, onUrlChange, imageType, pre
               <div className="text-center text-gray-400">
                 <AlertCircle className="w-8 h-8 mx-auto mb-2" />
                 <p className="text-sm">Impossible de charger l'image</p>
-                <p className="text-xs">Vérifiez l'URL</p>
               </div>
             </div>
           )}
         </div>
-      )}
-
-      {!previewUrl && (
+      ) : (
         <div className="mt-3">
+          <Label className="text-xs text-gray-500 mb-2 block">Aperçu :</Label>
           <div className="relative w-full h-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
             <div className="text-center text-gray-400">
               <ImageIcon className="w-8 h-8 mx-auto mb-2" />
@@ -189,8 +131,38 @@ function ImageUpload({ label, description, imageUrl, onUrlChange, imageType, pre
         </div>
       )}
 
+      {/* Upload Button */}
+      <div className="relative">
+        <input
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp"
+          onChange={handleFileUpload}
+          className="hidden"
+          id={`upload-${imageType}`}
+          disabled={uploading}
+        />
+        <Button
+          type="button"
+          onClick={() => document.getElementById(`upload-${imageType}`)?.click()}
+          disabled={uploading}
+          className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Upload en cours...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              {imageUrl ? 'Changer l\'image' : 'Uploader une image'}
+            </>
+          )}
+        </Button>
+      </div>
+
       <p className="text-xs text-gray-500">
-        Formats acceptés: JPG, PNG, WEBP (max 5MB)
+        Formats acceptés: JPG, PNG, WEBP (max 5MB). L'image sera enregistrée automatiquement.
       </p>
     </div>
   );
@@ -389,6 +361,7 @@ export default function CreatorSettings() {
   };
 
   
+  // ✅ REFACTORED: Only saves bio and social links (images are saved automatically on upload)
   const handleSavePublicProfile = async () => {
     setSaving(true);
     try {
@@ -396,15 +369,14 @@ export default function CreatorSettings() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          profileImage: profileData.profileImage?.trim() || null,
-          bannerImage: profileData.bannerImage?.trim() || null,
+          // ❌ NO MORE: profileImage and bannerImage (handled by upload API)
           bio: profileData.bio,
           socialLinks: cleanSocialLinks(profileData.socialLinks),
         }),
       });
 
       if (response.ok) {
-        toast.success('Profil public mis à jour avec succès !');
+        toast.success('Profil mis à jour avec succès !');
         await fetchData();
       } else {
         const err = await response.json();
@@ -648,40 +620,42 @@ export default function CreatorSettings() {
           <TabsContent value="public" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Profil Public</CardTitle>
+                <CardTitle>Images du profil</CardTitle>
+                <CardDescription>
+                  Gérez votre photo de profil et votre bannière
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* ✅ Profile Image Upload - Simplified */}
+                <ImageUpload
+                  label="Photo de profil"
+                  description="Votre photo sera affichée de manière circulaire"
+                  imageUrl={profileData.profileImage}
+                  onUploadSuccess={fetchData}
+                  imageType="profile"
+                  previewClassName="relative w-32 h-32 border rounded-full overflow-hidden bg-gray-50 mx-auto"
+                />
+
+                {/* ✅ Banner Image Upload - Simplified */}
+                <ImageUpload
+                  label="Image de bannière"
+                  description="Image de couverture de votre profil (format paysage recommandé: 1200x300px)"
+                  imageUrl={profileData.bannerImage}
+                  onUploadSuccess={fetchData}
+                  imageType="banner"
+                  previewClassName="relative w-full h-40 border rounded-lg overflow-hidden bg-gray-50"
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Bio et description</CardTitle>
                 <CardDescription>
                   Personnalisez votre profil visible par vos fans
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="profileImage">Photo de profil (URL)</Label>
-                  <Input
-                    id="profileImage"
-                    type="url"
-                    value={profileData.profileImage}
-                    onChange={(e) => setProfileData({ ...profileData, profileImage: e.target.value })}
-                    placeholder="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dXNlciUyMHByb2ZpbGV8ZW58MHx8MHx8fDA%3D"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Ajoutez l'URL d'une image pour votre photo de profil
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bannerImage">Bannière (URL)</Label>
-                  <Input
-                    id="bannerImage"
-                    type="url"
-                    value={profileData.bannerImage}
-                    onChange={(e) => setProfileData({ ...profileData, bannerImage: e.target.value })}
-                    placeholder="https://lh7-rt.googleusercontent.com/docsz/AD_4nXeeIW9ydvjWXc2xyf3l6-myQT4soO2jVPUovWl3n9MM_PyKadgjF4OOk-4BH_uaN8Y2jnQoDcVaUGCbLfwHgtQ2iiHjKM-MaQ92MjD6NQ7I18W-3_fGWMP1Uc_XB4NHkcab1Uobnlp9sCdwsrbmdngeamCD?key=G0DUnZ0pTlxt4vmbEMiYvg"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Image de bannière affichée en haut de votre profil (recommandé: 1200x300px)
-                  </p>
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="publicBio">Bio enrichie</Label>
                   <Textarea
@@ -776,26 +750,7 @@ export default function CreatorSettings() {
                   />
                 </div>
 
-                {/* Profile Image Upload */}
-                <ImageUpload
-                  label="Photo de profil"
-                  description="Votre photo sera affichée de manière circulaire"
-                  imageUrl={formData.profileImage}
-                  onUrlChange={(url) => setFormData({ ...formData, profileImage: url })}
-                  imageType="profile"
-                  previewClassName="relative w-32 h-32 border rounded-full overflow-hidden bg-gray-50 mx-auto"
-                />
-
-                {/* Banner Image Upload */}
-                <ImageUpload
-                  label="Image de bannière"
-                  description="Image de couverture de votre profil (format paysage recommandé)"
-                  imageUrl={formData.bannerImage}
-                  onUrlChange={(url) => setFormData({ ...formData, bannerImage: url })}
-                  imageType="banner"
-                  previewClassName="relative w-full h-40 border rounded-lg overflow-hidden bg-gray-50"
-                />
-
+                {/* ✅ Save Button for Bio and Social Links ONLY */}
                 <div className="flex justify-end pt-4">
                   <Button
                     onClick={handleSavePublicProfile}
@@ -805,7 +760,7 @@ export default function CreatorSettings() {
                     {saving ? (
                       <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement...</>
                     ) : (
-                      <><Save className="w-4 h-4 mr-2" />Enregistrer le profil public</>
+                      <><Save className="w-4 h-4 mr-2" />Enregistrer</>
                     )}
                   </Button>
                 </div>

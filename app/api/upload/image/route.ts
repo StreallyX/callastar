@@ -125,9 +125,26 @@ export async function POST(request: NextRequest) {
     // 🌍 URL publique
     const publicUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 
+    // ✅ CRITICAL: Update database immediately after S3 upload
+    try {
+      await db.creator.update({
+        where: { id: creatorId },
+        data: imageType === 'profile'
+          ? { profileImage: publicUrl }
+          : { bannerImage: publicUrl },
+      });
+    } catch (dbError: any) {
+      console.error('Database update error:', dbError);
+      return NextResponse.json(
+        { error: 'Image uploadée mais erreur lors de la mise à jour de la base de données', details: dbError?.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       url: publicUrl,
+      message: 'Image uploadée et profil mis à jour avec succès',
     });
   } catch (error: any) {
     console.error('Upload error:', error);
