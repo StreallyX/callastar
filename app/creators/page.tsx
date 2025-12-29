@@ -55,7 +55,7 @@ export default async function CreatorsPage() {
 
         {creators?.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {creators.map((creator: any) => (
+            {creators.map((creator) => (
               <CreatorCard key={creator?.id} creator={creator} />
             ))}
           </div>

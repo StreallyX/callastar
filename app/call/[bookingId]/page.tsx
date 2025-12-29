@@ -26,7 +26,7 @@ const debugLog = (...args: any[]) => {
 };
 
 interface CallState {
-  phase: 'loading' | 'waiting' | 'pre-call' | 'in-call' | 'ended' | 'error';
+  phase: 'loading' | 'pre-call' | 'in-call' | 'ended' | 'error';
   error?: string;
   callStartTime?: Date;
 }
@@ -103,18 +103,14 @@ export default function CallPage({
       if (booking) {
         const callTime = new Date(booking.callOffer.dateTime).getTime();
         const now = Date.now();
-        const fifteenMinutesBefore = callTime - 15 * 60 * 1000;
         
-        if (callState.phase === 'waiting') {
-          setTimeUntilCall(Math.max(0, Math.floor((fifteenMinutesBefore - now) / 1000)));
-          
-          if (now >= fifteenMinutesBefore) {
-            setCallState({ phase: 'pre-call' });
-            if (bookingId) {
-              logCallEvent(bookingId, 'PRE_CALL_ENTERED', { timestamp: new Date().toISOString() });
-            }
-          }
-        } else if (callState.phase === 'in-call') {
+        // Update time until call for pre-call phase
+        if (callState.phase === 'pre-call') {
+          setTimeUntilCall(Math.max(0, Math.floor((callTime - now) / 1000)));
+        }
+        
+        // Update time remaining for in-call phase
+        if (callState.phase === 'in-call') {
           // Calcul du temps écoulé basé sur l'heure de début réelle de l'appel
           let elapsed = 0;
           
@@ -200,22 +196,8 @@ export default function CallPage({
       
       debugLog('Booking data:', fetchedBooking);
 
-      // Check if call is accessible (sauf pour les bookings de test)
-      if (!fetchedBooking?.isTestBooking) {
-        const callTime = new Date(fetchedBooking?.callOffer?.dateTime).getTime();
-        const now = Date.now();
-        const fifteenMinutesBefore = callTime - 15 * 60 * 1000;
-
-        if (now < fifteenMinutesBefore) {
-          const minutesUntil = Math.ceil((fifteenMinutesBefore - now) / 60000);
-          setCallState({ 
-            phase: 'waiting', 
-            error: `L'accès à l'appel sera disponible dans ${minutesUntil} minutes` 
-          });
-          return;
-        }
-      }
-
+      // ✅ NOUVELLE LOGIQUE: Toujours permettre l'accès à la waiting room/pre-call
+      // Pas de blocage temporel - l'utilisateur peut toujours entrer et tester son équipement
       setCallState({ phase: 'pre-call' });
       await logCallEvent(bookingId, 'PRE_CALL_ENTERED', { timestamp: new Date().toISOString() });
       
@@ -630,72 +612,31 @@ export default function CallPage({
     );
   }
 
-  if (callState.phase === 'waiting') {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
-        <Navbar />
-        <div className="container mx-auto max-w-4xl px-4 py-12">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-6 h-6 text-purple-600" />
-                  Appel à venir
-                </CardTitle>
-                {/* Branding Callastar */}
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                    C
-                  </div>
-                  <span className="font-semibold text-purple-600">Callastar</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold mb-4">{booking?.callOffer?.title}</h2>
-                <p className="text-gray-600 mb-6">
-                  avec {booking?.callOffer?.creator?.user?.name}
-                </p>
-                
-                <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-8 mb-6">
-                  <p className="text-sm text-gray-600 mb-2">L'appel sera accessible dans</p>
-                  <div className="text-5xl font-bold text-purple-600 mb-2">
-                    {formatCountdown(timeUntilCall)}
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    Prévu le {new Date(booking?.callOffer?.dateTime).toLocaleString('fr-FR')}
-                  </p>
-                </div>
-
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    <div className="space-y-2 text-sm">
-                      <p>✓ Vous pourrez rejoindre l'appel 15 minutes avant l'heure prévue</p>
-                      <p>✓ Assurez-vous d'avoir une bonne connexion internet</p>
-                      <p>✓ Préparez votre caméra et votre microphone</p>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              </div>
-              
-              <div className="flex gap-4 justify-center">
-                <Button onClick={() => router.push('/dashboard/user')} variant="outline">
-                  Retour au dashboard
-                </Button>
-                <Button onClick={() => window.location.reload()}>
-                  Actualiser
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   if (callState.phase === 'pre-call') {
+    // Calculate call status dynamically
+    const callTime = new Date(booking?.callOffer?.dateTime ?? new Date()).getTime();
+    const now = Date.now();
+    const duration = (booking?.callOffer?.duration || 30) * 60 * 1000;
+    const isCallTime = now >= callTime;
+    const isPast = now > callTime + duration;
+    
+    let callStatus = '';
+    let statusColor = '';
+    
+    if (isPast) {
+      callStatus = 'L\'appel est terminé';
+      statusColor = 'text-gray-600';
+    } else if (isCallTime) {
+      callStatus = 'L\'appel peut commencer maintenant !';
+      statusColor = 'text-green-600';
+    } else if (timeUntilCall < 900) { // Less than 15 minutes
+      callStatus = `Commence dans ${formatCountdown(timeUntilCall)}`;
+      statusColor = 'text-orange-600';
+    } else {
+      callStatus = `Commence dans ${formatCountdown(timeUntilCall)}`;
+      statusColor = 'text-purple-600';
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
@@ -704,7 +645,7 @@ export default function CallPage({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-3 flex-wrap">
-                  Prêt à rejoindre l'appel
+                  Salle d'attente - Prêt à rejoindre
                   {booking?.isTestBooking && (
                     <Badge className="bg-blue-500 text-white">
                       🧪 Mode Test
@@ -734,6 +675,24 @@ export default function CallPage({
                     </p>
                   )}
                 </div>
+
+                {/* Call Status - Always visible and updated */}
+                <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      Statut de l'appel
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className={`text-lg font-bold ${statusColor}`}>
+                      {callStatus}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Prévu le {new Date(booking?.callOffer?.dateTime).toLocaleString('fr-FR')}
+                    </p>
+                  </CardContent>
+                </Card>
 
                 {/* Section: Règles de l'appel */}
                 <Card className="border-2 border-purple-200 bg-purple-50/50">
@@ -807,11 +766,21 @@ export default function CallPage({
                     <p>✓ Trouvez un endroit calme</p>
                   </div>
                 </div>
+                
+                {/* Important note: Always accessible */}
+                <Alert className="bg-blue-50 border-blue-200">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    <strong>✨ Accès libre :</strong> Vous pouvez rejoindre l'appel à tout moment. 
+                    Arrivez en avance pour tester votre équipement ou rejoignez si vous êtes en retard - 
+                    l'accès n'est jamais bloqué.
+                  </AlertDescription>
+                </Alert>
               </div>
 
               <div className="flex gap-4">
                 <Button onClick={() => router.push('/dashboard/user')} variant="outline" className="flex-1">
-                  Annuler
+                  Retour au dashboard
                 </Button>
                 <Button 
                   onClick={joinCall} 

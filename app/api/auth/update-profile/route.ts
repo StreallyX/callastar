@@ -5,7 +5,8 @@ import { z } from 'zod';
 
 const updateProfileSchema = z.object({
   name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-  email: z.string().email('Email invalide'),
+  email: z.string().email('Email invalide').optional(),
+  timezone: z.string().optional(),
 });
 
 export async function PUT(request: NextRequest) {
@@ -21,8 +22,8 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const validatedData = updateProfileSchema.parse(body);
 
-    // Check if email is already taken by another user
-    if (validatedData.email !== jwtUser.email) {
+    // Check if email is already taken by another user (only if email is being updated)
+    if (validatedData.email && validatedData.email !== jwtUser.email) {
       const existingUser = await db.user.findUnique({
         where: { email: validatedData.email },
       });
@@ -35,18 +36,29 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Build update data dynamically
+    const updateData: any = {
+      name: validatedData.name,
+    };
+    
+    if (validatedData.email) {
+      updateData.email = validatedData.email;
+    }
+    
+    if (validatedData.timezone) {
+      updateData.timezone = validatedData.timezone;
+    }
+
     // Update user profile
     const updatedUser = await db.user.update({
       where: { id: jwtUser.userId },
-      data: {
-        name: validatedData.name,
-        email: validatedData.email,
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        timezone: true,
       },
     });
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,17 +10,212 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Save, User, DollarSign, ExternalLink, Bell, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Save, User, DollarSign, ExternalLink, Bell, CheckCircle, XCircle, Globe, Clock, Upload, ImageIcon, AlertCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getCommonTimezones, detectUserTimezone, getTimezoneAbbreviation } from '@/lib/timezone';
+
+// ✅ REFACTORED: Image Upload Component - Simplified version
+interface ImageUploadProps {
+  label: string;
+  description: string;
+  imageUrl: string;
+  onUploadSuccess: () => void; // Callback to refresh data after upload
+  onDelete: () => void; // Callback to delete image
+  imageType: 'profile' | 'banner';
+  previewClassName?: string;
+}
+
+function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, imageType, previewClassName }: ImageUploadProps) {
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Update error state when imageUrl changes
+  useEffect(() => {
+    setImageError(false);
+  }, [imageUrl]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Format non supporté. Utilisez JPG, PNG ou WEBP');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Fichier trop lourd. Taille maximale : 5MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('imageType', imageType);
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        // Display specific error message from API
+        if (error.error) {
+          toast.error(error.error);
+        } else if (response.status === 500) {
+          toast.error('Erreur serveur lors de l\'upload. Veuillez réessayer.');
+        } else {
+          toast.error('Erreur lors de l\'upload de l\'image');
+        }
+        return;
+      }
+      
+      // ✅ Success: DB is already updated by the API
+      toast.success('Image uploadée et profil mis à jour avec succès !');
+      
+      // ✅ Refresh data from database to get the new image
+      onUploadSuccess();
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Une erreur inattendue est survenue. Veuillez réessayer.');
+    } finally {
+      setUploading(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label>{label}</Label>
+        <p className="text-sm text-gray-500">{description}</p>
+      </div>
+
+      {/* Preview */}
+      {imageUrl ? (
+        <div className="mt-3">
+          <Label className="text-xs text-gray-500 mb-2 block">Aperçu actuel :</Label>
+          {!imageError ? (
+            <div className={previewClassName || 'relative w-full h-32 border rounded-lg overflow-hidden bg-gray-50'}>
+              <Image
+                src={imageUrl}
+                alt={label}
+                fill
+                className="object-cover"
+                onError={handleImageError}
+              />
+            </div>
+          ) : (
+            <div className="relative w-full h-32 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+              <div className="text-center text-gray-400">
+                <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+                <p className="text-sm">Impossible de charger l&apos;image</p>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="mt-3">
+          <Label className="text-xs text-gray-500 mb-2 block">Aperçu :</Label>
+          <div className="relative w-full h-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+            <div className="text-center text-gray-400">
+              <ImageIcon className="w-8 h-8 mx-auto mb-2" />
+              <p className="text-sm">Aucune image</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload and Delete Buttons */}
+      <div className="space-y-2">
+        <div className="relative">
+          <input
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={handleFileUpload}
+            className="hidden"
+            id={`upload-${imageType}`}
+            disabled={uploading || deleting}
+          />
+          <Button
+            type="button"
+            onClick={() => document.getElementById(`upload-${imageType}`)?.click()}
+            disabled={uploading || deleting}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Upload en cours...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                {imageUrl ? 'Changer l\'image' : 'Uploader une image'}
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Delete Button - Only visible if image exists */}
+        {imageUrl && (
+          <Button
+            type="button"
+            onClick={handleDelete}
+            disabled={uploading || deleting}
+            variant="outline"
+            className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+          >
+            {deleting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Suppression en cours...
+              </>
+            ) : (
+              <>
+                <XCircle className="w-4 h-4 mr-2" />
+                Supprimer l&apos;image
+              </>
+            )}
+          </Button>
+        )}
+      </div>
+
+      <p className="text-xs text-gray-500">
+        Formats acceptés: JPG, PNG, WEBP (max 5MB). L&apos;image sera enregistrée automatiquement.
+      </p>
+    </div>
+  );
+}
 
 export default function CreatorSettings() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [creator, setCreator] = useState<any>(null);
   const [stripeOnboarding, setStripeOnboarding] = useState({
     onboarded: false,
     loading: true,
@@ -29,10 +225,26 @@ export default function CreatorSettings() {
     email: '',
     bio: '',
     expertise: '',
+    profileImage: '',
+    bannerImage: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+  const [profileData, setProfileData] = useState({
+    profileImage: '',
+    bannerImage: '',
+    bio: '',
+    socialLinks: {
+      instagram: '',
+      tiktok: '',
+      twitter: '',
+      youtube: '',
+      other: '',
+    },
+  });
+  const [timezone, setTimezone] = useState('Europe/Paris');
+  const [detectedTimezone, setDetectedTimezone] = useState('');
   const [notifications, setNotifications] = useState({
     email: true,
     newBooking: true,
@@ -40,8 +252,14 @@ export default function CreatorSettings() {
     callReminder: true,
   });
 
+  const timezones = getCommonTimezones();
+
   useEffect(() => {
     fetchData();
+    
+    // Auto-detect timezone
+    const detected = detectUserTimezone();
+    setDetectedTimezone(detected);
     
     // ✅ FIX: Check if returning from Stripe onboarding
     const params = new URLSearchParams(window.location.search);
@@ -60,6 +278,7 @@ export default function CreatorSettings() {
         window.history.replaceState({}, '', window.location.pathname);
       }, 2000);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
@@ -76,16 +295,33 @@ export default function CreatorSettings() {
         return;
       }
       
-      setUser(userData?.user);
-      setCreator(userData?.user?.creator);
+      // ✅ FIX: Always sync formData with database values
       setFormData({
         name: userData?.user?.name || '',
         email: userData?.user?.email || '',
         bio: userData?.user?.creator?.bio || '',
         expertise: userData?.user?.creator?.expertise || '',
+        profileImage: userData?.user?.creator?.profileImage || '',
+        bannerImage: userData?.user?.creator?.bannerImage || '',
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
+      });
+      setTimezone(userData?.user?.creator?.timezone || userData?.user?.timezone || 'Europe/Paris');
+      
+      // Load profile data
+      const socialLinks = userData?.user?.creator?.socialLinks || {};
+      setProfileData({
+        profileImage: userData?.user?.creator?.profileImage || '',
+        bannerImage: userData?.user?.creator?.bannerImage || '',
+        bio: userData?.user?.creator?.bio || '',
+        socialLinks: {
+          instagram: socialLinks.instagram || '',
+          tiktok: socialLinks.tiktok || '',
+          twitter: socialLinks.twitter || '',
+          youtube: socialLinks.youtube || '',
+          other: socialLinks.other || '',
+        },
       });
 
       // Check Stripe Connect onboarding status
@@ -109,13 +345,14 @@ export default function CreatorSettings() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      // Update user info
+      // Update user info (including timezone)
       const userResponse = await fetch('/api/auth/update-profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
+          timezone: timezone,
         }),
       });
 
@@ -126,6 +363,9 @@ export default function CreatorSettings() {
         body: JSON.stringify({
           bio: formData.bio,
           expertise: formData.expertise,
+          timezone: timezone,
+          profileImage: formData.profileImage,
+          bannerImage: formData.bannerImage,
         }),
       });
 
@@ -141,6 +381,54 @@ export default function CreatorSettings() {
       setSaving(false);
     }
   };
+  
+  const handleAutoDetect = () => {
+    const detected = detectUserTimezone();
+    setTimezone(detected);
+    toast.success(`Fuseau horaire détecté : ${detected}`);
+  };
+
+  const cleanSocialLinks = (links: Record<string, string>) => {
+    const cleaned: Record<string, string | null> = {};
+
+    for (const [key, value] of Object.entries(links)) {
+      if (value && value.trim() !== '') {
+        cleaned[key] = value.trim();
+      }
+    }
+
+    return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+  };
+
+  
+  // ✅ REFACTORED: Only saves bio and social links (images are saved automatically on upload)
+  const handleSavePublicProfile = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/creators/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          // ❌ NO MORE: profileImage and bannerImage (handled by upload API)
+          bio: profileData.bio,
+          socialLinks: cleanSocialLinks(profileData.socialLinks),
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Profil mis à jour avec succès !');
+        await fetchData();
+      } else {
+        const err = await response.json();
+        toast.error(err?.error ?? 'Erreur lors de la mise à jour');
+      }
+    } catch (error) {
+      toast.error('Une erreur est survenue');
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const handleChangePassword = async () => {
     if (formData.newPassword !== formData.confirmPassword) {
@@ -178,6 +466,31 @@ export default function CreatorSettings() {
     }
   };
 
+  const handleDeleteImage = async (imageType: 'profile' | 'banner') => {
+    // Confirmation before deletion
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer cette image ?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/upload/image?imageType=${imageType}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Image supprimée avec succès !');
+        // Refresh data to update UI
+        await fetchData();
+      } else {
+        const error = await response.json();
+        toast.error(error?.error ?? 'Erreur lors de la suppression');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Une erreur est survenue lors de la suppression');
+    }
+  };
+
   const handleStartStripeOnboarding = async () => {
     const toastId = toast('Redirection vers Stripe...', { duration: Infinity });
     
@@ -196,7 +509,7 @@ export default function CreatorSettings() {
         toast.dismiss(toastId);
         toast.error(error?.error ?? 'Erreur lors de la création du lien d\'onboarding');
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.dismiss(toastId);
       toast.error('Une erreur est survenue');
       console.error('Stripe onboarding error:', error);
@@ -228,8 +541,9 @@ export default function CreatorSettings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile">Profil</TabsTrigger>
+            <TabsTrigger value="public">Profil Public</TabsTrigger>
             <TabsTrigger value="payments">Paiements</TabsTrigger>
             <TabsTrigger value="security">Sécurité</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -244,7 +558,7 @@ export default function CreatorSettings() {
                   Ces informations seront visibles sur votre profil public
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nom complet</Label>
                   <Input
@@ -276,7 +590,7 @@ export default function CreatorSettings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expertise">Domaine d'expertise</Label>
+                  <Label htmlFor="expertise">Domaine d&apos;expertise</Label>
                   <Input
                     id="expertise"
                     value={formData.expertise}
@@ -284,10 +598,229 @@ export default function CreatorSettings() {
                     placeholder="ex: Musique, Comédie, Sport..."
                   />
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="flex justify-end">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Fuseau horaire
+                </CardTitle>
+                <CardDescription>
+                  Configurez votre fuseau horaire pour afficher correctement les horaires des appels
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                  <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900 mb-1">
+                      Fuseau horaire détecté automatiquement
+                    </p>
+                    <p className="text-blue-700">
+                      {detectedTimezone} ({getTimezoneAbbreviation(detectedTimezone)})
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="timezone">Fuseau horaire actuel</Label>
+                  <div className="flex gap-2">
+                    <Select value={timezone} onValueChange={setTimezone}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Sélectionner un fuseau horaire" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {timezones.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={handleAutoDetect} 
+                      variant="outline"
+                      type="button"
+                    >
+                      Auto-détecter
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Tous les horaires seront affichés dans ce fuseau horaire
+                  </p>
+                </div>
+
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <p className="text-sm text-purple-900">
+                    <strong>Aperçu :</strong> Il est actuellement{' '}
+                    {new Date().toLocaleTimeString('fr-FR', {
+                      timeZone: timezone,
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}{' '}
+                    ({getTimezoneAbbreviation(timezone)}) dans votre fuseau horaire
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="bg-gradient-to-r from-purple-600 to-pink-600"
+              >
+                {saving ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement...</>
+                ) : (
+                  <><Save className="w-4 h-4 mr-2" />Enregistrer</>
+                )}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Public Profile Tab */}
+          <TabsContent value="public" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Images du profil</CardTitle>
+                <CardDescription>
+                  Gérez votre photo de profil et votre bannière
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* ✅ Profile Image Upload - Simplified */}
+                <ImageUpload
+                  label="Photo de profil"
+                  description="Votre photo sera affichée de manière circulaire"
+                  imageUrl={profileData.profileImage}
+                  onUploadSuccess={fetchData}
+                  onDelete={() => handleDeleteImage('profile')}
+                  imageType="profile"
+                  previewClassName="relative w-32 h-32 border rounded-full overflow-hidden bg-gray-50 mx-auto"
+                />
+
+                {/* ✅ Banner Image Upload - Simplified */}
+                <ImageUpload
+                  label="Image de bannière"
+                  description="Image de couverture de votre profil (format paysage recommandé: 1200x300px)"
+                  imageUrl={profileData.bannerImage}
+                  onUploadSuccess={fetchData}
+                  onDelete={() => handleDeleteImage('banner')}
+                  imageType="banner"
+                  previewClassName="relative w-full h-40 border rounded-lg overflow-hidden bg-gray-50"
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Bio et description</CardTitle>
+                <CardDescription>
+                  Personnalisez votre profil visible par vos fans
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="publicBio">Bio enrichie</Label>
+                  <Textarea
+                    id="publicBio"
+                    rows={6}
+                    value={profileData.bio}
+                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                    placeholder="Parlez de vous, de votre parcours, de ce que vous proposez..."
+                  />
+                  <p className="text-xs text-gray-500">
+                    Cette bio sera affichée sur votre profil public. Utilisez des sauts de ligne pour structurer votre texte.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Réseaux Sociaux</CardTitle>
+                <CardDescription>
+                  Ajoutez vos liens de réseaux sociaux pour que vos fans puissent vous suivre
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <Input
+                    id="instagram"
+                    type="url"
+                    value={profileData.socialLinks.instagram}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, instagram: e.target.value }
+                    })}
+                    placeholder="https://instagram.com/votre-compte"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tiktok">TikTok</Label>
+                  <Input
+                    id="tiktok"
+                    type="url"
+                    value={profileData.socialLinks.tiktok}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, tiktok: e.target.value }
+                    })}
+                    placeholder="https://tiktok.com/@votre-compte"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="twitter">Twitter / X</Label>
+                  <Input
+                    id="twitter"
+                    type="url"
+                    value={profileData.socialLinks.twitter}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, twitter: e.target.value }
+                    })}
+                    placeholder="https://twitter.com/votre-compte"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="youtube">YouTube</Label>
+                  <Input
+                    id="youtube"
+                    type="url"
+                    value={profileData.socialLinks.youtube}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, youtube: e.target.value }
+                    })}
+                    placeholder="https://youtube.com/@votre-chaine"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="other">Site web / Autre lien</Label>
+                  <Input
+                    id="other"
+                    type="url"
+                    value={profileData.socialLinks.other}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, other: e.target.value }
+                    })}
+                    placeholder="https://votre-site.com"
+                  />
+                </div>
+
+                {/* ✅ Save Button for Bio and Social Links ONLY */}
+                <div className="flex justify-end pt-4">
                   <Button
-                    onClick={handleSaveProfile}
+                    onClick={handleSavePublicProfile}
                     disabled={saving}
                     className="bg-gradient-to-r from-purple-600 to-pink-600"
                   >
@@ -390,13 +923,13 @@ export default function CreatorSettings() {
                 <div className="border rounded-lg p-4">
                   <h4 className="font-semibold mb-2">Comment ajouter mon compte bancaire ?</h4>
                   <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-                    <li>Cliquez sur le bouton <strong>"Ouvrir Stripe Connect"</strong> ci-dessus</li>
+                    <li>Cliquez sur le bouton <strong>&quot;Ouvrir Stripe Connect&quot;</strong> ci-dessus</li>
                     <li>Connectez-vous à votre espace Stripe Connect</li>
                     <li>Ajoutez votre IBAN et les informations de votre banque dans la section dédiée</li>
                     <li>Vos virements seront automatiquement envoyés selon votre configuration</li>
                   </ol>
                   <p className="text-sm text-gray-500 mt-3">
-                    ℹ️ Important : N'utilisez jamais le Dashboard Stripe classique, utilisez toujours le lien Stripe Connect fourni ci-dessus.
+                    ℹ️ Important : N&apos;utilisez jamais le Dashboard Stripe classique, utilisez toujours le lien Stripe Connect fourni ci-dessus.
                   </p>
                 </div>
 
@@ -406,7 +939,7 @@ export default function CreatorSettings() {
                   <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
                     <li><strong>Période de sécurité:</strong> Les paiements sont retenus pendant 7 jours pour protéger contre les litiges</li>
                     <li><strong>Commission:</strong> La plateforme prélève une commission de 10% sur chaque réservation</li>
-                    <li><strong>Demande de paiement:</strong> Après 7 jours, vous pouvez demander le transfert dans l'onglet "Revenus" de votre dashboard</li>
+                    <li><strong>Demande de paiement:</strong> Après 7 jours, vous pouvez demander le transfert dans l&apos;onglet &quot;Revenus&quot; de votre dashboard</li>
                     <li><strong>Réception:</strong> Les fonds sont transférés sur votre compte Stripe, puis vers votre banque selon votre configuration</li>
                   </ul>
                 </div>
@@ -420,7 +953,7 @@ export default function CreatorSettings() {
               <CardHeader>
                 <CardTitle>Changer le mot de passe</CardTitle>
                 <CardDescription>
-                  Assurez-vous d'utiliser un mot de passe fort et unique
+                  Assurez-vous d&apos;utiliser un mot de passe fort et unique
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -498,7 +1031,7 @@ export default function CreatorSettings() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Nouvelle réservation</Label>
-                    <p className="text-sm text-gray-500">Notification lorsqu'un fan réserve un appel</p>
+                    <p className="text-sm text-gray-500">Notification lorsqu&apos;un fan réserve un appel</p>
                   </div>
                   <Switch
                     checked={notifications.newBooking}
@@ -519,7 +1052,7 @@ export default function CreatorSettings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Rappels d'appel</Label>
+                    <Label>Rappels d&apos;appel</Label>
                     <p className="text-sm text-gray-500">Recevoir un rappel avant vos appels programmés</p>
                   </div>
                   <Switch

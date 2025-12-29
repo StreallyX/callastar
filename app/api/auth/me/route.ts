@@ -23,11 +23,15 @@ export async function GET(request: NextRequest) {
         name: true,
         role: true,
         createdAt: true,
+        timezone: true,
         creator: {
           select: {
             id: true,
             bio: true,
             profileImage: true,
+            bannerImage: true,
+            socialLinks: true,
+            timezone: true,
             isStripeOnboarded: true,
           },
         },

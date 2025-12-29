@@ -1,53 +1,96 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { z } from 'zod';
 
-const updateProfileSchema = z.object({
+/**
+ * Helpers
+ */
+const nullableUrl = z
+  .string()
+  .optional()
+  .transform((v) => {
+    if (!v || v.trim() === '') return null;
+    return v.trim();
+  })
+  .nullable()
+  .refine(
+    (v) => v === null || /^https?:\/\//.test(v),
+    { message: 'URL invalide' }
+  );
+
+
+/**
+ * Validation schema
+ * ✅ REFACTORED: Removed profileImage and bannerImage (handled by /api/upload/image)
+ */
+const updateCreatorProfileSchema = z.object({
   bio: z.string().optional(),
   expertise: z.string().optional(),
-  profileImage: z.string().url().optional(),
+  timezone: z.string().optional(),
+
+  // ❌ REMOVED: profileImage and bannerImage
+  // Images are now managed exclusively by /api/upload/image
+
+  socialLinks: z
+    .object({
+      instagram: nullableUrl,
+      tiktok: nullableUrl,
+      twitter: nullableUrl,
+      youtube: nullableUrl,
+      other: nullableUrl,
+    })
+    .optional(),
 });
 
+/**
+ * PUT — Update creator profile
+ */
 export async function PUT(request: NextRequest) {
   try {
-    // Check authentication
-    const user = await getUserFromRequest(request);
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Non authentifié' },
-        { status: 401 }
-      );
+    const jwtUser = await getUserFromRequest(request);
+    if (!jwtUser) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    if (user.role !== 'CREATOR') {
+    const user = await db.user.findUnique({
+      where: { id: jwtUser.userId },
+      include: { creator: true },
+    });
+
+    if (!user || user.role !== 'CREATOR' || !user.creator) {
       return NextResponse.json(
-        { error: 'Accès refusé. Seuls les créateurs peuvent modifier leur profil.' },
+        { error: 'Accès réservé aux créateurs' },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-    const validatedData = updateProfileSchema.parse(body);
+    console.log('[PUT /creators/profile] body:', body);
 
-    // Get creator
-    const creator = await db.creator.findUnique({
-      where: { userId: user.userId },
-    });
+    const validatedData = updateCreatorProfileSchema.parse(body);
 
-    if (!creator) {
-      return NextResponse.json(
-        { error: 'Profil créateur introuvable' },
-        { status: 404 }
-      );
+    /**
+     * Build update payload safely
+     */
+    const updateData: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(validatedData)) {
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
     }
 
-    // Update creator profile
     const updatedCreator = await db.creator.update({
-      where: { id: creator.id },
-      data: validatedData,
-      include: {
+      where: { id: user.creator.id },
+      data: updateData,
+      select: {
+        id: true,
+        bio: true,
+        timezone: true,
+        profileImage: true,
+        bannerImage: true,
+        socialLinks: true,
         user: {
           select: {
             id: true,
@@ -58,22 +101,62 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(
-      { creator: updatedCreator },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Update profile error:', error);
-
+    return NextResponse.json({ creator: updatedCreator });
+  } catch (error: any) {
     if (error instanceof z.ZodError) {
+      console.error('[ZOD ERROR]', error.issues);
       return NextResponse.json(
-        { error: 'Données invalides', details: error.issues },
+        { error: error.issues },
         { status: 400 }
       );
     }
 
+    console.error('Error updating creator profile:', error);
     return NextResponse.json(
-      { error: 'Une erreur est survenue' },
+      { error: 'Erreur lors de la mise à jour du profil' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET — Fetch creator profile
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const jwtUser = await getUserFromRequest(request);
+    if (!jwtUser) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: jwtUser.userId },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            bio: true,
+            timezone: true,
+            profileImage: true,
+            bannerImage: true,
+            socialLinks: true,
+          },
+        },
+      },
+    });
+
+    if (!user || user.role !== 'CREATOR' || !(user as any).creator) {
+      return NextResponse.json(
+        { error: 'Accès réservé aux créateurs' },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json({ creator: (user as any).creator });
+  } catch (error: any) {
+    console.error('Error fetching creator profile:', error);
+    return NextResponse.json(
+      { error: 'Erreur lors de la récupération du profil' },
       { status: 500 }
     );
   }

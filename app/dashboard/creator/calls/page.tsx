@@ -10,6 +10,7 @@ import { Calendar, Clock, Loader2, ArrowLeft, Video, User, DollarSign } from 'lu
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { DateTimeDisplay, LiveCountdown } from '@/components/ui/datetime-display';
 
 export default function CallsPage() {
   const router = useRouter();
@@ -249,25 +250,39 @@ export default function CallsPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-6 text-sm text-gray-600 ml-16">
+                        <div className="space-y-2 text-sm text-gray-600 ml-16">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
-                            <span>{callDate.toLocaleDateString('fr-FR')}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
-                            <span>{callDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="w-4 h-4" />
-                            <CurrencyDisplay 
-                              amount={Number(booking?.callOffer?.price ?? 0)} 
-                              currency={booking?.callOffer?.currency || creatorCurrency} 
+                            <DateTimeDisplay 
+                              date={booking?.callOffer?.dateTime}
+                              timezone={user?.creator?.timezone || user?.timezone}
+                              format="full"
                             />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
-                            <span>{booking?.callOffer?.duration} min</span>
+                          
+                          {/* Show countdown only for upcoming calls */}
+                          {statusInfo.label === 'Confirmé' && (
+                            <div className="flex items-center gap-2 font-medium text-purple-600">
+                              <Clock className="w-4 h-4" />
+                              <LiveCountdown 
+                                date={booking?.callOffer?.dateTime}
+                                timezone={user?.creator?.timezone || user?.timezone}
+                              />
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="w-4 h-4" />
+                              <CurrencyDisplay 
+                                amount={Number(booking?.callOffer?.price ?? 0)} 
+                                currency={booking?.callOffer?.currency || creatorCurrency} 
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4" />
+                              <span>{booking?.callOffer?.duration} min</span>
+                            </div>
                           </div>
                         </div>
                       </div>
