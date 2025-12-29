@@ -1,3 +1,29 @@
-# Allow all web crawlers to access all content
+# Robots.txt for Call a Star Platform
+# Multilingual support: French (default) and English
+
 User-agent: *
 Allow: /
+Allow: /fr/
+Allow: /en/
+
+# Disallow admin and API routes from crawling
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /_next/
+
+# Allow public pages
+Allow: /creators
+Allow: /fr/creators
+Allow: /en/creators
+Allow: /legal
+Allow: /fr/legal
+Allow: /en/legal
+
+# Sitemap references for multilingual SEO
+# TODO: Generate and uncomment when sitemaps are ready
+# Sitemap: https://callastar.com/sitemap.xml
+# Sitemap: https://callastar.com/sitemap-fr.xml
+# Sitemap: https://callastar.com/sitemap-en.xml
+
+# Crawl-delay (optional, adjust based on server capacity)
+# Crawl-delay: 1

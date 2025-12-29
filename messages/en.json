@@ -1,0 +1,242 @@
+{
+  "common": {
+    "appName": "Call a Star",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "none": "None"
+  },
+  "navbar": {
+    "creators": "Creators",
+    "login": "Log in",
+    "register": "Sign up",
+    "dashboard": "Dashboard",
+    "payments": "Payments",
+    "settings": "Settings",
+    "testsTools": "Tests & Tools",
+    "logout": "Log out"
+  },
+  "homepage": {
+    "meta": {
+      "title": "Call a Star - Connect with your favorite creators",
+      "description": "SaaS platform enabling influencers to monetize their audience by offering paid video calls to their fans"
+    },
+    "hero": {
+      "title": "Connect with your stars",
+      "description": "Book private video calls with your favorite influencers and creators. A unique and personalized experience.",
+      "becomeCreator": "Become a creator",
+      "exploreCreators": "Explore creators"
+    },
+    "features": {
+      "videoCall": {
+        "title": "HD Video Calls",
+        "description": "Enjoy high-quality, secure, and private video calls."
+      },
+      "easyBooking": {
+        "title": "Easy Booking",
+        "description": "Choose your creator, select a time slot, and book in just a few clicks."
+      },
+      "uniqueExperience": {
+        "title": "Unique Experience",
+        "description": "Experience a special and personalized moment with your favorite star."
+      }
+    },
+    "popularCreators": {
+      "title": "Popular Creators",
+      "description": "Discover our most sought-after creators",
+      "seeAll": "See all creators"
+    },
+    "footer": {
+      "copyright": "© 2024 Call a Star. All rights reserved."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Log In",
+      "description": "Log in to access your account",
+      "email": "Email",
+      "emailPlaceholder": "your@email.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "loginButton": "Log in",
+      "loggingIn": "Logging in...",
+      "orContinueWith": "Or continue with",
+      "googleLogin": "Sign in with Google",
+      "testAccounts": "Test Accounts",
+      "admin": "Admin",
+      "creator": "Creator",
+      "user": "User",
+      "noAccount": "Don't have an account yet?",
+      "registerLink": "Sign up",
+      "backToHome": "Back to home",
+      "successMessage": "Login successful! Welcome",
+      "errorMessage": "Login error",
+      "genericError": "An error occurred during login",
+      "googleError": "Error signing in with Google"
+    },
+    "register": {
+      "title": "Sign Up",
+      "description": "Create your account to get started",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Doe",
+      "email": "Email",
+      "emailPlaceholder": "your@email.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "accountType": "Account Type",
+      "accountTypePlaceholder": "Select a type",
+      "userRole": "User (Fan)",
+      "creatorRole": "Creator (Influencer)",
+      "registerButton": "Sign up",
+      "registering": "Signing up...",
+      "orContinueWith": "Or continue with",
+      "googleRegister": "Sign up with Google",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Log in",
+      "backToHome": "Back to home",
+      "successTitle": "Registration successful!",
+      "successDescription": "Your account has been created successfully",
+      "errorTitle": "Registration error",
+      "errorDescription": "An error occurred",
+      "genericError": "An error occurred during registration",
+      "googleError": "Error signing in with Google"
+    }
+  },
+  "creators": {
+    "list": {
+      "title": "Our Creators",
+      "description": "Discover all our creators and book a private video call with your favorite star",
+      "noCreators": "No creators available at the moment"
+    },
+    "profile": {
+      "notFound": "Creator not found",
+      "backToCreators": "Back to creators",
+      "about": "About",
+      "socialLinks": "Social Networks",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "twitter": "Twitter",
+      "youtube": "YouTube",
+      "other": "Other",
+      "availableOffers": "Available Slots",
+      "noOffers": "No slots available at the moment",
+      "duration": "Duration",
+      "minutes": "minutes",
+      "bookNow": "Book now",
+      "reviews": "Reviews",
+      "noReviews": "No reviews yet",
+      "stars": "stars"
+    }
+  },
+  "booking": {
+    "title": "Booking",
+    "description": "Complete your booking",
+    "callDetails": "Call Details",
+    "creator": "Creator",
+    "date": "Date",
+    "time": "Time",
+    "duration": "Duration",
+    "minutes": "minutes",
+    "price": "Price",
+    "paymentError": "Payment Error",
+    "paymentSuccess": "Payment successful!",
+    "bookingConfirmed": "Your booking is confirmed",
+    "processing": "Processing...",
+    "payAndBook": "Pay and book",
+    "genericError": "An error occurred during payment",
+    "backToDashboard": "Back to dashboard",
+    "offerNotFound": "Offer not found",
+    "alreadyBooked": "Already Booked",
+    "bookingExists": "You already have a booking for this slot"
+  },
+  "call": {
+    "room": {
+      "title": "Video Call",
+      "loading": "Loading call...",
+      "preCall": "Waiting for call to start",
+      "inCall": "Call in progress",
+      "ended": "Call ended",
+      "error": "Error",
+      "starting": "Starting...",
+      "timeUntil": "Time until call",
+      "timeRemaining": "Time remaining",
+      "elapsed": "Time elapsed",
+      "camera": "Camera",
+      "microphone": "Microphone",
+      "endCall": "End call",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit fullscreen",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "reconnecting": "Reconnecting...",
+      "testingMedia": "Testing media...",
+      "waitingForParticipants": "Waiting for participants...",
+      "callStarted": "The call has started",
+      "callEnded": "The call has ended",
+      "viewSummary": "View summary",
+      "backToDashboard": "Back to dashboard",
+      "errorMessage": "An error occurred during the call",
+      "bookingNotFound": "Booking not found",
+      "unauthorized": "Unauthorized"
+    },
+    "summary": {
+      "title": "Call Summary",
+      "loading": "Loading summary...",
+      "error": "Error",
+      "notFound": "Summary not found",
+      "status": "Status",
+      "completedNormally": "✓ Completed normally",
+      "completedMultiple": "✓ Completed (multiple sessions)",
+      "interrupted": "⚠ Interrupted",
+      "inProgress": "⏳ In progress",
+      "noShow": "✗ No-show",
+      "unknown": "? Unknown",
+      "totalDuration": "Total Cumulative Duration",
+      "efficiency": "Efficiency",
+      "ofScheduled": "of scheduled duration",
+      "participants": "Participants",
+      "creator": "Creator",
+      "fan": "Fan",
+      "temporalDetails": "Temporal Details",
+      "scheduledDate": "Scheduled Date",
+      "actualStart": "Actual Start",
+      "actualEnd": "Actual End",
+      "sessions": "Call Sessions",
+      "sessionsDescription": "This call was interrupted and resumed multiple times. Here are the session details.",
+      "session": "Session",
+      "totalInfo": "The total duration displayed is the sum of all sessions.",
+      "timeline": "Call Timeline",
+      "timelineDescription": "All events recorded during the call",
+      "viewHistory": "View history",
+      "backToDashboard": "Back to dashboard",
+      "summaryInfo": "This summary is dynamically calculated from the call logs and reflects the actual cumulative duration of all sessions.",
+      "onSessions": "Over {count} session(s)"
+    }
+  },
+  "legal": {
+    "terms": {
+      "title": "Terms of Service and Sale (ToS)",
+      "lastUpdated": "Last updated"
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "lastUpdated": "Last updated"
+    },
+    "notice": {
+      "title": "Legal Notice",
+      "lastUpdated": "Last updated"
+    }
+  }
+}

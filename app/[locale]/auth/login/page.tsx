@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter } from '@/navigation';
+import { Link } from '@/navigation';
 import { Star, Mail, Lock, Loader2, User, Shield, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,16 +11,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import toast from 'react-hot-toast';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 const TEST_ACCOUNTS = [
-  { email: 'john@doe.com', password: 'johndoe123', label: 'Admin', icon: Shield },
-  { email: 'emma.creator@example.com', password: 'password123', label: 'Créateur (Emma)', icon: Video },
-  { email: 'lucas.creator@example.com', password: 'password123', label: 'Créateur (Lucas)', icon: Video },
-  { email: 'user@example.com', password: 'password123', label: 'Utilisateur', icon: User },
+  { email: 'john@doe.com', password: 'johndoe123', labelKey: 'admin', icon: Shield },
+  { email: 'emma.creator@example.com', password: 'password123', labelKey: 'creator', icon: Video, extraLabel: ' (Emma)' },
+  { email: 'lucas.creator@example.com', password: 'password123', labelKey: 'creator', icon: Video, extraLabel: ' (Lucas)' },
+  { email: 'user@example.com', password: 'password123', labelKey: 'user', icon: User },
 ];
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations('auth.login');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,7 +43,7 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(`Connexion réussie ! Bienvenue ${data?.user?.name ?? ''}`);
+        toast.success(`${t('successMessage')} ${data?.user?.name ?? ''}`);
 
         // Use window.location.href to force a full page reload
         // This ensures the cookie is properly set and recognized by middleware
@@ -53,10 +55,10 @@ export default function LoginPage() {
           window.location.href = '/dashboard/user';
         }
       } else {
-        toast.error(data?.error ?? 'Erreur de connexion');
+        toast.error(data?.error ?? t('errorMessage'));
       }
     } catch (error) {
-      toast.error('Une erreur est survenue lors de la connexion');
+      toast.error(t('genericError'));
     } finally {
       setLoading(false);
     }
@@ -79,7 +81,7 @@ export default function LoginPage() {
         redirect: true,
       });
     } catch (error) {
-      toast.error('Erreur lors de la connexion avec Google');
+      toast.error(t('googleError'));
       setGoogleLoading(false);
     }
   };
@@ -91,22 +93,22 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 mb-4 mx-auto">
             <Star className="w-8 h-8 text-white fill-white" />
           </div>
-          <CardTitle className="text-2xl">Connexion</CardTitle>
+          <CardTitle className="text-2xl">{t('title')}</CardTitle>
           <CardDescription>
-            Connectez-vous pour accéder à votre compte
+            {t('description')}
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="votre@email.com"
+                  placeholder={t('emailPlaceholder')}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="pl-10"
@@ -116,13 +118,13 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={t('passwordPlaceholder')}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="pl-10"
@@ -141,10 +143,10 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Connexion...
+                  {t('loggingIn')}
                 </>
               ) : (
-                'Se connecter'
+                t('loginButton')
               )}
             </Button>
 
@@ -155,7 +157,7 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-white px-2 text-gray-500">
-                  Ou continuer avec
+                  {t('orContinueWith')}
                 </span>
               </div>
             </div>
@@ -171,7 +173,7 @@ export default function LoginPage() {
               {googleLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Connexion...
+                  {t('loggingIn')}
                 </>
               ) : (
                 <>
@@ -193,7 +195,7 @@ export default function LoginPage() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Se connecter avec Google
+                  {t('googleLogin')}
                 </>
               )}
             </Button>
@@ -206,7 +208,7 @@ export default function LoginPage() {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-white px-2 text-gray-500">
-                    Comptes de test
+                    {t('testAccounts')}
                   </span>
                 </div>
               </div>
@@ -225,7 +227,7 @@ export default function LoginPage() {
                       className="text-xs flex items-center gap-1"
                     >
                       <Icon className="w-3 h-3" />
-                      {account.label}
+                      {t(account.labelKey)}{account.extraLabel || ''}
                     </Button>
                   );
                 })}
@@ -233,14 +235,14 @@ export default function LoginPage() {
             </div>
 
             <p className="text-center text-sm text-gray-600">
-              Pas encore de compte ?{' '}
+              {t('noAccount')}{' '}
               <Link href="/auth/register" className="text-purple-600 hover:underline font-medium">
-                S'inscrire
+                {t('registerLink')}
               </Link>
             </p>
 
             <Link href="/" className="text-center text-sm text-gray-600 hover:text-gray-900">
-              Retour à l'accueil
+              {t('backToHome')}
             </Link>
           </CardFooter>
         </form>

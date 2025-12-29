@@ -1,8 +1,10 @@
-import Link from 'next/link';
 import { Star, Video, Calendar, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/navbar';
 import { CreatorCard } from '@/components/creator-card';
+import { Link } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 async function getCreators() {
   try {
@@ -21,9 +23,20 @@ async function getCreators() {
   }
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'homepage.meta' });
+  
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
+
 export default async function HomePage() {
   const data = await getCreators();
   const creators = data?.creators ?? [];
+  const t = await getTranslations('homepage');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -37,24 +50,23 @@ export default async function HomePage() {
           </div>
           
           <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Connectez-vous avec vos stars
+            {t('hero.title')}
           </h1>
           
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Réservez des appels vidéo privés avec vos influenceurs et créateurs préférés.
-            Une expérience unique et personnalisée.
+            {t('hero.description')}
           </p>
 
           <div className="flex items-center justify-center gap-4 pt-4">
             <Link href="/auth/register">
               <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                 <Sparkles className="w-5 h-5 mr-2" />
-                Devenir créateur
+                {t('hero.becomeCreator')}
               </Button>
             </Link>
             <Link href="/creators">
               <Button size="lg" variant="outline">
-                Explorer les créateurs
+                {t('hero.exploreCreators')}
               </Button>
             </Link>
           </div>
@@ -68,9 +80,9 @@ export default async function HomePage() {
             <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
               <Video className="w-6 h-6 text-purple-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Appels vidéo HD</h3>
+            <h3 className="text-xl font-semibold mb-2">{t('features.videoCall.title')}</h3>
             <p className="text-gray-600">
-              Profitez d'appels vidéo de haute qualité sécurisés et privés.
+              {t('features.videoCall.description')}
             </p>
           </div>
 
@@ -78,9 +90,9 @@ export default async function HomePage() {
             <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center mb-4">
               <Calendar className="w-6 h-6 text-pink-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Réservation facile</h3>
+            <h3 className="text-xl font-semibold mb-2">{t('features.easyBooking.title')}</h3>
             <p className="text-gray-600">
-              Choisissez votre créateur, sélectionnez un créneau et réservez en quelques clics.
+              {t('features.easyBooking.description')}
             </p>
           </div>
 
@@ -88,9 +100,9 @@ export default async function HomePage() {
             <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
               <Sparkles className="w-6 h-6 text-purple-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Expérience unique</h3>
+            <h3 className="text-xl font-semibold mb-2">{t('features.uniqueExperience.title')}</h3>
             <p className="text-gray-600">
-              Vivez un moment priviligié et personnalisé avec votre star préférée.
+              {t('features.uniqueExperience.description')}
             </p>
           </div>
         </div>
@@ -100,8 +112,8 @@ export default async function HomePage() {
       {creators?.length > 0 && (
         <section className="container mx-auto max-w-7xl px-4 py-16">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Créateurs populaires</h2>
-            <p className="text-gray-600">Découvrez nos créateurs les plus demandés</p>
+            <h2 className="text-3xl font-bold mb-4">{t('popularCreators.title')}</h2>
+            <p className="text-gray-600">{t('popularCreators.description')}</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -113,7 +125,7 @@ export default async function HomePage() {
           <div className="text-center mt-12">
             <Link href="/creators">
               <Button size="lg" variant="outline">
-                Voir tous les créateurs
+                {t('popularCreators.seeAll')}
               </Button>
             </Link>
           </div>
@@ -125,7 +137,7 @@ export default async function HomePage() {
         <div className="container mx-auto max-w-7xl px-4 py-8">
           <div className="flex items-center justify-center gap-2 text-gray-600">
             <Star className="w-5 h-5" />
-            <span>© 2024 Call a Star. Tous droits réservés.</span>
+            <span>{t('footer.copyright')}</span>
           </div>
         </div>
       </footer>

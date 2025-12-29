@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-import { Star, LogOut, User, LayoutDashboard, Settings, TestTube2, Wallet } from 'lucide-react';
+import { Link, useRouter, usePathname } from '@/navigation';
+import { Star, LogOut, User, LayoutDashboard, Settings, TestTube2, Wallet, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   DropdownMenu,
@@ -13,6 +12,8 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import NotificationBell from '@/components/NotificationBell';
+import { useLocale, useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
 
 interface UserData {
   id: string;
@@ -23,6 +24,10 @@ interface UserData {
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams();
+  const locale = useLocale();
+  const t = useTranslations('navbar');
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -70,6 +75,12 @@ export function Navbar() {
     return '/dashboard/user/settings';
   };
 
+  const switchLanguage = (newLocale: string) => {
+    // Use Next.js router to navigate to the same path with new locale
+    const currentPath = pathname;
+    router.push(currentPath, { locale: newLocale as any });
+  };
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto max-w-7xl px-4">
@@ -87,8 +98,26 @@ export function Navbar() {
           {/* Navigation */}
           <div className="flex items-center gap-4">
             <Link href="/creators">
-              <Button variant="ghost">Créateurs</Button>
+              <Button variant="ghost">{t('creators')}</Button>
             </Link>
+
+            {/* Language Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Languages className="w-4 h-4" />
+                  {locale.toUpperCase()}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => switchLanguage('fr')}>
+                  🇫🇷 Français
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => switchLanguage('en')}>
+                  🇬🇧 English
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {!loading && (
               <>
@@ -105,28 +134,28 @@ export function Navbar() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => router.push(getDashboardPath())}>
                         <LayoutDashboard className="w-4 h-4 mr-2" />
-                        Dashboard
+                        {t('dashboard')}
                       </DropdownMenuItem>
                       {user?.role === 'CREATOR' && (
                         <DropdownMenuItem onClick={() => router.push('/dashboard/creator/payouts')}>
                           <Wallet className="w-4 h-4 mr-2" />
-                          Paiements
+                          {t('payments')}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem onClick={() => router.push(getSettingsPath())}>
                         <Settings className="w-4 h-4 mr-2" />
-                        Paramètres
+                        {t('settings')}
                       </DropdownMenuItem>
                       {user?.role === 'ADMIN' && (
                         <DropdownMenuItem onClick={() => router.push('/dashboard/admin/testing')}>
                           <TestTube2 className="w-4 h-4 mr-2" />
-                          Tests & Outils
+                          {t('testsTools')}
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="w-4 h-4 mr-2" />
-                        Déconnexion
+                        {t('logout')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -134,11 +163,11 @@ export function Navbar() {
                 ) : (
                   <>
                     <Link href="/auth/login">
-                      <Button variant="ghost">Connexion</Button>
+                      <Button variant="ghost">{t('login')}</Button>
                     </Link>
                     <Link href="/auth/register">
                       <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                        S'inscrire
+                        {t('register')}
                       </Button>
                     </Link>
                   </>

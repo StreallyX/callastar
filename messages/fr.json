@@ -1,0 +1,242 @@
+{
+  "common": {
+    "appName": "Call a Star",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "all": "Tous",
+    "none": "Aucun"
+  },
+  "navbar": {
+    "creators": "Créateurs",
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "dashboard": "Dashboard",
+    "payments": "Paiements",
+    "settings": "Paramètres",
+    "testsTools": "Tests & Outils",
+    "logout": "Déconnexion"
+  },
+  "homepage": {
+    "meta": {
+      "title": "Call a Star - Connectez-vous avec vos créateurs préférés",
+      "description": "Plateforme SaaS permettant aux influenceurs de monétiser leur audience en offrant des appels vidéo payants à leurs fans"
+    },
+    "hero": {
+      "title": "Connectez-vous avec vos stars",
+      "description": "Réservez des appels vidéo privés avec vos influenceurs et créateurs préférés. Une expérience unique et personnalisée.",
+      "becomeCreator": "Devenir créateur",
+      "exploreCreators": "Explorer les créateurs"
+    },
+    "features": {
+      "videoCall": {
+        "title": "Appels vidéo HD",
+        "description": "Profitez d'appels vidéo de haute qualité sécurisés et privés."
+      },
+      "easyBooking": {
+        "title": "Réservation facile",
+        "description": "Choisissez votre créateur, sélectionnez un créneau et réservez en quelques clics."
+      },
+      "uniqueExperience": {
+        "title": "Expérience unique",
+        "description": "Vivez un moment priviligié et personnalisé avec votre star préférée."
+      }
+    },
+    "popularCreators": {
+      "title": "Créateurs populaires",
+      "description": "Découvrez nos créateurs les plus demandés",
+      "seeAll": "Voir tous les créateurs"
+    },
+    "footer": {
+      "copyright": "© 2024 Call a Star. Tous droits réservés."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "description": "Connectez-vous pour accéder à votre compte",
+      "email": "Email",
+      "emailPlaceholder": "votre@email.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "loginButton": "Se connecter",
+      "loggingIn": "Connexion...",
+      "orContinueWith": "Ou continuer avec",
+      "googleLogin": "Se connecter avec Google",
+      "testAccounts": "Comptes de test",
+      "admin": "Admin",
+      "creator": "Créateur",
+      "user": "Utilisateur",
+      "noAccount": "Pas encore de compte ?",
+      "registerLink": "S'inscrire",
+      "backToHome": "Retour à l'accueil",
+      "successMessage": "Connexion réussie ! Bienvenue",
+      "errorMessage": "Erreur de connexion",
+      "genericError": "Une erreur est survenue lors de la connexion",
+      "googleError": "Erreur lors de la connexion avec Google"
+    },
+    "register": {
+      "title": "Inscription",
+      "description": "Créez votre compte pour commencer",
+      "fullName": "Nom complet",
+      "fullNamePlaceholder": "John Doe",
+      "email": "Email",
+      "emailPlaceholder": "votre@email.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "accountType": "Type de compte",
+      "accountTypePlaceholder": "Sélectionnez un type",
+      "userRole": "Utilisateur (Fan)",
+      "creatorRole": "Créateur (Influenceur)",
+      "registerButton": "S'inscrire",
+      "registering": "Inscription...",
+      "orContinueWith": "Ou continuer avec",
+      "googleRegister": "S'inscrire avec Google",
+      "haveAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter",
+      "backToHome": "Retour à l'accueil",
+      "successTitle": "Inscription réussie !",
+      "successDescription": "Votre compte a été créé avec succès",
+      "errorTitle": "Erreur d'inscription",
+      "errorDescription": "Une erreur est survenue",
+      "genericError": "Une erreur est survenue lors de l'inscription",
+      "googleError": "Erreur lors de la connexion avec Google"
+    }
+  },
+  "creators": {
+    "list": {
+      "title": "Nos Créateurs",
+      "description": "Découvrez tous nos créateurs et réservez un appel vidéo privé avec votre star préférée",
+      "noCreators": "Aucun créateur disponible pour le moment"
+    },
+    "profile": {
+      "notFound": "Créateur introuvable",
+      "backToCreators": "Retour aux créateurs",
+      "about": "À propos",
+      "socialLinks": "Réseaux sociaux",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "twitter": "Twitter",
+      "youtube": "YouTube",
+      "other": "Autre",
+      "availableOffers": "Créneaux disponibles",
+      "noOffers": "Aucun créneau disponible pour le moment",
+      "duration": "Durée",
+      "minutes": "minutes",
+      "bookNow": "Réserver maintenant",
+      "reviews": "Avis",
+      "noReviews": "Aucun avis pour le moment",
+      "stars": "étoiles"
+    }
+  },
+  "booking": {
+    "title": "Réservation",
+    "description": "Finalisez votre réservation",
+    "callDetails": "Détails de l'appel",
+    "creator": "Créateur",
+    "date": "Date",
+    "time": "Heure",
+    "duration": "Durée",
+    "minutes": "minutes",
+    "price": "Prix",
+    "paymentError": "Erreur de paiement",
+    "paymentSuccess": "Paiement réussi !",
+    "bookingConfirmed": "Votre réservation est confirmée",
+    "processing": "Traitement...",
+    "payAndBook": "Payer et réserver",
+    "genericError": "Une erreur est survenue lors du paiement",
+    "backToDashboard": "Retour au dashboard",
+    "offerNotFound": "Offre introuvable",
+    "alreadyBooked": "Déjà réservé",
+    "bookingExists": "Vous avez déjà une réservation pour ce créneau"
+  },
+  "call": {
+    "room": {
+      "title": "Appel vidéo",
+      "loading": "Chargement de l'appel...",
+      "preCall": "En attente du début de l'appel",
+      "inCall": "Appel en cours",
+      "ended": "Appel terminé",
+      "error": "Erreur",
+      "starting": "Démarrage...",
+      "timeUntil": "Temps avant l'appel",
+      "timeRemaining": "Temps restant",
+      "elapsed": "Temps écoulé",
+      "camera": "Caméra",
+      "microphone": "Microphone",
+      "endCall": "Terminer l'appel",
+      "fullscreen": "Plein écran",
+      "exitFullscreen": "Quitter le plein écran",
+      "connected": "Connecté",
+      "disconnected": "Déconnecté",
+      "reconnecting": "Reconnexion...",
+      "testingMedia": "Test des médias...",
+      "waitingForParticipants": "En attente des participants...",
+      "callStarted": "L'appel a commencé",
+      "callEnded": "L'appel est terminé",
+      "viewSummary": "Voir le résumé",
+      "backToDashboard": "Retour au dashboard",
+      "errorMessage": "Une erreur est survenue lors de l'appel",
+      "bookingNotFound": "Réservation introuvable",
+      "unauthorized": "Non autorisé"
+    },
+    "summary": {
+      "title": "Résumé de l'appel",
+      "loading": "Chargement du résumé...",
+      "error": "Erreur",
+      "notFound": "Résumé introuvable",
+      "status": "Statut",
+      "completedNormally": "✓ Terminé normalement",
+      "completedMultiple": "✓ Terminé (sessions multiples)",
+      "interrupted": "⚠ Interrompu",
+      "inProgress": "⏳ En cours",
+      "noShow": "✗ Absent",
+      "unknown": "? Inconnu",
+      "totalDuration": "Durée totale cumulée",
+      "efficiency": "Efficacité",
+      "ofScheduled": "de la durée prévue",
+      "participants": "Participants",
+      "creator": "Créateur",
+      "fan": "Fan",
+      "temporalDetails": "Détails temporels",
+      "scheduledDate": "Date prévue",
+      "actualStart": "Début réel",
+      "actualEnd": "Fin réelle",
+      "sessions": "Sessions d'appel",
+      "sessionsDescription": "Cet appel a été interrompu et repris plusieurs fois. Voici le détail des sessions.",
+      "session": "Session",
+      "totalInfo": "La durée totale affichée est la somme de toutes les sessions.",
+      "timeline": "Chronologie de l'appel",
+      "timelineDescription": "Tous les événements enregistrés durant l'appel",
+      "viewHistory": "Voir l'historique",
+      "backToDashboard": "Retour au dashboard",
+      "summaryInfo": "Ce résumé est calculé dynamiquement à partir des logs de l'appel et reflète la durée réelle cumulée de toutes les sessions.",
+      "onSessions": "Sur {count} session(s)"
+    }
+  },
+  "legal": {
+    "terms": {
+      "title": "Conditions Générales d'Utilisation et de Vente (CGU/CGV)",
+      "lastUpdated": "Dernière mise à jour"
+    },
+    "privacy": {
+      "title": "Politique de Confidentialité",
+      "lastUpdated": "Dernière mise à jour"
+    },
+    "notice": {
+      "title": "Mentions Légales",
+      "lastUpdated": "Dernière mise à jour"
+    }
+  }
+}
