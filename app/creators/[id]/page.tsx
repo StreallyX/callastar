@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { Navbar } from '@/components/navbar';
-import { Star, Calendar, Clock, DollarSign, MessageSquare } from 'lucide-react';
+import { Star, Calendar, Clock, DollarSign, MessageSquare, Instagram, Twitter, Youtube, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -113,61 +113,149 @@ export default async function CreatorProfilePage({
   const availableOffers = creator?.callOffers ?? [];
   const { reviews, averageRating, totalReviews } = reviewsData;
 
+  // Parse social links
+  const socialLinks = creator?.socialLinks as any;
+  const hasSocialLinks = socialLinks && (
+    socialLinks.instagram || 
+    socialLinks.tiktok || 
+    socialLinks.twitter || 
+    socialLinks.youtube || 
+    socialLinks.other
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
       <Navbar />
 
       <div className="container mx-auto max-w-7xl px-4 py-12">
-        {/* Creator Header */}
-        <div className="bg-white rounded-xl shadow-sm border p-8 mb-8">
-          <div className="flex flex-col md:flex-row gap-8 items-start">
-            <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-purple-200 to-pink-200 flex-shrink-0">
-              {creator?.profileImage ? (
-                <Image
-                  src={creator.profileImage}
-                  alt={creator?.user?.name ?? 'Creator'}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Star className="w-16 h-16 text-purple-600" />
-                </div>
-              )}
+        {/* Creator Header with Banner */}
+        <div className="bg-white rounded-xl shadow-sm border overflow-hidden mb-8">
+          {/* Banner Image */}
+          {creator?.bannerImage && (
+            <div className="relative w-full h-64 bg-gradient-to-r from-purple-200 to-pink-200">
+              <Image
+                src={creator.bannerImage}
+                alt="Banner"
+                fill
+                className="object-cover"
+              />
             </div>
-
-            <div className="flex-1">
-              <div className="flex items-start justify-between gap-4 mb-2">
-                <h1 className="text-3xl font-bold">{creator?.user?.name ?? 'Unknown'}</h1>
-                <CallRequestDialog creatorId={id} creatorName={creator?.user?.name ?? 'ce créateur'} />
-              </div>
-              
-              {/* Rating Display */}
-              {totalReviews > 0 && (
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex items-center">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-5 h-5 ${
-                          star <= Math.round(averageRating)
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
+          )}
+          
+          {/* Profile Content */}
+          <div className="p-8">
+            <div className="flex flex-col md:flex-row gap-8 items-start">
+              {/* Profile Image - overlapping banner if exists */}
+              <div className={`relative w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-purple-200 to-pink-200 flex-shrink-0 border-4 border-white ${creator?.bannerImage ? '-mt-20' : ''}`}>
+                {creator?.profileImage ? (
+                  <Image
+                    src={creator.profileImage}
+                    alt={creator?.user?.name ?? 'Creator'}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Star className="w-16 h-16 text-purple-600" />
                   </div>
-                  <span className="font-semibold text-lg">{averageRating.toFixed(1)}</span>
-                  <span className="text-gray-500">({totalReviews} avis)</span>
-                </div>
-              )}
+                )}
+              </div>
 
-              <p className="text-gray-600 mb-4 whitespace-pre-wrap">
-                {creator?.bio ?? 'Pas de bio disponible'}
-              </p>
-              <Badge className="bg-gradient-to-r from-purple-600 to-pink-600">
-                {availableOffers.length} offre{availableOffers.length !== 1 ? 's' : ''} disponible{availableOffers.length !== 1 ? 's' : ''}
-              </Badge>
+              <div className="flex-1">
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <h1 className="text-3xl font-bold">{creator?.user?.name ?? 'Unknown'}</h1>
+                  <CallRequestDialog creatorId={id} creatorName={creator?.user?.name ?? 'ce créateur'} />
+                </div>
+                
+                {/* Rating Display */}
+                {totalReviews > 0 && (
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="flex items-center">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-5 h-5 ${
+                            star <= Math.round(averageRating)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-semibold text-lg">{averageRating.toFixed(1)}</span>
+                    <span className="text-gray-500">({totalReviews} avis)</span>
+                  </div>
+                )}
+
+                {/* Bio with better formatting */}
+                <div className="text-gray-600 mb-4 whitespace-pre-wrap leading-relaxed">
+                  {creator?.bio ?? 'Pas de bio disponible'}
+                </div>
+                
+                {/* Social Links */}
+                {hasSocialLinks && (
+                  <div className="flex items-center gap-3 mb-4 flex-wrap">
+                    {socialLinks.instagram && (
+                      <a 
+                        href={socialLinks.instagram} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:opacity-90 transition"
+                      >
+                        <Instagram className="w-4 h-4" />
+                        <span className="text-sm font-medium">Instagram</span>
+                      </a>
+                    )}
+                    {socialLinks.tiktok && (
+                      <a 
+                        href={socialLinks.tiktok} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-black text-white rounded-full hover:opacity-90 transition"
+                      >
+                        <span className="text-sm font-bold">TikTok</span>
+                      </a>
+                    )}
+                    {socialLinks.twitter && (
+                      <a 
+                        href={socialLinks.twitter} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-full hover:opacity-90 transition"
+                      >
+                        <Twitter className="w-4 h-4" />
+                        <span className="text-sm font-medium">Twitter</span>
+                      </a>
+                    )}
+                    {socialLinks.youtube && (
+                      <a 
+                        href={socialLinks.youtube} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-full hover:opacity-90 transition"
+                      >
+                        <Youtube className="w-4 h-4" />
+                        <span className="text-sm font-medium">YouTube</span>
+                      </a>
+                    )}
+                    {socialLinks.other && (
+                      <a 
+                        href={socialLinks.other} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-full hover:opacity-90 transition"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span className="text-sm font-medium">Site web</span>
+                      </a>
+                    )}
+                  </div>
+                )}
+                
+                <Badge className="bg-gradient-to-r from-purple-600 to-pink-600">
+                  {availableOffers.length} offre{availableOffers.length !== 1 ? 's' : ''} disponible{availableOffers.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
             </div>
           </div>
         </div>

@@ -225,6 +225,7 @@ model Creator {
   userId            String  @unique
   bio               String? @db.Text
   profileImage      String?
+  bannerImage       String? // ✅ NEW: Banner image URL
   stripeAccountId   String?
   isStripeOnboarded Boolean @default(false)
 
@@ -233,6 +234,9 @@ model Creator {
   
   // ✅ NEW: Creator's timezone (IANA format, e.g., "Europe/Paris", "America/New_York")
   timezone String @default("Europe/Paris")
+  
+  // ✅ NEW: Social media links (stored as JSON)
+  socialLinks Json? // { instagram, tiktok, twitter, youtube, other }
 
   // User's payout settings (from feature branch)
   payoutSchedule    PayoutSchedule @default(WEEKLY)

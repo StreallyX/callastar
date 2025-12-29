@@ -35,6 +35,18 @@ export default function CreatorSettings() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [profileData, setProfileData] = useState({
+    profileImage: '',
+    bannerImage: '',
+    bio: '',
+    socialLinks: {
+      instagram: '',
+      tiktok: '',
+      twitter: '',
+      youtube: '',
+      other: '',
+    },
+  });
   const [timezone, setTimezone] = useState('Europe/Paris');
   const [detectedTimezone, setDetectedTimezone] = useState('');
   const [notifications, setNotifications] = useState({
@@ -98,6 +110,21 @@ export default function CreatorSettings() {
         confirmPassword: '',
       });
       setTimezone(userData?.user?.creator?.timezone || userData?.user?.timezone || 'Europe/Paris');
+      
+      // Load profile data
+      const socialLinks = userData?.user?.creator?.socialLinks || {};
+      setProfileData({
+        profileImage: userData?.user?.creator?.profileImage || '',
+        bannerImage: userData?.user?.creator?.bannerImage || '',
+        bio: userData?.user?.creator?.bio || '',
+        socialLinks: {
+          instagram: socialLinks.instagram || '',
+          tiktok: socialLinks.tiktok || '',
+          twitter: socialLinks.twitter || '',
+          youtube: socialLinks.youtube || '',
+          other: socialLinks.other || '',
+        },
+      });
 
       // Check Stripe Connect onboarding status
       const onboardingResponse = await fetch('/api/stripe/connect-onboard');
@@ -159,6 +186,33 @@ export default function CreatorSettings() {
     const detected = detectUserTimezone();
     setTimezone(detected);
     toast.success(`Fuseau horaire détecté : ${detected}`);
+  };
+  
+  const handleSavePublicProfile = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/creators/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileImage: profileData.profileImage || null,
+          bannerImage: profileData.bannerImage || null,
+          bio: profileData.bio,
+          socialLinks: profileData.socialLinks,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Profil public mis à jour avec succès !');
+        await fetchData();
+      } else {
+        toast.error('Erreur lors de la mise à jour du profil public');
+      }
+    } catch (error) {
+      toast.error('Une erreur est survenue');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangePassword = async () => {
@@ -247,8 +301,9 @@ export default function CreatorSettings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile">Profil</TabsTrigger>
+            <TabsTrigger value="public">Profil Public</TabsTrigger>
             <TabsTrigger value="payments">Paiements</TabsTrigger>
             <TabsTrigger value="security">Sécurité</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -384,6 +439,155 @@ export default function CreatorSettings() {
                 )}
               </Button>
             </div>
+          </TabsContent>
+
+          {/* Public Profile Tab */}
+          <TabsContent value="public" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Profil Public</CardTitle>
+                <CardDescription>
+                  Personnalisez votre profil visible par vos fans
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="profileImage">Photo de profil (URL)</Label>
+                  <Input
+                    id="profileImage"
+                    type="url"
+                    value={profileData.profileImage}
+                    onChange={(e) => setProfileData({ ...profileData, profileImage: e.target.value })}
+                    placeholder="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dXNlciUyMHByb2ZpbGV8ZW58MHx8MHx8fDA%3D"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Ajoutez l'URL d'une image pour votre photo de profil
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bannerImage">Bannière (URL)</Label>
+                  <Input
+                    id="bannerImage"
+                    type="url"
+                    value={profileData.bannerImage}
+                    onChange={(e) => setProfileData({ ...profileData, bannerImage: e.target.value })}
+                    placeholder="https://lh7-rt.googleusercontent.com/docsz/AD_4nXeeIW9ydvjWXc2xyf3l6-myQT4soO2jVPUovWl3n9MM_PyKadgjF4OOk-4BH_uaN8Y2jnQoDcVaUGCbLfwHgtQ2iiHjKM-MaQ92MjD6NQ7I18W-3_fGWMP1Uc_XB4NHkcab1Uobnlp9sCdwsrbmdngeamCD?key=G0DUnZ0pTlxt4vmbEMiYvg"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Image de bannière affichée en haut de votre profil (recommandé: 1200x300px)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="publicBio">Bio enrichie</Label>
+                  <Textarea
+                    id="publicBio"
+                    rows={6}
+                    value={profileData.bio}
+                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                    placeholder="Parlez de vous, de votre parcours, de ce que vous proposez..."
+                  />
+                  <p className="text-xs text-gray-500">
+                    Cette bio sera affichée sur votre profil public. Utilisez des sauts de ligne pour structurer votre texte.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Réseaux Sociaux</CardTitle>
+                <CardDescription>
+                  Ajoutez vos liens de réseaux sociaux pour que vos fans puissent vous suivre
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <Input
+                    id="instagram"
+                    type="url"
+                    value={profileData.socialLinks.instagram}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, instagram: e.target.value }
+                    })}
+                    placeholder="https://instagram.com/votre-compte"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tiktok">TikTok</Label>
+                  <Input
+                    id="tiktok"
+                    type="url"
+                    value={profileData.socialLinks.tiktok}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, tiktok: e.target.value }
+                    })}
+                    placeholder="https://tiktok.com/@votre-compte"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="twitter">Twitter / X</Label>
+                  <Input
+                    id="twitter"
+                    type="url"
+                    value={profileData.socialLinks.twitter}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, twitter: e.target.value }
+                    })}
+                    placeholder="https://twitter.com/votre-compte"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="youtube">YouTube</Label>
+                  <Input
+                    id="youtube"
+                    type="url"
+                    value={profileData.socialLinks.youtube}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, youtube: e.target.value }
+                    })}
+                    placeholder="https://youtube.com/@votre-chaine"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="other">Site web / Autre lien</Label>
+                  <Input
+                    id="other"
+                    type="url"
+                    value={profileData.socialLinks.other}
+                    onChange={(e) => setProfileData({ 
+                      ...profileData, 
+                      socialLinks: { ...profileData.socialLinks, other: e.target.value }
+                    })}
+                    placeholder="https://votre-site.com"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSavePublicProfile}
+                    disabled={saving}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600"
+                  >
+                    {saving ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement...</>
+                    ) : (
+                      <><Save className="w-4 h-4 mr-2" />Enregistrer le profil public</>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Payments Tab */}

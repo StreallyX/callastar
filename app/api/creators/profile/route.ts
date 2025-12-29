@@ -75,6 +75,8 @@ export async function PUT(request: NextRequest) {
         bio: true,
         timezone: true,
         profileImage: true,
+        bannerImage: true,
+        socialLinks: true,
         user: {
           select: {
             id: true,
