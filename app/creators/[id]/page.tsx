@@ -1,6 +1,5 @@
-import Image from 'next/image';
 import { Navbar } from '@/components/navbar';
-import { Star, Calendar, Clock, DollarSign, MessageSquare, Instagram, Twitter, Youtube, ExternalLink } from 'lucide-react';
+import { Star, Calendar, Clock, DollarSign, Instagram, Twitter, Youtube, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +8,8 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 import { getCreatorCurrency } from '@/lib/stripe';
+import { CreatorProfileImage } from '@/components/creator-profile-image';
+import { CreatorBannerImage } from '@/components/creator-banner-image';
 
 async function getCreator(id: string) {
   try {
@@ -114,7 +115,7 @@ export default async function CreatorProfilePage({
   const { reviews, averageRating, totalReviews } = reviewsData;
 
   // Parse social links
-  const socialLinks = creator?.socialLinks as any;
+  const socialLinks = creator?.socialLinks as Record<string, string> | null;
   const hasSocialLinks = socialLinks && (
     socialLinks.instagram || 
     socialLinks.tiktok || 
@@ -131,35 +132,20 @@ export default async function CreatorProfilePage({
         {/* Creator Header with Banner */}
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden mb-8">
           {/* Banner Image */}
-          {creator?.bannerImage && (
-            <div className="relative w-full h-64 bg-gradient-to-r from-purple-200 to-pink-200">
-              <Image
-                src={creator.bannerImage}
-                alt="Banner"
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
+          <CreatorBannerImage 
+            bannerImage={creator?.bannerImage}
+            alt="Banner"
+          />
           
           {/* Profile Content */}
           <div className="p-8">
             <div className="flex flex-col md:flex-row gap-8 items-start">
               {/* Profile Image - overlapping banner if exists */}
-              <div className={`relative w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-purple-200 to-pink-200 flex-shrink-0 border-4 border-white ${creator?.bannerImage ? '-mt-20' : ''}`}>
-                {creator?.profileImage ? (
-                  <Image
-                    src={creator.profileImage}
-                    alt={creator?.user?.name ?? 'Creator'}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Star className="w-16 h-16 text-purple-600" />
-                  </div>
-                )}
-              </div>
+              <CreatorProfileImage 
+                profileImage={creator?.profileImage}
+                alt={creator?.user?.name ?? 'Creator'}
+                hasBanner={!!creator?.bannerImage}
+              />
 
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-4 mb-2">
@@ -266,7 +252,7 @@ export default async function CreatorProfilePage({
 
           {availableOffers.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {availableOffers.map((offer: any) => {
+              {availableOffers.map((offer) => {
                 const offerDate = new Date(offer?.dateTime ?? new Date());
                 const formattedDate = offerDate.toLocaleDateString('fr-FR', {
                   weekday: 'long',
@@ -324,7 +310,7 @@ export default async function CreatorProfilePage({
             <div className="text-center py-12 bg-white rounded-xl shadow-sm border">
               <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-4">Aucun appel disponible pour le moment</p>
-              <p className="text-sm text-gray-400">Utilisez le bouton "Proposer un appel" pour envoyer une demande personnalisée</p>
+              <p className="text-sm text-gray-400">Utilisez le bouton &quot;Proposer un appel&quot; pour envoyer une demande personnalisée</p>
             </div>
           )}
         </div>
@@ -334,7 +320,7 @@ export default async function CreatorProfilePage({
           <div>
             <h2 className="text-2xl font-bold mb-6">Avis des utilisateurs</h2>
             <div className="grid gap-4">
-              {reviews.slice(0, 6).map((review: any) => (
+              {reviews.slice(0, 6).map((review) => (
                 <Card key={review.id} className="bg-white">
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-3">

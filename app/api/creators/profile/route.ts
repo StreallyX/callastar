@@ -145,14 +145,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (!user || user.role !== 'CREATOR' || !user.creator) {
+    if (!user || user.role !== 'CREATOR' || !(user as any).creator) {
       return NextResponse.json(
         { error: 'Accès réservé aux créateurs' },
         { status: 403 }
       );
     }
 
-    return NextResponse.json({ creator: user.creator });
+    return NextResponse.json({ creator: (user as any).creator });
   } catch (error: any) {
     console.error('Error fetching creator profile:', error);
     return NextResponse.json(

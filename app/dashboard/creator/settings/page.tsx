@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,13 +43,13 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, imageType,
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Format non accepté. Utilisez JPG, PNG ou WEBP');
+      toast.error('Format non supporté. Utilisez JPG, PNG ou WEBP');
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Fichier trop volumineux. Maximum 5MB');
+      toast.error('Fichier trop lourd. Taille maximale : 5MB');
       return;
     }
 
@@ -66,19 +67,25 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, imageType,
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Erreur lors de l\'upload');
+        // Display specific error message from API
+        if (error.error) {
+          toast.error(error.error);
+        } else if (response.status === 500) {
+          toast.error('Erreur serveur lors de l\'upload. Veuillez réessayer.');
+        } else {
+          toast.error('Erreur lors de l\'upload de l\'image');
+        }
+        return;
       }
-
-      const data = await response.json();
       
       // ✅ Success: DB is already updated by the API
       toast.success('Image uploadée et profil mis à jour avec succès !');
       
       // ✅ Refresh data from database to get the new image
       onUploadSuccess();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Upload error:', error);
-      toast.error(error.message || 'Erreur lors de l\'upload');
+      toast.error('Une erreur inattendue est survenue. Veuillez réessayer.');
     } finally {
       setUploading(false);
       // Reset file input
@@ -103,10 +110,11 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, imageType,
           <Label className="text-xs text-gray-500 mb-2 block">Aperçu actuel :</Label>
           {!imageError ? (
             <div className={previewClassName || 'relative w-full h-32 border rounded-lg overflow-hidden bg-gray-50'}>
-              <img
+              <Image
                 src={imageUrl}
                 alt={label}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
                 onError={handleImageError}
               />
             </div>
@@ -114,7 +122,7 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, imageType,
             <div className="relative w-full h-32 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
               <div className="text-center text-gray-400">
                 <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-                <p className="text-sm">Impossible de charger l'image</p>
+                <p className="text-sm">Impossible de charger l&apos;image</p>
               </div>
             </div>
           )}
@@ -162,7 +170,7 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, imageType,
       </div>
 
       <p className="text-xs text-gray-500">
-        Formats acceptés: JPG, PNG, WEBP (max 5MB). L'image sera enregistrée automatiquement.
+        Formats acceptés: JPG, PNG, WEBP (max 5MB). L&apos;image sera enregistrée automatiquement.
       </p>
     </div>
   );
@@ -172,8 +180,6 @@ export default function CreatorSettings() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [creator, setCreator] = useState<any>(null);
   const [stripeOnboarding, setStripeOnboarding] = useState({
     onboarded: false,
     loading: true,
@@ -236,6 +242,7 @@ export default function CreatorSettings() {
         window.history.replaceState({}, '', window.location.pathname);
       }, 2000);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
@@ -251,9 +258,6 @@ export default function CreatorSettings() {
         router.push('/dashboard/user');
         return;
       }
-      
-      setUser(userData?.user);
-      setCreator(userData?.user?.creator);
       
       // ✅ FIX: Always sync formData with database values
       setFormData({
@@ -444,7 +448,7 @@ export default function CreatorSettings() {
         toast.dismiss(toastId);
         toast.error(error?.error ?? 'Erreur lors de la création du lien d\'onboarding');
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.dismiss(toastId);
       toast.error('Une erreur est survenue');
       console.error('Stripe onboarding error:', error);
@@ -525,7 +529,7 @@ export default function CreatorSettings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expertise">Domaine d'expertise</Label>
+                  <Label htmlFor="expertise">Domaine d&apos;expertise</Label>
                   <Input
                     id="expertise"
                     value={formData.expertise}
@@ -856,13 +860,13 @@ export default function CreatorSettings() {
                 <div className="border rounded-lg p-4">
                   <h4 className="font-semibold mb-2">Comment ajouter mon compte bancaire ?</h4>
                   <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-                    <li>Cliquez sur le bouton <strong>"Ouvrir Stripe Connect"</strong> ci-dessus</li>
+                    <li>Cliquez sur le bouton <strong>&quot;Ouvrir Stripe Connect&quot;</strong> ci-dessus</li>
                     <li>Connectez-vous à votre espace Stripe Connect</li>
                     <li>Ajoutez votre IBAN et les informations de votre banque dans la section dédiée</li>
                     <li>Vos virements seront automatiquement envoyés selon votre configuration</li>
                   </ol>
                   <p className="text-sm text-gray-500 mt-3">
-                    ℹ️ Important : N'utilisez jamais le Dashboard Stripe classique, utilisez toujours le lien Stripe Connect fourni ci-dessus.
+                    ℹ️ Important : N&apos;utilisez jamais le Dashboard Stripe classique, utilisez toujours le lien Stripe Connect fourni ci-dessus.
                   </p>
                 </div>
 
@@ -872,7 +876,7 @@ export default function CreatorSettings() {
                   <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
                     <li><strong>Période de sécurité:</strong> Les paiements sont retenus pendant 7 jours pour protéger contre les litiges</li>
                     <li><strong>Commission:</strong> La plateforme prélève une commission de 10% sur chaque réservation</li>
-                    <li><strong>Demande de paiement:</strong> Après 7 jours, vous pouvez demander le transfert dans l'onglet "Revenus" de votre dashboard</li>
+                    <li><strong>Demande de paiement:</strong> Après 7 jours, vous pouvez demander le transfert dans l&apos;onglet &quot;Revenus&quot; de votre dashboard</li>
                     <li><strong>Réception:</strong> Les fonds sont transférés sur votre compte Stripe, puis vers votre banque selon votre configuration</li>
                   </ul>
                 </div>
@@ -886,7 +890,7 @@ export default function CreatorSettings() {
               <CardHeader>
                 <CardTitle>Changer le mot de passe</CardTitle>
                 <CardDescription>
-                  Assurez-vous d'utiliser un mot de passe fort et unique
+                  Assurez-vous d&apos;utiliser un mot de passe fort et unique
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -964,7 +968,7 @@ export default function CreatorSettings() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Nouvelle réservation</Label>
-                    <p className="text-sm text-gray-500">Notification lorsqu'un fan réserve un appel</p>
+                    <p className="text-sm text-gray-500">Notification lorsqu&apos;un fan réserve un appel</p>
                   </div>
                   <Switch
                     checked={notifications.newBooking}
@@ -985,7 +989,7 @@ export default function CreatorSettings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Rappels d'appel</Label>
+                    <Label>Rappels d&apos;appel</Label>
                     <p className="text-sm text-gray-500">Recevoir un rappel avant vos appels programmés</p>
                   </div>
                   <Switch

@@ -1,6 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Star, Calendar } from 'lucide-react';
+import { Star, Calendar, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -22,22 +25,31 @@ interface CreatorCardProps {
 }
 
 export function CreatorCard({ creator }: CreatorCardProps) {
+  const [imageError, setImageError] = useState(false);
   const offersCount = creator?.callOffers?.length ?? 0;
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <CardHeader className="p-0">
         <div className="relative aspect-square bg-gradient-to-br from-purple-200 to-pink-200">
-          {creator?.profileImage ? (
+          {creator?.profileImage && !imageError ? (
             <Image
               src={creator.profileImage}
               alt={creator?.user?.name ?? 'Creator'}
               fill
               className="object-cover"
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Star className="w-16 h-16 text-purple-600" />
+              {imageError ? (
+                <div className="text-center text-gray-400">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-2" />
+                  <p className="text-sm">Image indisponible</p>
+                </div>
+              ) : (
+                <Star className="w-16 h-16 text-purple-600" />
+              )}
             </div>
           )}
         </div>
