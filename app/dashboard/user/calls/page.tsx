@@ -10,6 +10,7 @@ import { Calendar, Clock, Video, Loader2, Download, ArrowLeft } from 'lucide-rea
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { DateTimeDisplay, LiveCountdown } from '@/components/ui/datetime-display';
 
 export default function CallsPage() {
   const router = useRouter();
@@ -141,18 +142,6 @@ export default function CallsPage() {
             {upcomingBookings.length > 0 ? (
               <div className="space-y-4">
                 {upcomingBookings.map((booking: any) => {
-                  const callDate = new Date(booking?.callOffer?.dateTime ?? new Date());
-                  const formattedDate = callDate.toLocaleDateString('fr-FR', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  });
-                  const formattedTime = callDate.toLocaleTimeString('fr-FR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  });
-
                   return (
                     <Card key={booking?.id}>
                       <CardContent className="pt-6">
@@ -168,14 +157,30 @@ export default function CallsPage() {
                               )}
                             </div>
                             <p className="text-sm text-gray-600">avec {booking?.callOffer?.creator?.user?.name}</p>
+                            
+                            {/* Date with timezone */}
                             <div className="flex items-center gap-2 text-sm text-gray-500">
                               <Calendar className="w-4 h-4" />
-                              <span>{formattedDate}</span>
+                              <DateTimeDisplay 
+                                date={booking?.callOffer?.dateTime}
+                                timezone={user?.timezone}
+                                format="full"
+                              />
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                            
+                            {/* Time countdown */}
+                            <div className="flex items-center gap-2 text-sm font-medium text-purple-600">
                               <Clock className="w-4 h-4" />
-                              <span>{formattedTime} - {booking?.callOffer?.duration} minutes</span>
+                              <LiveCountdown 
+                                date={booking?.callOffer?.dateTime}
+                                timezone={user?.timezone}
+                              />
                             </div>
+                            
+                            <div className="text-sm text-gray-500">
+                              Durée: {booking?.callOffer?.duration} minutes
+                            </div>
+                            
                             <div className="text-sm text-gray-500">
                               <CurrencyDisplay 
                                 amount={Number(booking?.totalPrice)} 
