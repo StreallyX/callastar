@@ -23,12 +23,14 @@ interface ImageUploadProps {
   description: string;
   imageUrl: string;
   onUploadSuccess: () => void; // Callback to refresh data after upload
+  onDelete: () => void; // Callback to delete image
   imageType: 'profile' | 'banner';
   previewClassName?: string;
 }
 
-function ImageUpload({ label, description, imageUrl, onUploadSuccess, imageType, previewClassName }: ImageUploadProps) {
+function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, imageType, previewClassName }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   // Update error state when imageUrl changes
@@ -97,6 +99,15 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, imageType,
     setImageError(true);
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div>
@@ -139,34 +150,59 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, imageType,
         </div>
       )}
 
-      {/* Upload Button */}
-      <div className="relative">
-        <input
-          type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp"
-          onChange={handleFileUpload}
-          className="hidden"
-          id={`upload-${imageType}`}
-          disabled={uploading}
-        />
-        <Button
-          type="button"
-          onClick={() => document.getElementById(`upload-${imageType}`)?.click()}
-          disabled={uploading}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Upload en cours...
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4 mr-2" />
-              {imageUrl ? 'Changer l\'image' : 'Uploader une image'}
-            </>
-          )}
-        </Button>
+      {/* Upload and Delete Buttons */}
+      <div className="space-y-2">
+        <div className="relative">
+          <input
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={handleFileUpload}
+            className="hidden"
+            id={`upload-${imageType}`}
+            disabled={uploading || deleting}
+          />
+          <Button
+            type="button"
+            onClick={() => document.getElementById(`upload-${imageType}`)?.click()}
+            disabled={uploading || deleting}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Upload en cours...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                {imageUrl ? 'Changer l\'image' : 'Uploader une image'}
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Delete Button - Only visible if image exists */}
+        {imageUrl && (
+          <Button
+            type="button"
+            onClick={handleDelete}
+            disabled={uploading || deleting}
+            variant="outline"
+            className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+          >
+            {deleting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Suppression en cours...
+              </>
+            ) : (
+              <>
+                <XCircle className="w-4 h-4 mr-2" />
+                Supprimer l&apos;image
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       <p className="text-xs text-gray-500">
@@ -430,6 +466,31 @@ export default function CreatorSettings() {
     }
   };
 
+  const handleDeleteImage = async (imageType: 'profile' | 'banner') => {
+    // Confirmation before deletion
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer cette image ?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/upload/image?imageType=${imageType}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Image supprimée avec succès !');
+        // Refresh data to update UI
+        await fetchData();
+      } else {
+        const error = await response.json();
+        toast.error(error?.error ?? 'Erreur lors de la suppression');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Une erreur est survenue lors de la suppression');
+    }
+  };
+
   const handleStartStripeOnboarding = async () => {
     const toastId = toast('Redirection vers Stripe...', { duration: Infinity });
     
@@ -636,6 +697,7 @@ export default function CreatorSettings() {
                   description="Votre photo sera affichée de manière circulaire"
                   imageUrl={profileData.profileImage}
                   onUploadSuccess={fetchData}
+                  onDelete={() => handleDeleteImage('profile')}
                   imageType="profile"
                   previewClassName="relative w-32 h-32 border rounded-full overflow-hidden bg-gray-50 mx-auto"
                 />
@@ -646,6 +708,7 @@ export default function CreatorSettings() {
                   description="Image de couverture de votre profil (format paysage recommandé: 1200x300px)"
                   imageUrl={profileData.bannerImage}
                   onUploadSuccess={fetchData}
+                  onDelete={() => handleDeleteImage('banner')}
                   imageType="banner"
                   previewClassName="relative w-full h-40 border rounded-lg overflow-hidden bg-gray-50"
                 />

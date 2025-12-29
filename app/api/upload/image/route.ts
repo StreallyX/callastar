@@ -4,6 +4,7 @@ import {
   PutObjectCommand,
   ListObjectsV2Command,
   DeleteObjectsCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -150,6 +151,105 @@ export async function POST(request: NextRequest) {
     console.error('Upload error:', error);
     return NextResponse.json(
       { error: 'Erreur lors de l’upload', details: error?.message },
+      { status: 500 }
+    );
+  }
+}
+
+
+export async function DELETE(request: NextRequest) {
+  try {
+    // 🔐 Auth
+    const jwtUser = await getUserFromRequest(request);
+
+    if (!jwtUser || jwtUser.role !== 'CREATOR') {
+      return NextResponse.json(
+        { error: 'Accès réservé aux créateurs' },
+        { status: 403 }
+      );
+    }
+
+    // 📥 Get imageType from query params
+    const { searchParams } = new URL(request.url);
+    const imageType = searchParams.get('imageType');
+
+    if (!imageType || !['profile', 'banner'].includes(imageType)) {
+      return NextResponse.json(
+        { error: "Type d'image invalide (profile | banner)" },
+        { status: 400 }
+      );
+    }
+
+    // 👤 Get Creator
+    const user = await db.user.findUnique({
+      where: { id: jwtUser.userId },
+      include: { creator: true },
+    });
+
+    if (!user?.creator) {
+      return NextResponse.json(
+        { error: 'Profil créateur introuvable' },
+        { status: 404 }
+      );
+    }
+
+    const creatorId = user.creator.id;
+    const currentImageUrl = imageType === 'profile' 
+      ? user.creator.profileImage 
+      : user.creator.bannerImage;
+
+    // Check if image exists
+    if (!currentImageUrl) {
+      return NextResponse.json(
+        { error: 'Aucune image à supprimer' },
+        { status: 400 }
+      );
+    }
+
+    // 🧹 Extract S3 key from URL and delete from S3
+    try {
+      // Extract key from URL: https://bucket.s3.region.amazonaws.com/key
+      const url = new URL(currentImageUrl);
+      const key = url.pathname.substring(1); // Remove leading /
+
+      await s3Client.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME!,
+          Key: key,
+        })
+      );
+    } catch (s3Error: any) {
+      console.error('S3 deletion error:', s3Error);
+      return NextResponse.json(
+        { error: "Erreur lors de la suppression de l'image sur S3", details: s3Error?.message },
+        { status: 500 }
+      );
+    }
+
+    // ✅ Update database to set image to null
+    try {
+      await db.creator.update({
+        where: { id: creatorId },
+        data: imageType === 'profile'
+          ? { profileImage: null }
+          : { bannerImage: null },
+      });
+    } catch (dbError: any) {
+      console.error('Database update error:', dbError);
+      return NextResponse.json(
+        { error: 'Image supprimée de S3 mais erreur lors de la mise à jour de la base de données', details: dbError?.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Image supprimée avec succès',
+    });
+  } catch (error: any) {
+    console.error('Delete error:', error);
+    return NextResponse.json(
+      { error: 'Erreur lors de la suppression', details: error?.message },
       { status: 500 }
     );
   }
