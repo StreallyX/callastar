@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
+} from '@aws-sdk/client-s3';
 import { getUserFromRequest } from '@/lib/auth';
+import { db } from '@/lib/db';
 
-// Initialize S3 client
+// S3 client
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'eu-west-1',
-  credentials: process.env.AWS_PROFILE
-    ? undefined // AWS SDK will use the profile from environment
-    : {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-      },
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
 });
 
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -18,109 +22,117 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const user = await getUserFromRequest(request);
+    // 🔐 Auth
+    const jwtUser = await getUserFromRequest(request);
 
-    if (!user) {
+    if (!jwtUser || jwtUser.role !== 'CREATOR') {
       return NextResponse.json(
-        { error: 'Non authentifié' },
-        { status: 401 }
-      );
-    }
-
-    if (user.role !== 'CREATOR') {
-      return NextResponse.json(
-        { error: 'Accès refusé. Seuls les créateurs peuvent uploader des images.' },
+        { error: 'Accès réservé aux créateurs' },
         { status: 403 }
       );
     }
 
-    // Parse form data
+    // 📦 FormData
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const imageType = formData.get('imageType') as string; // 'profile' or 'banner'
+    const file = formData.get('file') as File | null;
+    const imageType = formData.get('imageType') as string | null;
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'Aucun fichier fourni' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 });
     }
 
     if (!imageType || !['profile', 'banner'].includes(imageType)) {
       return NextResponse.json(
-        { error: 'Type d\'image invalide. Doit être "profile" ou "banner"' },
+        { error: 'Type d’image invalide (profile | banner)' },
         { status: 400 }
       );
     }
 
-    // Validate file type
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Type de fichier non accepté. Formats acceptés: JPG, PNG, WEBP' },
+        { error: 'Format non supporté (jpg, png, webp uniquement)' },
         { status: 400 }
       );
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: 'Fichier trop volumineux. Taille maximum: 5MB' },
+        { error: 'Image trop volumineuse (max 5MB)' },
         { status: 400 }
       );
     }
 
-    // Get creator ID
-    const creator = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/me`, {
-      headers: {
-        cookie: request.headers.get('cookie') || '',
-      },
-    }).then((res) => res.json());
+    // 👤 Creator
+    const user = await db.user.findUnique({
+      where: { id: jwtUser.userId },
+      include: { creator: true },
+    });
 
-    const creatorId = creator?.user?.creator?.id;
-
-    if (!creatorId) {
+    if (!user?.creator) {
       return NextResponse.json(
         { error: 'Profil créateur introuvable' },
         { status: 404 }
       );
     }
 
-    // Prepare file for upload
-    const fileExtension = file.name.split('.').pop() || 'jpg';
-    const fileName = imageType === 'profile' ? `profile.${fileExtension}` : `banner.${fileExtension}`;
-    const fileKey = `${process.env.AWS_FOLDER_PREFIX || 'callastar'}/creators/${creatorId}/${fileName}`;
+    const creatorId = user.creator.id;
+    const basePath = `${process.env.AWS_FOLDER_PREFIX || 'creators'}/${creatorId}/`;
 
-    // Convert file to buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Upload to S3
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: fileKey,
-      Body: buffer,
-      ContentType: file.type,
-      ACL: 'public-read', // Make the file publicly readable
-    });
-
-    await s3Client.send(uploadCommand);
-
-    // Generate public URL
-    const publicUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION || 'eu-west-1'}.amazonaws.com/${fileKey}`;
-
-    return NextResponse.json(
-      {
-        success: true,
-        url: publicUrl,
-        message: 'Image uploadée avec succès',
-      },
-      { status: 200 }
+    // 🧹 1️⃣ SUPPRIMER LES ANCIENS FICHIERS (profile.* ou banner.*)
+    const listResponse = await s3Client.send(
+      new ListObjectsV2Command({
+        Bucket: process.env.AWS_BUCKET_NAME!,
+        Prefix: basePath,
+      })
     );
+
+    const objectsToDelete =
+      listResponse.Contents?.filter(
+        (obj) =>
+          obj.Key &&
+          obj.Key.startsWith(`${basePath}${imageType}.`)
+      ).map((obj) => ({ Key: obj.Key! })) || [];
+
+    if (objectsToDelete.length > 0) {
+      await s3Client.send(
+        new DeleteObjectsCommand({
+          Bucket: process.env.AWS_BUCKET_NAME!,
+          Delete: {
+            Objects: objectsToDelete,
+          },
+        })
+      );
+    }
+
+    // 🧱 2️⃣ NOUVEAU NOM DE FICHIER
+    const extension = file.name.split('.').pop() || 'jpg';
+    const fileName = `${imageType}.${extension}`;
+    const key = `${basePath}${fileName}`;
+
+    // 🔄 Buffer
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    // ☁️ 3️⃣ Upload S3 (sans ACL)
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME!,
+        Key: key,
+        Body: buffer,
+        ContentType: file.type,
+      })
+    );
+
+    // 🌍 URL publique
+    const publicUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    return NextResponse.json({
+      success: true,
+      url: publicUrl,
+    });
   } catch (error: any) {
     console.error('Upload error:', error);
     return NextResponse.json(
-      { error: 'Erreur lors de l\'upload de l\'image', details: error?.message },
+      { error: 'Erreur lors de l’upload', details: error?.message },
       { status: 500 }
     );
   }
