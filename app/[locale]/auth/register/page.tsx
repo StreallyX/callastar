@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { signIn } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
@@ -25,9 +26,24 @@ export default function RegisterPage() {
     password: '',
     role: 'USER' as 'USER' | 'CREATOR',
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsError, setTermsError] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate terms acceptance
+    if (!acceptedTerms) {
+      setTermsError(true);
+      toast({
+        variant: 'destructive',
+        title: t('errorTitle'),
+        description: t('termsRequired'),
+      });
+      return;
+    }
+    
+    setTermsError(false);
     setLoading(true);
 
     try {
@@ -165,6 +181,37 @@ export default function RegisterPage() {
                   <SelectItem value="CREATOR">{t('creatorRole')}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Terms Acceptance */}
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="terms"
+                  checked={acceptedTerms}
+                  onCheckedChange={(checked) => {
+                    setAcceptedTerms(checked as boolean);
+                    setTermsError(false);
+                  }}
+                  className={termsError ? 'border-red-500' : ''}
+                />
+                <label
+                  htmlFor="terms"
+                  className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {t('termsAcceptance')}{' '}
+                  <Link 
+                    href="/legal/terms" 
+                    className="text-purple-600 hover:underline font-medium"
+                    target="_blank"
+                  >
+                    {t('termsLink')}
+                  </Link>
+                </label>
+              </div>
+              {termsError && (
+                <p className="text-sm text-red-500">{t('termsRequired')}</p>
+              )}
             </div>
           </CardContent>
 

@@ -30,27 +30,96 @@
   },
   "homepage": {
     "meta": {
-      "title": "Call a Star - Connectez-vous avec vos créateurs préférés",
-      "description": "Plateforme SaaS permettant aux influenceurs de monétiser leur audience en offrant des appels vidéo payants à leurs fans"
+      "title": "Callastar - Connectez-vous avec des créateurs et experts pour des appels vidéo payants",
+      "description": "Réservez des appels vidéo avec des créateurs, experts et influenceurs. Paiements sécurisés via Stripe, appels vidéo via Daily.co. Monétisez votre temps ou obtenez des conseils personnalisés."
     },
     "hero": {
-      "title": "Connectez-vous avec vos stars",
-      "description": "Réservez des appels vidéo privés avec vos influenceurs et créateurs préférés. Une expérience unique et personnalisée.",
+      "title": "Connectez-vous avec des créateurs et experts",
+      "subtitle": "La plateforme qui connecte fans et créateurs pour des appels vidéo privés",
+      "description": "Callastar est une plateforme de réservation d'appels vidéo payants qui permet aux utilisateurs de se connecter directement avec des créateurs, experts et influenceurs pour des consultations, du coaching ou des conseils personnalisés.",
       "becomeCreator": "Devenir créateur",
       "exploreCreators": "Explorer les créateurs"
     },
+    "about": {
+      "title": "Qu'est-ce que Callastar ?",
+      "description": "Callastar est une plateforme innovante qui met en relation des utilisateurs avec des créateurs de contenu, experts et influenceurs pour des appels vidéo privés et payants.",
+      "usedFor": {
+        "title": "À quoi sert Callastar ?",
+        "consultations": "Consultations personnalisées avec des experts",
+        "coaching": "Séances de coaching et mentorat",
+        "advice": "Conseils professionnels dans divers domaines",
+        "meetGreet": "Rencontres virtuelles avec vos créateurs préférés"
+      },
+      "forWhom": {
+        "title": "Pour qui ?",
+        "users": {
+          "title": "Pour les utilisateurs",
+          "description": "Obtenez des conseils d'experts, du coaching personnalisé ou discutez avec vos créateurs favoris"
+        },
+        "creators": {
+          "title": "Pour les créateurs",
+          "description": "Monétisez votre temps et expertise en offrant des appels vidéo à votre communauté"
+        }
+      }
+    },
     "features": {
-      "videoCall": {
-        "title": "Appels vidéo HD",
-        "description": "Profitez d'appels vidéo de haute qualité sécurisés et privés."
-      },
-      "easyBooking": {
+      "title": "Fonctionnalités clés",
+      "description": "Tout ce dont vous avez besoin pour des appels vidéo professionnels",
+      "booking": {
         "title": "Réservation facile",
-        "description": "Choisissez votre créateur, sélectionnez un créneau et réservez en quelques clics."
+        "description": "Système de réservation simple et intuitif. Choisissez votre créateur, sélectionnez une offre et réservez en quelques clics."
       },
-      "uniqueExperience": {
-        "title": "Expérience unique",
-        "description": "Vivez un moment priviligié et personnalisé avec votre star préférée."
+      "payments": {
+        "title": "Paiements sécurisés",
+        "description": "Transactions sécurisées via Stripe. Protection complète des données bancaires et paiements instantanés."
+      },
+      "videoCalls": {
+        "title": "Appels vidéo HD",
+        "description": "Appels vidéo de haute qualité via Daily.co. Connexion stable et fiable pour une expérience optimale."
+      },
+      "reviews": {
+        "title": "Avis et évaluations",
+        "description": "Système de reviews transparent. Consultez les avis des autres utilisateurs avant de réserver."
+      },
+      "profiles": {
+        "title": "Profils créateurs",
+        "description": "Profils détaillés avec biographie, tarifs et disponibilités. Trouvez le créateur parfait pour vos besoins."
+      },
+      "offers": {
+        "title": "Offres personnalisées",
+        "description": "Les créateurs proposent différentes durées et tarifs. Choisissez l'offre qui vous convient le mieux."
+      }
+    },
+    "journey": {
+      "title": "Comment ça marche ?",
+      "description": "Quatre étapes simples pour connecter avec des créateurs",
+      "step1": {
+        "title": "1. Découvrez",
+        "description": "Explorez les profils des créateurs et découvrez leurs offres d'appels vidéo"
+      },
+      "step2": {
+        "title": "2. Inscrivez-vous",
+        "description": "Créez votre compte gratuitement en quelques secondes"
+      },
+      "step3": {
+        "title": "3. Réservez",
+        "description": "Choisissez une offre, effectuez le paiement sécurisé et confirmez votre réservation"
+      },
+      "step4": {
+        "title": "4. Connectez",
+        "description": "Rejoignez votre appel vidéo à l'heure prévue et profitez de votre échange"
+      }
+    },
+    "cta": {
+      "users": {
+        "title": "Vous cherchez des conseils d'expert ?",
+        "description": "Explorez nos créateurs et réservez votre premier appel dès maintenant",
+        "button": "Explorer les créateurs"
+      },
+      "creators": {
+        "title": "Vous êtes créateur ou expert ?",
+        "description": "Rejoignez Callastar et commencez à monétiser votre temps et expertise",
+        "button": "Devenir créateur"
       }
     },
     "popularCreators": {
@@ -59,7 +128,10 @@
       "seeAll": "Voir tous les créateurs"
     },
     "footer": {
-      "copyright": "© 2024 Call a Star. Tous droits réservés."
+      "copyright": "© 2024 Callastar. Tous droits réservés.",
+      "terms": "Conditions Générales",
+      "privacy": "Politique de confidentialité",
+      "legal": "Mentions légales"
     }
   },
   "auth": {
@@ -99,6 +171,9 @@
       "accountTypePlaceholder": "Sélectionnez un type",
       "userRole": "Utilisateur (Fan)",
       "creatorRole": "Créateur (Influenceur)",
+      "termsAcceptance": "J'accepte les",
+      "termsLink": "conditions générales d'utilisation",
+      "termsRequired": "Vous devez accepter les conditions générales pour continuer",
       "registerButton": "S'inscrire",
       "registering": "Inscription...",
       "orContinueWith": "Ou continuer avec",

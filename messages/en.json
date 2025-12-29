@@ -30,27 +30,96 @@
   },
   "homepage": {
     "meta": {
-      "title": "Call a Star - Connect with your favorite creators",
-      "description": "SaaS platform enabling influencers to monetize their audience by offering paid video calls to their fans"
+      "title": "Callastar - Connect with creators and experts for paid video calls",
+      "description": "Book video calls with creators, experts and influencers. Secure payments via Stripe, video calls via Daily.co. Monetize your time or get personalized advice."
     },
     "hero": {
-      "title": "Connect with your stars",
-      "description": "Book private video calls with your favorite influencers and creators. A unique and personalized experience.",
+      "title": "Connect with creators and experts",
+      "subtitle": "The platform that connects fans and creators for private video calls",
+      "description": "Callastar is a paid video call booking platform that allows users to connect directly with creators, experts and influencers for consultations, coaching or personalized advice.",
       "becomeCreator": "Become a creator",
       "exploreCreators": "Explore creators"
     },
+    "about": {
+      "title": "What is Callastar?",
+      "description": "Callastar is an innovative platform that connects users with content creators, experts and influencers for private paid video calls.",
+      "usedFor": {
+        "title": "What is Callastar used for?",
+        "consultations": "Personalized consultations with experts",
+        "coaching": "Coaching and mentoring sessions",
+        "advice": "Professional advice in various fields",
+        "meetGreet": "Virtual meet and greets with your favorite creators"
+      },
+      "forWhom": {
+        "title": "Who is it for?",
+        "users": {
+          "title": "For users",
+          "description": "Get expert advice, personalized coaching or chat with your favorite creators"
+        },
+        "creators": {
+          "title": "For creators",
+          "description": "Monetize your time and expertise by offering video calls to your community"
+        }
+      }
+    },
     "features": {
-      "videoCall": {
-        "title": "HD Video Calls",
-        "description": "Enjoy high-quality, secure, and private video calls."
-      },
-      "easyBooking": {
+      "title": "Key Features",
+      "description": "Everything you need for professional video calls",
+      "booking": {
         "title": "Easy Booking",
-        "description": "Choose your creator, select a time slot, and book in just a few clicks."
+        "description": "Simple and intuitive booking system. Choose your creator, select an offer and book in a few clicks."
       },
-      "uniqueExperience": {
-        "title": "Unique Experience",
-        "description": "Experience a special and personalized moment with your favorite star."
+      "payments": {
+        "title": "Secure Payments",
+        "description": "Secure transactions via Stripe. Complete protection of banking data and instant payments."
+      },
+      "videoCalls": {
+        "title": "HD Video Calls",
+        "description": "High-quality video calls via Daily.co. Stable and reliable connection for an optimal experience."
+      },
+      "reviews": {
+        "title": "Reviews & Ratings",
+        "description": "Transparent review system. Check other users' reviews before booking."
+      },
+      "profiles": {
+        "title": "Creator Profiles",
+        "description": "Detailed profiles with biography, rates and availability. Find the perfect creator for your needs."
+      },
+      "offers": {
+        "title": "Custom Offers",
+        "description": "Creators offer different durations and rates. Choose the offer that suits you best."
+      }
+    },
+    "journey": {
+      "title": "How does it work?",
+      "description": "Four simple steps to connect with creators",
+      "step1": {
+        "title": "1. Discover",
+        "description": "Explore creator profiles and discover their video call offers"
+      },
+      "step2": {
+        "title": "2. Sign up",
+        "description": "Create your account for free in seconds"
+      },
+      "step3": {
+        "title": "3. Book",
+        "description": "Choose an offer, make a secure payment and confirm your booking"
+      },
+      "step4": {
+        "title": "4. Connect",
+        "description": "Join your video call at the scheduled time and enjoy your conversation"
+      }
+    },
+    "cta": {
+      "users": {
+        "title": "Looking for expert advice?",
+        "description": "Explore our creators and book your first call now",
+        "button": "Explore creators"
+      },
+      "creators": {
+        "title": "Are you a creator or expert?",
+        "description": "Join Callastar and start monetizing your time and expertise",
+        "button": "Become a creator"
       }
     },
     "popularCreators": {
@@ -59,7 +128,10 @@
       "seeAll": "See all creators"
     },
     "footer": {
-      "copyright": "© 2024 Call a Star. All rights reserved."
+      "copyright": "© 2024 Callastar. All rights reserved.",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "legal": "Legal Notice"
     }
   },
   "auth": {
@@ -98,6 +170,9 @@
       "accountType": "Account Type",
       "accountTypePlaceholder": "Select a type",
       "userRole": "User (Fan)",
+      "termsAcceptance": "I accept the",
+      "termsLink": "terms of service",
+      "termsRequired": "You must accept the terms of service to continue",
       "creatorRole": "Creator (Influencer)",
       "registerButton": "Sign up",
       "registering": "Signing up...",
