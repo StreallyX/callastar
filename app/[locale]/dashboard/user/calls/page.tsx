@@ -11,9 +11,13 @@ import { toast } from 'sonner';
 import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 import { DateTimeDisplay, LiveCountdown } from '@/components/ui/datetime-display';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 
 export default function CallsPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.user.calls');
   const [user, setUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,20 +127,20 @@ export default function CallsPage() {
           <Link href="/dashboard/user">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Mes Appels à Venir</h1>
-          <p className="text-gray-600">Tous vos appels confirmés et à venir</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Appels à venir</CardTitle>
-            <CardDescription>Vous avez {upcomingBookings.length} appel(s) à venir</CardDescription>
+            <CardTitle>{t('title')}</CardTitle>
+            <CardDescription>{t('subtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             {upcomingBookings.length > 0 ? (
@@ -156,7 +160,7 @@ export default function CallsPage() {
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600">avec {booking?.callOffer?.creator?.user?.name}</p>
+                            <p className="text-sm text-gray-600">{t('with')} {booking?.callOffer?.creator?.user?.name}</p>
                             
                             {/* Date with timezone */}
                             <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -178,7 +182,7 @@ export default function CallsPage() {
                             </div>
                             
                             <div className="text-sm text-gray-500">
-                              Durée: {booking?.callOffer?.duration} minutes
+                              {t('duration')}: {booking?.callOffer?.duration} minutes
                             </div>
                             
                             <div className="text-sm text-gray-500">
@@ -195,7 +199,7 @@ export default function CallsPage() {
                                 className="bg-gradient-to-r from-purple-600 to-pink-600"
                               >
                                 <Video className="w-4 h-4 mr-2" />
-                                Rejoindre
+                                {t('join')}
                               </Button>
                             )}
                             <Button
@@ -204,7 +208,7 @@ export default function CallsPage() {
                               size="sm"
                             >
                               <Download className="w-4 h-4 mr-2" />
-                              Calendrier
+                              Calendar
                             </Button>
                           </div>
                         </div>
@@ -216,10 +220,10 @@ export default function CallsPage() {
             ) : (
               <div className="py-12 text-center">
                 <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Aucun appel à venir</p>
+                <p className="text-gray-500">{t('noCalls')}</p>
                 <Link href="/creators">
                   <Button variant="outline" className="mt-4">
-                    Parcourir les créateurs
+                    Browse Creators
                   </Button>
                 </Link>
               </div>

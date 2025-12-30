@@ -10,10 +10,14 @@ import { Bell, Loader2, ArrowLeft, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from '@/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.user.notifications');
   const [user, setUser] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -196,22 +200,22 @@ export default function NotificationsPage() {
           <Link href="/dashboard/user">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
         </div>
 
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Notifications</h1>
+            <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
             <p className="text-gray-600">
-              {unreadCount > 0 ? `Vous avez ${unreadCount} notification(s) non lue(s)` : 'Aucune nouvelle notification'}
+              {unreadCount > 0 ? `${unreadCount} unread notification(s)` : t('noNotifications')}
             </p>
           </div>
           {unreadCount > 0 && (
             <Button onClick={handleMarkAllAsRead} variant="outline">
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              Tout marquer comme lu
+              Mark all as read
             </Button>
           )}
         </div>
@@ -251,8 +255,8 @@ export default function NotificationsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Aucune notification</p>
-              <p className="text-sm text-gray-400 mt-2">Vous recevrez des notifications ici pour vos appels et demandes</p>
+              <p className="text-gray-500">{t('noNotifications')}</p>
+              <p className="text-sm text-gray-400 mt-2">{t('noNotificationsDesc')}</p>
             </CardContent>
           </Card>
         )}
