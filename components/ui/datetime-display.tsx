@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { formatDateWithTimezone, formatTimeWithTimezone, formatTimeUntil, detectUserTimezone } from '@/lib/timezone';
+import { useLocale } from 'next-intl';
 
 interface DateTimeDisplayProps {
   date: Date | string;
@@ -28,6 +29,7 @@ export function DateTimeDisplay({
   format = 'full',
   className = '' 
 }: DateTimeDisplayProps) {
+  const locale = useLocale();
   const [userTimezone, setUserTimezone] = useState<string>('Europe/Paris');
   const [mounted, setMounted] = useState(false);
   
@@ -41,11 +43,14 @@ export function DateTimeDisplay({
   // Use provided timezone or detected one
   const effectiveTimezone = timezone || userTimezone;
   
+  // Get locale for date formatting
+  const dateLocale = locale === 'fr' ? 'fr-FR' : 'en-US';
+  
   // Server-side rendering fallback (show without timezone until hydration)
   if (!mounted) {
     return (
       <span className={className}>
-        {new Date(date).toLocaleString('fr-FR')}
+        {new Date(date).toLocaleString(dateLocale)}
       </span>
     );
   }
@@ -92,6 +97,7 @@ export function LiveCountdown({
   className = '',
   onComplete
 }: LiveCountdownProps) {
+  const locale = useLocale();
   const [userTimezone, setUserTimezone] = useState<string>('Europe/Paris');
   const [mounted, setMounted] = useState(false);
   const [countdown, setCountdown] = useState<string>('');
@@ -104,6 +110,11 @@ export function LiveCountdown({
   
   const effectiveTimezone = timezone || userTimezone;
   
+  // Translation text based on locale
+  const inProgressText = locale === 'fr' ? 'En cours' : 'In progress';
+  const loadingText = locale === 'fr' ? 'Chargement...' : 'Loading...';
+  const timezoneText = locale === 'fr' ? 'Fuseau horaire' : 'Timezone';
+  
   useEffect(() => {
     if (!mounted) return;
     
@@ -113,7 +124,7 @@ export function LiveCountdown({
       const diff = target.getTime() - now.getTime();
       
       if (diff <= 0) {
-        setCountdown('En cours');
+        setCountdown(inProgressText);
         if (onComplete) onComplete();
         return;
       }
@@ -125,14 +136,14 @@ export function LiveCountdown({
     const interval = setInterval(updateCountdown, 1000);
     
     return () => clearInterval(interval);
-  }, [date, effectiveTimezone, mounted, onComplete]);
+  }, [date, effectiveTimezone, mounted, onComplete, inProgressText]);
   
   if (!mounted) {
-    return <span className={className}>Chargement...</span>;
+    return <span className={className}>{loadingText}</span>;
   }
   
   return (
-    <span className={className} title={`Timezone: ${effectiveTimezone}`}>
+    <span className={className} title={`${timezoneText}: ${effectiveTimezone}`}>
       {countdown}
     </span>
   );

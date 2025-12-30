@@ -359,7 +359,7 @@ export default function UserDashboard() {
                                 <div className="flex items-center gap-4 text-sm text-gray-600">
                                   <div className="flex items-center gap-1">
                                     <Clock className="w-4 h-4" />
-                                    <span>{new Date(request.proposedDateTime).toLocaleString('fr-FR')}</span>
+                                    <span>{new Date(request.proposedDateTime).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')}</span>
                                   </div>
                                   <span>•</span>
                                   <CurrencyDisplay 
@@ -406,7 +406,7 @@ export default function UserDashboard() {
                   <div className="space-y-4">
                     {pastBookings.map((booking: any) => {
                       const callDate = new Date(booking?.callOffer?.dateTime ?? new Date());
-                      const formattedDate = callDate.toLocaleDateString('fr-FR', {
+                      const formattedDate = callDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',

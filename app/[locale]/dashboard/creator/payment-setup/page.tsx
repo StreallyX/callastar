@@ -43,6 +43,7 @@ export default function PaymentSetupPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard.creator.paymentSetup');
+  const tToast = useTranslations('toast');
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [accountData, setAccountData] = useState<StripeAccountData | null>(null);
@@ -54,7 +55,7 @@ export default function PaymentSetupPage() {
     const onboardingParam = params.get('onboarding');
 
     if (onboardingParam === 'success' || onboardingParam === 'refresh') {
-      toast.info('Vérification de votre configuration Stripe…');
+      toast.info(tToast('info.verifyingStripe'));
 
       setTimeout(() => {
         fetchAccountStatus();
@@ -73,7 +74,7 @@ export default function PaymentSetupPage() {
       }
 
       if (!res.ok) {
-        toast.error('Erreur lors de la récupération du statut Stripe');
+        toast.error(tToast('error.loadingFailed'));
         return;
       }
 
@@ -81,7 +82,7 @@ export default function PaymentSetupPage() {
       setAccountData(data);
     } catch (err) {
       console.error(err);
-      toast.error('Une erreur est survenue');
+      toast.error(tToast('error.genericError'));
     } finally {
       setLoading(false);
     }
@@ -94,13 +95,13 @@ export default function PaymentSetupPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data?.error || 'Erreur Stripe');
+        toast.error(data?.error || tToast('error.stripeError'));
         return;
       }
 
       window.location.href = data.url;
     } catch {
-      toast.error('Impossible de démarrer Stripe');
+      toast.error(tToast('error.cannotStartStripe'));
     } finally {
       setStarting(false);
     }

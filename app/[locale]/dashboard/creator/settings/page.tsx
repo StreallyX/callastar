@@ -47,13 +47,13 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Format non supporté. Utilisez JPG, PNG ou WEBP');
+      toast.error(tToast('error.unsupportedFormat'));
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Fichier trop lourd. Taille maximale : 5MB');
+      toast.error(tToast('error.fileTooLarge'));
       return;
     }
 
@@ -75,21 +75,21 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
         if (error.error) {
           toast.error(error.error);
         } else if (response.status === 500) {
-          toast.error('Erreur serveur lors de l\'upload. Veuillez réessayer.');
+          toast.error(tToast('error.serverError'));
         } else {
-          toast.error('Erreur lors de l\'upload de l\'image');
+          toast.error(tToast('error.uploadError'));
         }
         return;
       }
       
       // ✅ Success: DB is already updated by the API
-      toast.success('Image uploadée et profil mis à jour avec succès !');
+      toast.success(tToast('success.imageUploaded'));
       
       // ✅ Refresh data from database to get the new image
       onUploadSuccess();
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Une erreur inattendue est survenue. Veuillez réessayer.');
+      toast.error(tToast('error.genericError'));
     } finally {
       setUploading(false);
       // Reset file input
@@ -217,6 +217,7 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
 export default function CreatorSettings() {
   const router = useRouter();
   const t = useTranslations('dashboard.creator.settings');
+  const tToast = useTranslations('toast');
   const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -273,7 +274,7 @@ export default function CreatorSettings() {
       console.log('[Settings] Returned from onboarding, re-verifying...');
       
       if (onboardingParam === 'success') {
-        toast.info('Vérification de votre configuration Stripe en cours...');
+        toast.info(tToast('info.checkingStripeAccount'));
       }
       
       // Re-verify after delay
@@ -374,13 +375,13 @@ export default function CreatorSettings() {
       });
 
       if (userResponse.ok && creatorResponse.ok) {
-        toast.success('Profil mis à jour avec succès');
+        toast.success(tToast('success.profileUpdated'));
         fetchData();
       } else {
-        toast.error('Erreur lors de la mise à jour du profil');
+        toast.error(tToast('error.updateFailed'));
       }
     } catch (error) {
-      toast.error('Une erreur est survenue');
+      toast.error(tToast('error.genericError'));
     } finally {
       setSaving(false);
     }
@@ -389,7 +390,7 @@ export default function CreatorSettings() {
   const handleAutoDetect = () => {
     const detected = detectUserTimezone();
     setTimezone(detected);
-    toast.success(`Fuseau horaire détecté : ${detected}`);
+    toast.success(tToast('success.timezoneDetected', { timezone: detected }));
   };
 
   const cleanSocialLinks = (links: Record<string, string>) => {
@@ -420,14 +421,14 @@ export default function CreatorSettings() {
       });
 
       if (response.ok) {
-        toast.success('Profil mis à jour avec succès !');
+        toast.success(tToast('success.profileUpdated'));
         await fetchData();
       } else {
         const err = await response.json();
-        toast.error(err?.error ?? 'Erreur lors de la mise à jour');
+        toast.error(err?.error ?? tToast('error.updateFailed'));
       }
     } catch (error) {
-      toast.error('Une erreur est survenue');
+      toast.error(tToast('error.genericError'));
     } finally {
       setSaving(false);
     }
@@ -436,12 +437,12 @@ export default function CreatorSettings() {
 
   const handleChangePassword = async () => {
     if (formData.newPassword !== formData.confirmPassword) {
-      toast.error('Les mots de passe ne correspondent pas');
+      toast.error(tToast('error.passwordMismatch'));
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      toast.error('Le mot de passe doit contenir au moins 8 caractères');
+      toast.error(tToast('error.passwordTooShort'));
       return;
     }
 
@@ -457,14 +458,14 @@ export default function CreatorSettings() {
       });
 
       if (response.ok) {
-        toast.success('Mot de passe modifié avec succès');
+        toast.success(tToast('success.passwordChanged'));
         setFormData({ ...formData, currentPassword: '', newPassword: '', confirmPassword: '' });
       } else {
         const error = await response.json();
-        toast.error(error?.error ?? 'Erreur lors du changement de mot de passe');
+        toast.error(error?.error ?? tToast('error.updateFailed'));
       }
     } catch (error) {
-      toast.error('Une erreur est survenue');
+      toast.error(tToast('error.genericError'));
     } finally {
       setSaving(false);
     }
@@ -482,21 +483,21 @@ export default function CreatorSettings() {
       });
 
       if (response.ok) {
-        toast.success('Image supprimée avec succès !');
+        toast.success(tToast('success.imageDeleted'));
         // Refresh data to update UI
         await fetchData();
       } else {
         const error = await response.json();
-        toast.error(error?.error ?? 'Erreur lors de la suppression');
+        toast.error(error?.error ?? tToast('error.deletingFailed'));
       }
     } catch (error) {
       console.error('Delete error:', error);
-      toast.error('Une erreur est survenue lors de la suppression');
+      toast.error(tToast('error.genericError'));
     }
   };
 
   const handleStartStripeOnboarding = async () => {
-    const toastId = toast('Redirection vers Stripe...', { duration: Infinity });
+    const toastId = toast(tToast('info.redirecting'), { duration: Infinity });
     
     try {
       const response = await fetch('/api/stripe/connect-onboard', {
@@ -511,11 +512,11 @@ export default function CreatorSettings() {
       } else {
         const error = await response.json();
         toast.dismiss(toastId);
-        toast.error(error?.error ?? 'Erreur lors de la création du lien d\'onboarding');
+        toast.error(error?.error ?? tToast('error.onboardingError'));
       }
     } catch (error) {
       toast.dismiss(toastId);
-      toast.error('Une erreur est survenue');
+      toast.error(tToast('error.genericError'));
       console.error('Stripe onboarding error:', error);
     }
   };
@@ -908,10 +909,10 @@ export default function CreatorSettings() {
                             const data = await response.json();
                             window.open(data.url, '_blank');
                           } else {
-                            toast.error('Erreur lors de l\'ouverture du tableau de bord');
+                            toast.error(tToast('error.dashboardOpenError'));
                           }
                         } catch (error) {
-                          toast.error('Une erreur est survenue');
+                          toast.error(tToast('error.genericError'));
                         }
                       }}
                       variant="outline"
@@ -1067,7 +1068,7 @@ export default function CreatorSettings() {
 
                 <div className="flex justify-end">
                   <Button
-                    onClick={() => toast.success('Préférences enregistrées')}
+                    onClick={() => toast.success(tToast('success.preferenceSaved'))}
                     className="bg-gradient-to-r from-purple-600 to-pink-600"
                   >
                     <Save className="w-4 h-4 mr-2" />

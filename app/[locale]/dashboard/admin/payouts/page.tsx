@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,8 @@ interface Payout {
 
 export default function AdminPayouts() {
   const router = useRouter();
+  const t = useTranslations('dashboard.admin');
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [payouts, setPayouts] = useState<Payout[]>([]);
@@ -102,11 +105,11 @@ export default function AdminPayouts() {
         console.log('[AdminPayouts] Payouts loaded:', data.length);
       } else {
         console.error('[AdminPayouts] Error response:', data);
-        toast.error('Erreur lors du chargement');
+        toast.error(t('common.error'));
       }
     } catch (error) {
       console.error('[AdminPayouts] Error fetching payouts:', error);
-      toast.error('Erreur lors du chargement des paiements');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -149,16 +152,16 @@ export default function AdminPayouts() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('Paiement approuvé avec succès');
+        toast.success(t('payouts.approveSuccess') || 'Payment approved successfully');
         setApproveModalOpen(false);
         setPayoutToApprove(null);
         await fetchPayouts(); // Refresh the list
       } else {
-        toast.error(data.error || 'Erreur lors de l\'approbation');
+        toast.error(data.error || t('common.error'));
       }
     } catch (error) {
       console.error('Error approving payout:', error);
-      toast.error('Erreur lors de l\'approbation du paiement');
+      toast.error(t('common.error'));
     } finally {
       setActionLoading(false);
     }
@@ -166,7 +169,7 @@ export default function AdminPayouts() {
 
   const handleRejectPayout = async () => {
     if (!payoutToReject || !rejectionReason.trim()) {
-      toast.error('Veuillez fournir une raison pour le rejet');
+      toast.error(t('payouts.rejectReasonRequired') || 'Please provide a rejection reason');
       return;
     }
 
@@ -185,17 +188,17 @@ export default function AdminPayouts() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('Paiement rejeté');
+        toast.success(t('payouts.rejectSuccess') || 'Payment rejected');
         setRejectModalOpen(false);
         setPayoutToReject(null);
         setRejectionReason('');
         await fetchPayouts(); // Refresh the list
       } else {
-        toast.error(data.error || 'Erreur lors du rejet');
+        toast.error(data.error || t('common.error'));
       }
     } catch (error) {
       console.error('Error rejecting payout:', error);
-      toast.error('Erreur lors du rejet du paiement');
+      toast.error(t('common.error'));
     } finally {
       setActionLoading(false);
     }
@@ -205,16 +208,16 @@ export default function AdminPayouts() {
   const filterConfigs = [
     {
       key: 'status',
-      label: 'Statut',
+      label: t('payments.status') || 'Status',
       type: 'select' as const,
       options: [
-        { label: 'Demandé', value: 'REQUESTED' },
-        { label: 'Approuvé', value: 'APPROVED' },
-        { label: 'En cours', value: 'PROCESSING' },
-        { label: 'Payé', value: 'PAID' },
-        { label: 'Échoué', value: 'FAILED' },
-        { label: 'Rejeté', value: 'REJECTED' },
-        { label: 'Annulé', value: 'CANCELED' },
+        { label: t('payouts.statusRequested') || 'Requested', value: 'REQUESTED' },
+        { label: t('payouts.statusApproved') || 'Approved', value: 'APPROVED' },
+        { label: t('payouts.statusProcessing') || 'Processing', value: 'PROCESSING' },
+        { label: t('payouts.statusPaid') || 'Paid', value: 'PAID' },
+        { label: t('payouts.statusFailed') || 'Failed', value: 'FAILED' },
+        { label: t('payouts.statusRejected') || 'Rejected', value: 'REJECTED' },
+        { label: t('payouts.statusCanceled') || 'Canceled', value: 'CANCELED' },
       ],
     },
   ];
@@ -224,7 +227,7 @@ export default function AdminPayouts() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
         <div className="container mx-auto max-w-7xl px-4 py-12">
-          <LoadingSpinner text="Chargement..." />
+          <LoadingSpinner text={t('common.loading') || 'Loading...'} />
         </div>
       </div>
     );
@@ -241,10 +244,10 @@ export default function AdminPayouts() {
             <div>
               <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
                 <Send className="w-8 h-8" />
-                Historique des Paiements aux Créateurs
+                {t('payouts.historyTitle') || 'Creator Payments History'}
               </h1>
               <p className="text-gray-600">
-                Gérez et consultez tous les paiements aux créateurs
+                {t('payouts.historyDescription') || 'Manage and view all payments to creators'}
               </p>
             </div>
             <div className="flex gap-2">
@@ -254,10 +257,10 @@ export default function AdminPayouts() {
                 disabled={refreshing}
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Actualiser
+                {t('common.refresh') || 'Refresh'}
               </Button>
               <Button variant="outline" onClick={() => router.push('/dashboard/admin')}>
-                Retour
+                {t('common.back') || 'Back'}
               </Button>
             </div>
           </div>
@@ -278,9 +281,9 @@ export default function AdminPayouts() {
         {/* Payouts Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Paiements ({payouts.length})</CardTitle>
+            <CardTitle>{t('payouts.paymentsCount', { count: payouts.length }) || `Payments (${payouts.length})`}</CardTitle>
             <CardDescription>
-              Liste de tous les paiements effectués aux créateurs
+              {t('payouts.paymentsListDescription') || 'List of all payments made to creators'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -289,15 +292,15 @@ export default function AdminPayouts() {
                 <table className="w-full text-sm">
                   <thead className="border-b">
                     <tr className="text-left">
-                      <th className="py-3 px-2">ID</th>
-                      <th className="py-3 px-2">Créateur</th>
-                      <th className="py-3 px-2">Montant</th>
-                      <th className="py-3 px-2">Statut</th>
-                      <th className="py-3 px-2">Raison échec/rejet</th>
-                      <th className="py-3 px-2">Tentatives</th>
-                      <th className="py-3 px-2">Date création</th>
-                      <th className="py-3 px-2">Date paiement</th>
-                      <th className="py-3 px-2">Actions</th>
+                      <th className="py-3 px-2">{t('common.id') || 'ID'}</th>
+                      <th className="py-3 px-2">{t('payouts.creator') || 'Creator'}</th>
+                      <th className="py-3 px-2">{t('payouts.amount') || 'Amount'}</th>
+                      <th className="py-3 px-2">{t('payments.status') || 'Status'}</th>
+                      <th className="py-3 px-2">{t('payouts.failureRejectReason') || 'Failure/Rejection Reason'}</th>
+                      <th className="py-3 px-2">{t('payouts.retries') || 'Retries'}</th>
+                      <th className="py-3 px-2">{t('payouts.createdDate') || 'Created Date'}</th>
+                      <th className="py-3 px-2">{t('payouts.paidDate') || 'Paid Date'}</th>
+                      <th className="py-3 px-2">{t('common.actions') || 'Actions'}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -337,11 +340,11 @@ export default function AdminPayouts() {
                           )}
                         </td>
                         <td className="py-3 px-2">
-                          <DateDisplay date={payout.createdAt} format="datetime" />
+                          <DateDisplay date={payout.createdAt} format="datetime" locale={locale} />
                         </td>
                         <td className="py-3 px-2">
                           {payout.paidAt ? (
-                            <DateDisplay date={payout.paidAt} format="datetime" />
+                            <DateDisplay date={payout.paidAt} format="datetime" locale={locale} />
                           ) : (
                             <span className="text-xs text-gray-400">-</span>
                           )}
@@ -389,8 +392,8 @@ export default function AdminPayouts() {
             ) : (
               <EmptyState
                 icon={Send}
-                title="Aucun paiement trouvé"
-                description="Aucun paiement aux créateurs ne correspond à vos critères."
+                title={t('payouts.noPayouts') || 'No payments found'}
+                description={t('payouts.noPayoutsDescription') || 'No creator payments match your criteria.'}
               />
             )}
           </CardContent>
@@ -401,61 +404,61 @@ export default function AdminPayouts() {
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Détails du Paiement</DialogTitle>
+            <DialogTitle>{t('payouts.detailsTitle') || 'Payment Details'}</DialogTitle>
             <DialogDescription>
-              Informations complètes sur le paiement au créateur
+              {t('payouts.detailsDescription') || 'Complete information about the creator payment'}
             </DialogDescription>
           </DialogHeader>
           {selectedPayout && (
             <div className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Informations de Paiement</CardTitle>
+                  <CardTitle className="text-base">{t('payouts.paymentInfo') || 'Payment Information'}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">ID Paiement</p>
+                      <p className="text-sm text-gray-600">{t('payouts.paymentId') || 'Payment ID'}</p>
                       <p className="text-sm font-mono bg-gray-100 px-2 py-1 rounded mt-1">
                         {selectedPayout.id}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">ID Stripe Payout</p>
+                      <p className="text-sm text-gray-600">{t('payouts.stripePayoutId') || 'Stripe Payout ID'}</p>
                       <p className="text-sm font-mono bg-gray-100 px-2 py-1 rounded mt-1">
                         {selectedPayout.stripePayoutId || 'N/A'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Montant</p>
+                      <p className="text-sm text-gray-600">{t('payouts.amount') || 'Amount'}</p>
                       <p className="text-lg font-bold text-green-600 mt-1">
                         <CurrencyDisplay amount={selectedPayout.amount} />
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Statut</p>
+                      <p className="text-sm text-gray-600">{t('payments.status') || 'Status'}</p>
                       <div className="mt-1">
                         <StatusBadge status={selectedPayout.status} type="payout" />
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Date création</p>
+                      <p className="text-sm text-gray-600">{t('payouts.createdDate') || 'Created Date'}</p>
                       <p className="text-sm font-medium mt-1">
-                        <DateDisplay date={selectedPayout.createdAt} format="datetime" />
+                        <DateDisplay date={selectedPayout.createdAt} format="datetime" locale={locale} />
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Date paiement</p>
+                      <p className="text-sm text-gray-600">{t('payouts.paidDate') || 'Paid Date'}</p>
                       <p className="text-sm font-medium mt-1">
                         {selectedPayout.paidAt ? (
-                          <DateDisplay date={selectedPayout.paidAt} format="datetime" />
+                          <DateDisplay date={selectedPayout.paidAt} format="datetime" locale={locale} />
                         ) : (
-                          <span className="text-gray-400">Non payé</span>
+                          <span className="text-gray-400">{t('payouts.notPaid') || 'Not paid'}</span>
                         )}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Nombre de tentatives</p>
+                      <p className="text-sm text-gray-600">{t('payouts.retriesCount') || 'Number of retries'}</p>
                       <p className="text-sm font-medium mt-1">{selectedPayout.retryCount}</p>
                     </div>
                   </div>
@@ -464,7 +467,7 @@ export default function AdminPayouts() {
                     <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
                       <div className="flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 text-red-600" />
-                        <p className="text-sm font-semibold text-red-900">Raison de l'échec</p>
+                        <p className="text-sm font-semibold text-red-900">{t('payouts.failureReason') || 'Failure reason'}</p>
                       </div>
                       <p className="text-sm text-red-700 mt-1">{selectedPayout.failureReason}</p>
                     </div>
@@ -474,7 +477,7 @@ export default function AdminPayouts() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Créateur</CardTitle>
+                  <CardTitle className="text-base">{t('payouts.creator') || 'Creator'}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -493,9 +496,9 @@ export default function AdminPayouts() {
       <Dialog open={approveModalOpen} onOpenChange={setApproveModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Approuver le paiement</DialogTitle>
+            <DialogTitle>{t('payouts.approveTitle') || 'Approve payment'}</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir approuver ce paiement ?
+              {t('payouts.approveDescription') || 'Are you sure you want to approve this payment?'}
             </DialogDescription>
           </DialogHeader>
           {payoutToApprove && (
@@ -504,19 +507,19 @@ export default function AdminPayouts() {
                 <CardContent className="pt-6">
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Créateur:</span>
+                      <span className="text-sm text-gray-600">{t('payouts.creator') || 'Creator'}:</span>
                       <span className="text-sm font-medium">{payoutToApprove.creator.user.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Montant:</span>
+                      <span className="text-sm text-gray-600">{t('payouts.amount') || 'Amount'}:</span>
                       <span className="text-sm font-bold text-green-600">
                         <CurrencyDisplay amount={payoutToApprove.amount} />
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Date de demande:</span>
+                      <span className="text-sm text-gray-600">{t('payouts.requestDate') || 'Request date'}:</span>
                       <span className="text-sm">
-                        <DateDisplay date={payoutToApprove.createdAt} format="datetime" />
+                        <DateDisplay date={payoutToApprove.createdAt} format="datetime" locale={locale} />
                       </span>
                     </div>
                   </div>
@@ -524,7 +527,7 @@ export default function AdminPayouts() {
               </Card>
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <p className="text-sm text-yellow-800">
-                  ⚠️ Cette action déclenchera le transfert Stripe réel vers le compte bancaire du créateur.
+                  {t('payouts.approveWarning') || '⚠️ This action will trigger the real Stripe transfer to the creator\'s bank account.'}
                 </p>
               </div>
             </div>
@@ -535,14 +538,14 @@ export default function AdminPayouts() {
               onClick={() => setApproveModalOpen(false)}
               disabled={actionLoading}
             >
-              Annuler
+              {t('common.cancel') || 'Cancel'}
             </Button>
             <Button
               onClick={handleApprovePayout}
               disabled={actionLoading}
               className="bg-green-600 hover:bg-green-700"
             >
-              {actionLoading ? 'Approbation...' : 'Approuver'}
+              {actionLoading ? (t('payouts.approving') || 'Approving...') : (t('payouts.approve') || 'Approve')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -552,9 +555,9 @@ export default function AdminPayouts() {
       <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rejeter le paiement</DialogTitle>
+            <DialogTitle>{t('payouts.rejectTitle') || 'Reject payment'}</DialogTitle>
             <DialogDescription>
-              Veuillez fournir une raison pour le rejet de ce paiement.
+              {t('payouts.rejectDescription') || 'Please provide a reason for rejecting this payment.'}
             </DialogDescription>
           </DialogHeader>
           {payoutToReject && (
@@ -563,19 +566,19 @@ export default function AdminPayouts() {
                 <CardContent className="pt-6">
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Créateur:</span>
+                      <span className="text-sm text-gray-600">{t('payouts.creator') || 'Creator'}:</span>
                       <span className="text-sm font-medium">{payoutToReject.creator.user.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Montant:</span>
+                      <span className="text-sm text-gray-600">{t('payouts.amount') || 'Amount'}:</span>
                       <span className="text-sm font-bold text-red-600">
                         <CurrencyDisplay amount={payoutToReject.amount} />
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Date de demande:</span>
+                      <span className="text-sm text-gray-600">{t('payouts.requestDate') || 'Request date'}:</span>
                       <span className="text-sm">
-                        <DateDisplay date={payoutToReject.createdAt} format="datetime" />
+                        <DateDisplay date={payoutToReject.createdAt} format="datetime" locale={locale} />
                       </span>
                     </div>
                   </div>
@@ -583,13 +586,13 @@ export default function AdminPayouts() {
               </Card>
               <div>
                 <label htmlFor="rejection-reason" className="block text-sm font-medium mb-2">
-                  Raison du rejet *
+                  {t('payouts.rejectReasonLabel') || 'Rejection reason'} *
                 </label>
                 <Textarea
                   id="rejection-reason"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Expliquez pourquoi ce paiement est rejeté..."
+                  placeholder={t('payouts.rejectReasonPlaceholder') || 'Explain why this payment is rejected...'}
                   rows={4}
                   className="w-full"
                 />
@@ -602,14 +605,14 @@ export default function AdminPayouts() {
               onClick={() => setRejectModalOpen(false)}
               disabled={actionLoading}
             >
-              Annuler
+              {t('common.cancel') || 'Cancel'}
             </Button>
             <Button
               onClick={handleRejectPayout}
               disabled={actionLoading || !rejectionReason.trim()}
               className="bg-red-600 hover:bg-red-700"
             >
-              {actionLoading ? 'Rejet...' : 'Rejeter'}
+              {actionLoading ? (t('payouts.rejecting') || 'Rejecting...') : (t('payouts.reject') || 'Reject')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -642,7 +642,7 @@ export default function AdminDashboard() {
                                 <div className="flex items-center gap-4 text-sm text-gray-600">
                                   <div className="flex items-center gap-1">
                                     <Calendar className="w-4 h-4" />
-                                    <span>{callDate.toLocaleDateString('fr-FR', {
+                                    <span>{callDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                                       weekday: 'short',
                                       day: 'numeric',
                                       month: 'short',

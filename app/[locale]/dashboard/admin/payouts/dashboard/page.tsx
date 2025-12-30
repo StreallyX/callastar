@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,6 +78,8 @@ interface DashboardData {
 
 export default function PayoutDashboard() {
   const router = useRouter();
+  const t = useTranslations('dashboard.admin');
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -142,11 +145,11 @@ export default function PayoutDashboard() {
         };
         setDashboardData(transformedData);
       } else {
-        toast.error(data.error || 'Erreur lors du chargement');
+        toast.error(data.error || t('common.error'));
       }
     } catch (error) {
       console.error('Error fetching dashboard:', error);
-      toast.error('Erreur lors du chargement du tableau de bord');
+      toast.error(t('common.error'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -154,7 +157,7 @@ export default function PayoutDashboard() {
   };
 
   const handleTriggerPayouts = async () => {
-    if (!confirm('Voulez-vous vraiment déclencher le traitement des paiements maintenant ?')) {
+    if (!confirm(t('payoutsDashboard.confirmProcess') || 'Do you really want to trigger payment processing now?')) {
       return;
     }
 
@@ -166,14 +169,14 @@ export default function PayoutDashboard() {
 
       const data = await response.json();
       if (response.ok) {
-        toast.success('Traitement des paiements lancé');
+        toast.success(t('payoutsDashboard.processSuccess') || 'Payment processing started');
         // Refresh dashboard after processing
         setTimeout(fetchDashboard, 2000);
       } else {
-        toast.error(data.error || 'Erreur lors du traitement');
+        toast.error(data.error || t('common.error'));
       }
     } catch (error) {
-      toast.error('Erreur lors du déclenchement des paiements');
+      toast.error(t('common.error'));
     } finally {
       setProcessing(false);
     }
@@ -184,7 +187,7 @@ export default function PayoutDashboard() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
         <div className="container mx-auto max-w-7xl px-4 py-12">
-          <LoadingSpinner text="Chargement..." />
+          <LoadingSpinner text={t('common.loading') || 'Loading...'} />
         </div>
       </div>
     );
@@ -197,7 +200,7 @@ export default function PayoutDashboard() {
         <div className="container mx-auto max-w-7xl px-4 py-12">
           <Alert>
             <AlertTriangle className="w-4 h-4" />
-            <AlertDescription>Impossible de charger les données du tableau de bord</AlertDescription>
+            <AlertDescription>{t('payoutsDashboard.dataLoadError') || 'Unable to load dashboard data'}</AlertDescription>
           </Alert>
         </div>
       </div>
@@ -215,10 +218,10 @@ export default function PayoutDashboard() {
             <div>
               <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
                 <TrendingUp className="w-8 h-8" />
-                Tableau de Bord des Paiements
+                {t('payoutsDashboard.title') || 'Payments Dashboard'}
               </h1>
               <p className="text-gray-600">
-                Vue d'ensemble complète de tous les paiements aux créateurs
+                {t('payoutsDashboard.description') || 'Complete overview of all creator payments'}
               </p>
             </div>
             <div className="flex gap-2">
@@ -228,7 +231,7 @@ export default function PayoutDashboard() {
                 disabled={refreshing}
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Actualiser
+                {t('common.refresh') || 'Refresh'}
               </Button>
               <Button
                 onClick={handleTriggerPayouts}
@@ -236,10 +239,10 @@ export default function PayoutDashboard() {
                 className="bg-gradient-to-r from-purple-600 to-pink-600"
               >
                 <Play className={`w-4 h-4 mr-2 ${processing ? 'animate-spin' : ''}`} />
-                Traiter les paiements
+                {t('payoutsDashboard.processingPayouts') || 'Process payments'}
               </Button>
               <Button variant="outline" onClick={() => router.push('/dashboard/admin')}>
-                Retour
+                {t('common.back') || 'Back'}
               </Button>
             </div>
           </div>
@@ -251,7 +254,7 @@ export default function PayoutDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Paiements en attente
+                {t('payoutsDashboard.cards.pendingPayouts') || 'Pending payments'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -259,7 +262,7 @@ export default function PayoutDashboard() {
                 {dashboardData.pendingPayouts.count}
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                Total: <CurrencyDisplay amount={dashboardData.pendingPayouts.totalAmount} />
+                {t('payoutsDashboard.cards.total') || 'Total:'} <CurrencyDisplay amount={dashboardData.pendingPayouts.totalAmount} />
               </p>
             </CardContent>
           </Card>
@@ -268,7 +271,7 @@ export default function PayoutDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <XCircle className="w-4 h-4" />
-                Paiements échoués (30j)
+                {t('payoutsDashboard.cards.failedPayouts') || 'Failed payments (30d)'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -276,7 +279,7 @@ export default function PayoutDashboard() {
                 {dashboardData.failedPayouts.count}
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                Total: <MultiCurrencyDisplay
+                {t('payoutsDashboard.cards.total') || 'Total:'} <MultiCurrencyDisplay
                   amounts={dashboardData.failedPayouts.totalAmountByCurrency}
                   emptyMessage="-"
                 />
@@ -288,14 +291,14 @@ export default function PayoutDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4" />
-                Créateurs bloqués
+                {t('payoutsDashboard.cards.blockedCreators') || 'Blocked creators'}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-orange-600">
                 {dashboardData.blockedCreators.count}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Paiements bloqués</p>
+              <p className="text-sm text-gray-600 mt-1">{t('payoutsDashboard.cards.blockedPayments') || 'Blocked payments'}</p>
             </CardContent>
           </Card>
 
@@ -303,14 +306,14 @@ export default function PayoutDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
-                Problèmes d'éligibilité
+                {t('payoutsDashboard.cards.eligibilityIssues') || 'Eligibility issues'}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-600">
                 {dashboardData.eligibilityIssues.count}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Créateurs concernés</p>
+              <p className="text-sm text-gray-600 mt-1">{t('payoutsDashboard.cards.affectedCreators') || 'Affected creators'}</p>
             </CardContent>
           </Card>
 
@@ -318,22 +321,22 @@ export default function PayoutDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
-                Volume (30 derniers jours)
+                {t('payoutsDashboard.cards.volume30Days') || 'Volume (last 30 days)'}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600 mb-2">
                 <MultiCurrencyDisplay 
                   amounts={dashboardData.payoutVolume30Days.totalAmountByCurrency}
-                  emptyMessage="Aucun paiement"
+                  emptyMessage={t('payoutsDashboard.cards.noAmount') || 'No payments'}
                 />
               </div>
               <p className="text-sm text-gray-600">
-                {dashboardData.payoutVolume30Days.count} paiements
+                {dashboardData.payoutVolume30Days.count} {t('payoutsDashboard.cards.payments') || 'payments'}
               </p>
               {Object.keys(dashboardData.payoutVolume30Days.totalFeesByCurrency).length > 0 && (
                 <div className="mt-3 pt-3 border-t">
-                  <p className="text-xs text-gray-500 mb-1">Fees plateforme:</p>
+                  <p className="text-xs text-gray-500 mb-1">{t('payoutsDashboard.cards.platformFees') || 'Platform fees:'}</p>
                   <div className="text-sm font-medium text-purple-600">
                     <MultiCurrencyDisplay 
                       amounts={dashboardData.payoutVolume30Days.totalFeesByCurrency}
@@ -349,7 +352,7 @@ export default function PayoutDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Paiements prêts
+                {t('payoutsDashboard.cards.readyPayments') || 'Ready payments'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -359,7 +362,7 @@ export default function PayoutDashboard() {
               <div className="text-sm text-gray-600">
                 <MultiCurrencyDisplay 
                   amounts={dashboardData.readyPayments.totalAmountByCurrency}
-                  emptyMessage="Aucun montant"
+                  emptyMessage={t('payoutsDashboard.cards.noAmount') || 'No amount'}
                   orientation="horizontal"
                 />
               </div>
@@ -370,13 +373,13 @@ export default function PayoutDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Prochain paiement prévu
+                {t('payoutsDashboard.cards.nextPayout') || 'Next payout scheduled'}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {dashboardData.nextPayoutDate ? (
                 <div className="text-xl font-bold text-blue-600">
-                  <DateDisplay date={dashboardData.nextPayoutDate} format="short" />
+                  <DateDisplay date={dashboardData.nextPayoutDate} format="short" locale={locale} />
                 </div>
               ) : (
                 <div className="text-xl font-bold text-gray-400">N/A</div>
@@ -391,14 +394,14 @@ export default function PayoutDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
-                Balance Stripe
+                {t('payoutsDashboard.stripeBalance.title') || 'Stripe Balance'}
               </CardTitle>
-              <CardDescription>Soldes disponibles et en attente sur votre compte Stripe</CardDescription>
+              <CardDescription>{t('payoutsDashboard.stripeBalance.description') || 'Available and pending balances on your Stripe account'}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-sm text-green-700 font-medium mb-2">💰 Disponible</p>
+                  <p className="text-sm text-green-700 font-medium mb-2">{t('payoutsDashboard.stripeBalance.available') || '💰 Available'}</p>
                   <div className="text-xl font-bold text-green-800">
                     <MultiCurrencyDisplay 
                       amounts={Object.entries(dashboardData.stripeBalance).reduce((acc, [currency, data]) => {
@@ -410,7 +413,7 @@ export default function PayoutDashboard() {
                   </div>
                 </div>
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-700 font-medium mb-2">⏳ En attente</p>
+                  <p className="text-sm text-yellow-700 font-medium mb-2">{t('payoutsDashboard.stripeBalance.pending') || '⏳ Pending'}</p>
                   <div className="text-xl font-bold text-yellow-800">
                     <MultiCurrencyDisplay 
                       amounts={Object.entries(dashboardData.stripeBalance).reduce((acc, [currency, data]) => {
@@ -432,9 +435,9 @@ export default function PayoutDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <XCircle className="w-5 h-5" />
-                Paiements échoués récents
+                {t('payoutsDashboard.failedPayoutsSection.title') || 'Recent Failed Payments'}
               </CardTitle>
-              <CardDescription>Dernières tentatives de paiement ayant échoué</CardDescription>
+              <CardDescription>{t('payoutsDashboard.failedPayoutsSection.description') || 'Latest failed payment attempts'}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -447,7 +450,7 @@ export default function PayoutDashboard() {
                       <p className="font-semibold text-red-900">{payout.creatorName}</p>
                       <p className="text-sm text-red-700 mt-1">{payout.failureReason}</p>
                       <p className="text-xs text-red-600 mt-1">
-                        <DateDisplay date={payout.createdAt} format="relative" />
+                        <DateDisplay date={payout.createdAt} format="relative" locale={locale} />
                       </p>
                     </div>
                     <div className="text-right">
@@ -460,7 +463,7 @@ export default function PayoutDashboard() {
                         className="mt-2"
                         onClick={() => router.push(`/dashboard/admin/creators/${payout.id}/stripe`)}
                       >
-                        Voir détails
+                        {t('payoutsDashboard.failedPayoutsSection.viewDetails') || 'View details'}
                       </Button>
                     </div>
                   </div>
@@ -477,9 +480,9 @@ export default function PayoutDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ShieldAlert className="w-5 h-5" />
-                  Créateurs bloqués
+                  {t('payoutsDashboard.blockedCreatorsSection.title') || 'Blocked Creators'}
                 </CardTitle>
-                <CardDescription>Créateurs dont les paiements sont bloqués</CardDescription>
+                <CardDescription>{t('payoutsDashboard.blockedCreatorsSection.description') || 'Creators whose payments are blocked'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -493,7 +496,7 @@ export default function PayoutDashboard() {
                           <p className="font-semibold text-orange-900">{creator.name}</p>
                           <p className="text-sm text-orange-700">{creator.email}</p>
                           <p className="text-sm text-orange-800 mt-2">
-                            <span className="font-medium">Raison: </span>
+                            <span className="font-medium">{t('payoutsDashboard.blockedCreatorsSection.reason') || 'Reason:'} </span>
                             {creator.reason}
                           </p>
                         </div>
@@ -502,7 +505,7 @@ export default function PayoutDashboard() {
                           variant="outline"
                           onClick={() => router.push(`/dashboard/admin/creators/${creator.id}/stripe`)}
                         >
-                          Débloquer
+                          {t('payoutsDashboard.blockedCreatorsSection.unblock') || 'Unblock'}
                         </Button>
                       </div>
                     </div>
@@ -518,9 +521,9 @@ export default function PayoutDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5" />
-                  Problèmes d'éligibilité
+                  {t('payoutsDashboard.eligibilitySection.title') || 'Eligibility Issues'}
                 </CardTitle>
-                <CardDescription>Créateurs avec des problèmes d'éligibilité</CardDescription>
+                <CardDescription>{t('payoutsDashboard.eligibilitySection.description') || 'Creators with eligibility issues'}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -543,7 +546,7 @@ export default function PayoutDashboard() {
                           variant="outline"
                           onClick={() => router.push(`/dashboard/admin/creators/${creator.id}/stripe`)}
                         >
-                          Résoudre
+                          {t('payoutsDashboard.eligibilitySection.resolve') || 'Resolve'}
                         </Button>
                       </div>
                     </div>

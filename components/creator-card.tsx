@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Star, Calendar, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 
 interface CreatorCardProps {
   creator: {
@@ -21,9 +22,11 @@ interface CreatorCardProps {
       title: string;
     }>;
   };
+  locale: string;
 }
 
-export function CreatorCard({ creator }: CreatorCardProps) {
+export function CreatorCard({ creator, locale }: CreatorCardProps) {
+  const t = useTranslations('components.creatorCard');
   const [imageError, setImageError] = useState(false);
   const offersCount = creator?.callOffers?.length ?? 0;
 
@@ -34,7 +37,7 @@ export function CreatorCard({ creator }: CreatorCardProps) {
           {creator?.profileImage && !imageError ? (
             <Image
               src={creator.profileImage}
-              alt={creator?.user?.name ?? 'Creator'}
+              alt={creator?.user?.name ?? t('creator')}
               fill
               className="object-cover"
               onError={() => setImageError(true)}
@@ -44,7 +47,7 @@ export function CreatorCard({ creator }: CreatorCardProps) {
               {imageError ? (
                 <div className="text-center text-gray-400">
                   <AlertCircle className="w-12 h-12 mx-auto mb-2" />
-                  <p className="text-sm">Image indisponible</p>
+                  <p className="text-sm">{t('imageUnavailable')}</p>
                 </div>
               ) : (
                 <Star className="w-16 h-16 text-purple-600" />
@@ -55,23 +58,25 @@ export function CreatorCard({ creator }: CreatorCardProps) {
       </CardHeader>
       
       <CardContent className="p-6">
-        <h3 className="text-xl font-semibold mb-2">{creator?.user?.name ?? 'Unknown'}</h3>
+        <h3 className="text-xl font-semibold mb-2">{creator?.user?.name ?? t('unknown')}</h3>
         <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-          {creator?.bio ?? 'Pas de bio disponible'}
+          {creator?.bio ?? t('noBio')}
         </p>
         
         {offersCount > 0 && (
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Calendar className="w-4 h-4" />
-            <span>{offersCount} offre{offersCount > 1 ? 's' : ''} disponible{offersCount > 1 ? 's' : ''}</span>
+            <span>
+              {t('offersCount', { count: offersCount })}
+            </span>
           </div>
         )}
       </CardContent>
       
       <CardFooter className="p-6 pt-0">
-        <Link href={`/creators/${creator?.id}`} className="w-full">
+        <Link href={`/${locale}/creators/${creator?.id}`} className="w-full">
           <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-            Voir le profil
+            {t('viewProfile')}
           </Button>
         </Link>
       </CardFooter>

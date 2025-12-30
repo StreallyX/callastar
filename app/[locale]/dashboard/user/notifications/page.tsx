@@ -165,7 +165,7 @@ export default function NotificationsPage() {
                 <h3 className="font-semibold text-lg">{notification.title}</h3>
                 <p className="text-sm text-gray-600">{notification.message}</p>
                 <p className="text-xs text-gray-400">
-                  {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: fr })}
+                  {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: locale === 'fr' ? fr : enUS })}
                 </p>
               </div>
               {!notification.read && (

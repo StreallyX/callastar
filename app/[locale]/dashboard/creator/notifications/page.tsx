@@ -21,7 +21,7 @@ import {
   Loader2
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -508,7 +508,7 @@ export default function CreatorNotificationsPage() {
                               <span className="text-sm text-gray-500 whitespace-nowrap">
                                 {formatDistanceToNow(
                                   new Date(notification.createdAt),
-                                  { addSuffix: true, locale: fr }
+                                  { addSuffix: true, locale: locale === 'fr' ? fr : enUS }
                                 )}
                               </span>
                             </div>

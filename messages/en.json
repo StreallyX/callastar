@@ -1089,5 +1089,47 @@
       "incompleteConfig": "Incomplete configuration: {message}",
       "settingsNotSynced": "Settings are not synced with Stripe"
     }
+  },
+  "components": {
+    "creatorCard": {
+      "creator": "Creator",
+      "imageUnavailable": "Image unavailable",
+      "unknown": "Unknown",
+      "noBio": "No bio available",
+      "offersCount": "{count, plural, =0 {no offers available} one {# offer available} other {# offers available}}",
+      "viewProfile": "View profile"
+    },
+    "callRequestDialog": {
+      "triggerButton": "Propose a call",
+      "title": "Propose a call with {creatorName}",
+      "description": "Send a personalized request to schedule a video call.",
+      "form": {
+        "dateTime": "Desired date and time",
+        "price": "Proposed price (€)",
+        "message": "Message (optional)",
+        "messagePlaceholder": "Tell us about yourself and why you want a call..."
+      },
+      "cancel": "Cancel",
+      "sending": "Sending...",
+      "submit": "Send request",
+      "success": "Call request sent successfully!",
+      "errors": {
+        "loginRequired": "Please log in to propose a call",
+        "invalidPrice": "Please enter a valid price",
+        "sendFailed": "Failed to send request",
+        "generic": "An error occurred"
+      }
+    },
+    "notificationBell": {
+      "ariaLabel": "Notifications",
+      "title": "Notifications",
+      "markAllRead": "Mark all as read",
+      "loading": "Loading...",
+      "empty": "No notifications",
+      "markAsRead": "Mark as read",
+      "delete": "Delete",
+      "viewDetails": "View details →",
+      "viewAll": "View all notifications"
+    }
   }
 }

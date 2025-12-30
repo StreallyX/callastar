@@ -1,5 +1,8 @@
+'use client';
+
 import * as React from "react";
 import { format } from "date-fns";
+import { fr, enUS } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -10,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useLocale } from 'next-intl';
 
 interface DateRangePickerProps {
   value: DateRange;
@@ -22,6 +26,10 @@ export function DateRangePicker({
   onChange,
   className,
 }: DateRangePickerProps) {
+  const locale = useLocale();
+  const dateFnsLocale = locale === 'fr' ? fr : enUS;
+  const placeholderText = locale === 'fr' ? 'Sélectionner une période' : 'Pick a date range';
+
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -38,14 +46,14 @@ export function DateRangePicker({
             {value?.from ? (
               value.to ? (
                 <>
-                  {format(value.from, "LLL dd, y")} -{" "}
-                  {format(value.to, "LLL dd, y")}
+                  {format(value.from, "LLL dd, y", { locale: dateFnsLocale })} -{" "}
+                  {format(value.to, "LLL dd, y", { locale: dateFnsLocale })}
                 </>
               ) : (
-                format(value.from, "LLL dd, y")
+                format(value.from, "LLL dd, y", { locale: dateFnsLocale })
               )
             ) : (
-              <span>Pick a date range</span>
+              <span>{placeholderText}</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -57,6 +65,7 @@ export function DateRangePicker({
             selected={value}
             onSelect={(value) => onChange(value as DateRange)}
             numberOfMonths={2}
+            locale={dateFnsLocale}
           />
         </PopoverContent>
       </Popover>

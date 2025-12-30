@@ -1089,5 +1089,47 @@
       "incompleteConfig": "Configuration incomplète: {message}",
       "settingsNotSynced": "Les paramètres ne sont pas synchronisés avec Stripe"
     }
+  },
+  "components": {
+    "creatorCard": {
+      "creator": "Créateur",
+      "imageUnavailable": "Image indisponible",
+      "unknown": "Inconnu",
+      "noBio": "Pas de bio disponible",
+      "offersCount": "{count, plural, =0 {aucune offre disponible} one {# offre disponible} other {# offres disponibles}}",
+      "viewProfile": "Voir le profil"
+    },
+    "callRequestDialog": {
+      "triggerButton": "Proposer un appel",
+      "title": "Proposer un appel avec {creatorName}",
+      "description": "Envoyez une demande personnalisée pour organiser un appel vidéo.",
+      "form": {
+        "dateTime": "Date et heure souhaitées",
+        "price": "Prix proposé (€)",
+        "message": "Message (optionnel)",
+        "messagePlaceholder": "Parlez de vous et pourquoi vous souhaitez un appel..."
+      },
+      "cancel": "Annuler",
+      "sending": "Envoi...",
+      "submit": "Envoyer la demande",
+      "success": "Demande d'appel envoyée avec succès!",
+      "errors": {
+        "loginRequired": "Veuillez vous connecter pour proposer un appel",
+        "invalidPrice": "Veuillez entrer un prix valide",
+        "sendFailed": "Échec de l'envoi de la demande",
+        "generic": "Une erreur s'est produite"
+      }
+    },
+    "notificationBell": {
+      "ariaLabel": "Notifications",
+      "title": "Notifications",
+      "markAllRead": "Tout marquer comme lu",
+      "loading": "Chargement...",
+      "empty": "Aucune notification",
+      "markAsRead": "Marquer comme lu",
+      "delete": "Supprimer",
+      "viewDetails": "Voir les détails →",
+      "viewAll": "Voir toutes les notifications"
+    }
   }
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations, useLocale } from 'next-intl';
 import { Bell, Check, Trash2, Filter, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ const NOTIFICATION_TYPES = [
 ];
 
 export default function AdminNotificationsPage() {
+  const locale = useLocale();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -305,7 +307,7 @@ export default function AdminNotificationsPage() {
                           <span className="text-sm text-gray-500 whitespace-nowrap">
                             {formatDistanceToNow(
                               new Date(notification.createdAt),
-                              { addSuffix: true, locale: fr }
+                              { addSuffix: true, locale: locale === 'fr' ? fr : enUS }
                             )}
                           </span>
                         </div>
