@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,8 @@ export default function CallSummaryPage({
   params: Promise<{ bookingId: string }> | { bookingId: string } 
 }) {
   const router = useRouter();
+  const t = useTranslations('call.summary');
+  const locale = useLocale();
   const [bookingId, setBookingId] = useState<string | null>(null);
   const [summary, setSummary] = useState<CallSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,7 +99,7 @@ export default function CallSummaryPage({
       const response = await fetch(`/api/call-summary/${bookingId}`);
       
       if (!response.ok) {
-        throw new Error('Impossible de récupérer le résumé');
+        throw new Error(t('cannotFetchSummary'));
       }
 
       const data = await response.json();
@@ -107,7 +110,7 @@ export default function CallSummaryPage({
         timestamp: new Date().toISOString(),
       });
     } catch (error: any) {
-      setError(error.message || 'Une erreur est survenue');
+      setError(error.message || t('errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -116,17 +119,17 @@ export default function CallSummaryPage({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-500">✓ Terminé normalement</Badge>;
+        return <Badge className="bg-green-500">{t('completedNormally')}</Badge>;
       case 'completed-multiple-sessions':
-        return <Badge className="bg-green-600">✓ Terminé (sessions multiples)</Badge>;
+        return <Badge className="bg-green-600">{t('completedMultiple')}</Badge>;
       case 'interrupted':
-        return <Badge className="bg-orange-500">⚠ Interrompu</Badge>;
+        return <Badge className="bg-orange-500">{t('interrupted')}</Badge>;
       case 'in-progress':
-        return <Badge className="bg-blue-500">⏳ En cours</Badge>;
+        return <Badge className="bg-blue-500">{t('inProgress')}</Badge>;
       case 'no-show':
-        return <Badge variant="destructive">✗ Absent</Badge>;
+        return <Badge variant="destructive">{t('noShow')}</Badge>;
       default:
-        return <Badge variant="secondary">? Inconnu</Badge>;
+        return <Badge variant="secondary">{t('unknown')}</Badge>;
     }
   };
 
@@ -162,13 +165,13 @@ export default function CallSummaryPage({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="w-6 h-6 text-red-500" />
-                Erreur
+                {t('error')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-gray-600">{error || 'Résumé introuvable'}</p>
+              <p className="text-gray-600">{error || t('notFound')}</p>
               <Button onClick={() => router.push('/dashboard/user')} variant="outline">
-                Retour au dashboard
+                {t('backToDashboard')}
               </Button>
             </CardContent>
           </Card>
@@ -190,7 +193,7 @@ export default function CallSummaryPage({
             <CheckCircle2 className="w-10 h-10 text-purple-600" />
           </div>
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Résumé de l'appel
+            {t('title')}
           </h1>
           <p className="text-gray-600 text-lg">{summary.callOffer.title}</p>
         </div>
@@ -202,12 +205,12 @@ export default function CallSummaryPage({
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Activity className="w-5 h-5 text-purple-600" />
-                Statut
+                {t('status')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-gray-600">État</span>
+                <span className="text-gray-600">{t('status')}</span>
                 {getStatusBadge(summary.callDetails.status)}
               </div>
             </CardContent>
@@ -218,7 +221,7 @@ export default function CallSummaryPage({
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Clock className="w-5 h-5 text-green-600" />
-                Durée totale cumulée
+                {t('totalDuration')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -227,7 +230,7 @@ export default function CallSummaryPage({
               </div>
               {summary.callDetails.sessionsCount > 1 && (
                 <p className="text-xs text-gray-500 mt-1">
-                  Sur {summary.callDetails.sessionsCount} session{summary.callDetails.sessionsCount > 1 ? 's' : ''}
+                  {t('onSessions').replace('{count}', summary.callDetails.sessionsCount.toString())}
                 </p>
               )}
             </CardContent>
@@ -238,7 +241,7 @@ export default function CallSummaryPage({
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-blue-600" />
-                Efficacité
+                {t('efficiency')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -248,7 +251,7 @@ export default function CallSummaryPage({
                     {efficiency.percentage}%
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    de la durée prévue ({summary.callOffer.scheduledDuration} min)
+                    {t('ofScheduled')} ({summary.callOffer.scheduledDuration} min)
                   </p>
                 </>
               )}
@@ -263,7 +266,7 @@ export default function CallSummaryPage({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="w-5 h-5" />
-                Participants
+                {t('participants')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -273,7 +276,7 @@ export default function CallSummaryPage({
                 </div>
                 <div>
                   <p className="font-semibold">{summary.participants.creator.name}</p>
-                  <p className="text-sm text-gray-500">Créateur</p>
+                  <p className="text-sm text-gray-500">{t('creator')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
@@ -282,7 +285,7 @@ export default function CallSummaryPage({
                 </div>
                 <div>
                   <p className="font-semibold">{summary.participants.user.name}</p>
-                  <p className="text-sm text-gray-500">Fan</p>
+                  <p className="text-sm text-gray-500">{t('fan')}</p>
                 </div>
               </div>
             </CardContent>
@@ -293,14 +296,14 @@ export default function CallSummaryPage({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                Détails temporels
+                {t('temporalDetails')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-sm text-gray-500 mb-1">Date prévue</p>
+                <p className="text-sm text-gray-500 mb-1">{t('scheduledDate')}</p>
                 <p className="font-semibold">
-                  {new Date(summary.callOffer.scheduledDateTime).toLocaleDateString('fr-FR', {
+                  {new Date(summary.callOffer.scheduledDateTime).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -308,7 +311,7 @@ export default function CallSummaryPage({
                   })}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {new Date(summary.callOffer.scheduledDateTime).toLocaleTimeString('fr-FR', {
+                  {new Date(summary.callOffer.scheduledDateTime).toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
@@ -319,9 +322,9 @@ export default function CallSummaryPage({
                 <div className="border-t pt-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Début réel</p>
+                      <p className="text-sm text-gray-500 mb-1">{t('actualStart')}</p>
                       <p className="font-semibold">
-                        {new Date(summary.callDetails.actualStartTime).toLocaleTimeString('fr-FR', {
+                        {new Date(summary.callDetails.actualStartTime).toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
@@ -330,9 +333,9 @@ export default function CallSummaryPage({
 
                     {summary.callDetails.actualEndTime && (
                       <div>
-                        <p className="text-sm text-gray-500 mb-1">Fin réelle</p>
+                        <p className="text-sm text-gray-500 mb-1">{t('actualEnd')}</p>
                         <p className="font-semibold">
-                          {new Date(summary.callDetails.actualEndTime).toLocaleTimeString('fr-FR', {
+                          {new Date(summary.callDetails.actualEndTime).toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
@@ -352,10 +355,10 @@ export default function CallSummaryPage({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Video className="w-5 h-5 text-orange-600" />
-                Sessions d'appel ({summary.callDetails.sessionsCount})
+                {t('sessions')} ({summary.callDetails.sessionsCount})
               </CardTitle>
               <CardDescription>
-                Cet appel a été interrompu et repris plusieurs fois. Voici le détail des sessions.
+                {t('sessionsDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -363,10 +366,10 @@ export default function CallSummaryPage({
                 {summary.callDetails.sessions.map((session, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
-                      <p className="font-semibold text-sm">Session {index + 1}</p>
+                      <p className="font-semibold text-sm">{t('session')} {index + 1}</p>
                       <p className="text-xs text-gray-500">
-                        {new Date(session.start).toLocaleTimeString('fr-FR')} 
-                        {session.end && ` → ${new Date(session.end).toLocaleTimeString('fr-FR')}`}
+                        {new Date(session.start).toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US')} 
+                        {session.end && ` → ${new Date(session.end).toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US')}`}
                       </p>
                     </div>
                     <div className="text-right">
@@ -380,7 +383,7 @@ export default function CallSummaryPage({
                 <Alert className="mt-4">
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    La durée totale affichée est la somme de toutes les sessions.
+                    {t('totalInfo')}
                   </AlertDescription>
                 </Alert>
               </div>
@@ -394,10 +397,10 @@ export default function CallSummaryPage({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="w-5 h-5" />
-                Chronologie de l'appel
+                {t('timeline')}
               </CardTitle>
               <CardDescription>
-                Tous les événements enregistrés durant l'appel
+                {t('timelineDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -420,7 +423,7 @@ export default function CallSummaryPage({
                       <div className="flex-1">
                         <p className="font-semibold capitalize">{eventName}</p>
                         <p className="text-xs text-gray-500">
-                          {new Date(log.timestamp).toLocaleTimeString('fr-FR', {
+                          {new Date(log.timestamp).toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                             hour: '2-digit',
                             minute: '2-digit',
                             second: '2-digit',
@@ -446,12 +449,12 @@ export default function CallSummaryPage({
         <div className="mt-8 flex gap-4 justify-center">
           <Link href="/dashboard/user/history">
             <Button variant="outline" size="lg">
-              Voir l'historique
+              {t('viewHistory')}
             </Button>
           </Link>
           <Link href="/dashboard/user">
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
         </div>
@@ -461,7 +464,7 @@ export default function CallSummaryPage({
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              Ce résumé est calculé dynamiquement à partir des logs de l'appel et reflète la durée réelle cumulée de toutes les sessions.
+              {t('summaryInfo')}
             </AlertDescription>
           </Alert>
         </div>

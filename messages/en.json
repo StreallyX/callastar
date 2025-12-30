@@ -312,7 +312,9 @@
       "weakConnection": "Weak connection",
       "weakConnectionDesc": "Your internet connection is unstable",
       "connectionLostDesc": "Attempting to reconnect...",
-      "aParticipant": "A participant"
+      "aParticipant": "A participant",
+      "cannotAccessCall": "Cannot access the call",
+      "cannotJoinCall": "Cannot join the call"
     },
     "summary": {
       "title": "Call Summary",
@@ -349,7 +351,9 @@
       "date": "Date",
       "duration": "Duration",
       "amount": "Amount",
-      "backToHome": "Back to home"
+      "backToHome": "Back to home",
+      "cannotFetchSummary": "Cannot fetch summary",
+      "errorOccurred": "An error occurred"
     }
   },
   "legal": {
@@ -1000,5 +1004,90 @@
   "layout": {
     "title": "Callastar",
     "description": "Video call booking platform with creators"
+  },
+  "toast": {
+    "success": {
+      "saved": "Saved successfully",
+      "updated": "Updated successfully",
+      "deleted": "Deleted successfully",
+      "sent": "Sent successfully",
+      "created": "Created successfully",
+      "calendarDownloaded": "Calendar file downloaded!",
+      "dataRefreshed": "Data refreshed",
+      "reviewSent": "Review sent successfully!",
+      "allNotificationsRead": "All notifications have been marked as read",
+      "settingsSaved": "Settings saved successfully!",
+      "profileUpdated": "Profile updated successfully",
+      "imageUploaded": "Image uploaded and profile updated successfully!",
+      "imageDeleted": "Image deleted successfully!",
+      "passwordChanged": "Password changed successfully",
+      "preferenceSaved": "Preferences saved",
+      "timezoneDetected": "Timezone detected: {timezone}",
+      "offerCreated": "Offer created successfully!",
+      "offerDeleted": "Offer deleted successfully",
+      "requestAccepted": "Request accepted and offer created!",
+      "requestRejected": "Request rejected",
+      "payoutRequested": "Payout request submitted successfully!",
+      "payoutSettingsSaved": "Settings saved successfully",
+      "settingsUpdated": "Settings updated!",
+      "paymentCreated": "Payment created successfully!",
+      "logsDeleted": "{count} log(s) deleted",
+      "refundCreated": "Refund created successfully",
+      "paymentsUnblocked": "Payments unblocked",
+      "paymentsBlocked": "Payments blocked",
+      "settingsUpdatedStripe": "Settings updated",
+      "eligibilityVerified": "Eligibility verified",
+      "stripeCopied": "Stripe ID copied",
+      "redirecting": "Redirecting...",
+      "stripeConfigured": "✅ Your Stripe account is now configured!",
+      "creatorsPageOpened": "Creators page opened",
+      "adminDashboardOpened": "Admin dashboard opened",
+      "twoLoginWindowsOpened": "Two login windows opened",
+      "copiedToClipboard": "Copied to clipboard"
+    },
+    "error": {
+      "loadingFailed": "Loading failed",
+      "savingFailed": "Saving failed",
+      "deletingFailed": "Deletion failed",
+      "sendingFailed": "Sending failed",
+      "creatingFailed": "Creation failed",
+      "downloadFailed": "Download failed",
+      "updateFailed": "Update failed",
+      "genericError": "An error occurred",
+      "fillAllFields": "Please fill in all fields",
+      "fillAllRequiredFields": "Please fill in all required fields",
+      "unsupportedFormat": "Unsupported format. Use JPG, PNG or WEBP",
+      "fileTooLarge": "File too large. Maximum size: 5MB",
+      "uploadError": "Error uploading image",
+      "serverError": "Server error during upload. Please try again.",
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must contain at least 8 characters",
+      "stripeError": "Stripe error",
+      "cannotStartStripe": "Cannot start Stripe",
+      "onboardingError": "Error creating onboarding link",
+      "dashboardOpenError": "Error opening dashboard",
+      "cannotCopy": "Cannot copy",
+      "dateRangeRequired": "Please select a date range",
+      "enterValidAmount": "Please enter a valid amount",
+      "minimumAmount": "Amount must be at least {amount} {currency}",
+      "amountExceedsBalance": "Requested amount exceeds available balance",
+      "payoutsNotEnabled": "Payouts are not enabled on your account",
+      "manualPayoutsNotEnabled": "Manual payouts are not enabled",
+      "cannotFetchBalance": "Unable to fetch balance",
+      "minAmountStripe": "Minimum amount must be at least 10 {currency}",
+      "maxAmountStripe": "Minimum amount cannot exceed 1,000,000 {currency}",
+      "enterReason": "Please enter a reason",
+      "rejectReasonRequired": "Please provide a rejection reason"
+    },
+    "info": {
+      "verifyingStripe": "Verifying your Stripe configuration...",
+      "checkingStripeAccount": "Checking your Stripe account...",
+      "configInProgress": "Configuration verification in progress...",
+      "featureToImplement": "Feature to implement via Stripe API"
+    },
+    "warning": {
+      "incompleteConfig": "Incomplete configuration: {message}",
+      "settingsNotSynced": "Settings are not synced with Stripe"
+    }
   }
 }

@@ -15,7 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import DailyIframe, { DailyCall, DailyEvent, DailyEventObjectParticipant } from '@daily-co/daily-js';
 import { logCallEvent, formatDuration } from '@/lib/call-types';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 // Debug flag
 const DEBUG_MODE = process.env.NODE_ENV === 'development';
@@ -40,6 +40,7 @@ export default function CallPage({
   const router = useRouter();
   const { toast } = useToast();
   const t = useTranslations('call.room');
+  const locale = useLocale();
   
   // State
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -190,7 +191,7 @@ export default function CallPage({
       
       const bookingResponse = await fetch(`/api/bookings/${bookingId}`);
       if (!bookingResponse.ok) {
-        throw new Error('Réservation introuvable');
+        throw new Error(t('bookingNotFound'));
       }
       const bookingData = await bookingResponse.json();
       const fetchedBooking = bookingData?.booking;
@@ -207,7 +208,7 @@ export default function CallPage({
       debugLog('Init call error:', error);
       setCallState({ 
         phase: 'error', 
-        error: error?.message ?? 'Une erreur est survenue' 
+        error: error?.message ?? t('callError')
       });
       toast({
         variant: 'destructive',
@@ -299,7 +300,7 @@ export default function CallPage({
 
       if (!tokenResponse.ok) {
         const error = await tokenResponse.json();
-        throw new Error(error?.error ?? 'Impossible d\'accéder à l\'appel');
+        throw new Error(error?.error ?? t('cannotAccessCall'));
       }
 
       const tokenData = await tokenResponse.json();
@@ -372,7 +373,7 @@ export default function CallPage({
       debugLog('Join call error:', error);
       setCallState({ 
         phase: 'error', 
-        error: error?.message ?? 'Impossible de rejoindre l\'appel' 
+        error: error?.message ?? t('cannotJoinCall')
       });
       toast({
         variant: 'destructive',
@@ -647,10 +648,10 @@ export default function CallPage({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-3 flex-wrap">
-                  Salle d'attente - Prêt à rejoindre
+                  {t('waitingRoom')}
                   {booking?.isTestBooking && (
                     <Badge className="bg-blue-500 text-white">
-                      🧪 Mode Test
+                      {t('testMode')}
                     </Badge>
                   )}
                 </CardTitle>
@@ -659,7 +660,7 @@ export default function CallPage({
                   <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                     C
                   </div>
-                  <span className="font-semibold text-purple-600">Callastar</span>
+                  <span className="font-semibold text-purple-600">{t('callastar')}</span>
                 </div>
               </div>
             </CardHeader>
@@ -667,13 +668,13 @@ export default function CallPage({
               <div className="space-y-4">
                 <div>
                   <h2 className="text-xl font-bold mb-2">{booking?.callOffer?.title}</h2>
-                  <p className="text-gray-600">avec {booking?.callOffer?.creator?.user?.name}</p>
+                  <p className="text-gray-600">{t('with')} {booking?.callOffer?.creator?.user?.name}</p>
                   <p className="text-sm text-gray-500">
-                    Durée prévue: {booking?.callOffer?.duration} minutes
+                    {t('scheduledDuration')}: {booking?.callOffer?.duration} {t('minutes')}
                   </p>
                   {booking?.isTestBooking && (
                     <p className="text-sm text-blue-600 font-medium mt-2">
-                      ℹ️ Ceci est un appel de test pour le développement
+                      {t('testCallInfo')}
                     </p>
                   )}
                 </div>
@@ -683,7 +684,7 @@ export default function CallPage({
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Clock className="w-5 h-5" />
-                      Statut de l'appel
+                      {t('callStatusTitle')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -691,7 +692,7 @@ export default function CallPage({
                       {callStatus}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
-                      Prévu le {new Date(booking?.callOffer?.dateTime).toLocaleString('fr-FR')}
+                      {t('scheduledFor')} {new Date(booking?.callOffer?.dateTime).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')}
                     </p>
                   </CardContent>
                 </Card>
@@ -701,32 +702,32 @@ export default function CallPage({
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Info className="w-5 h-5" />
-                      Règles de l'appel
+                      {t('callRulesTitle')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
-                      <p><strong>Durée:</strong> {booking?.callOffer?.duration} minutes allouées</p>
+                      <p><strong>{t('ruleDuration')}</strong> {booking?.callOffer?.duration} {t('minutesAllocated')}</p>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
-                      <p><strong>Comportement:</strong> Soyez respectueux et courtois</p>
+                      <p><strong>{t('ruleBehavior')}</strong> {t('ruleeBehaviorDesc')}</p>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
-                      <p><strong>Confidentialité:</strong> Ne partagez pas le contenu de l'appel</p>
+                      <p><strong>{t('ruleConfidentiality')}</strong> {t('ruleConfidentialityDesc')}</p>
                     </div>
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5" />
-                      <p><strong>Déconnexion:</strong> Si vous êtes déconnecté, vous pouvez rejoindre à nouveau</p>
+                      <p><strong>{t('ruleDisconnection')}</strong> {t('ruleDisconnectionDesc')}</p>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Test équipements */}
                 <div className="bg-gray-100 rounded-lg p-6 space-y-4">
-                  <h3 className="font-semibold">Testez vos équipements</h3>
+                  <h3 className="font-semibold">{t('testEquipment')}</h3>
                   
                   <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative">
                     <video
@@ -752,20 +753,20 @@ export default function CallPage({
                     {isTestingMedia ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Test en cours...
+                        {t('testInProgress')}
                       </>
                     ) : (
                       <>
                         <Settings className="w-4 h-4 mr-2" />
-                        Tester caméra et micro
+                        {t('testCameraAndMic')}
                       </>
                     )}
                   </Button>
 
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p>✓ Vérifiez que votre caméra fonctionne</p>
-                    <p>✓ Testez votre microphone</p>
-                    <p>✓ Trouvez un endroit calme</p>
+                    <p>{t('checkCamera')}</p>
+                    <p>{t('checkMic')}</p>
+                    <p>{t('findQuietPlace')}</p>
                   </div>
                 </div>
                 
@@ -773,23 +774,21 @@ export default function CallPage({
                 <Alert className="bg-blue-50 border-blue-200">
                   <Info className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-800">
-                    <strong>✨ Accès libre :</strong> Vous pouvez rejoindre l'appel à tout moment. 
-                    Arrivez en avance pour tester votre équipement ou rejoignez si vous êtes en retard - 
-                    l'accès n'est jamais bloqué.
+                    <strong>{t('freeAccessTitle')}</strong> {t('freeAccessDesc')}
                   </AlertDescription>
                 </Alert>
               </div>
 
               <div className="flex gap-4">
                 <Button onClick={() => router.push('/dashboard/user')} variant="outline" className="flex-1">
-                  Retour au dashboard
+                  {t('backToDashboard')}
                 </Button>
                 <Button 
                   onClick={joinCall} 
                   className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600"
                 >
                   <Video className="w-4 h-4 mr-2" />
-                  Rejoindre l'appel
+                  {t('joinCall')}
                 </Button>
               </div>
             </CardContent>
@@ -817,7 +816,7 @@ export default function CallPage({
                 </div>
                 {booking?.isTestBooking && (
                   <Badge className="bg-blue-500 text-white">
-                    🧪 Test
+                    {t('testMode')}
                   </Badge>
                 )}
               </div>
@@ -827,7 +826,7 @@ export default function CallPage({
                 <div className="w-6 h-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                   C
                 </div>
-                <span className="font-semibold text-white text-sm">Callastar</span>
+                <span className="font-semibold text-white text-sm">{t('callastar')}</span>
               </div>
             </div>
           </div>
@@ -840,18 +839,18 @@ export default function CallPage({
                 <span className="font-mono text-lg">{formatTime(elapsedTime)}</span>
                 {!isFirstParticipant && realCallStartTime && (
                   <span className="text-xs text-yellow-300 ml-2">
-                    (rejoint en cours)
+                    {t('joinedInProgress')}
                   </span>
                 )}
               </div>
               {!booking?.isTestBooking && (
                 <div className="text-sm text-gray-300 border-l border-gray-500 pl-4">
-                  Restant: {formatTime(timeRemaining)}
+                  {t('timeRemaining')}: {formatTime(timeRemaining)}
                 </div>
               )}
               {booking?.isTestBooking && (
                 <div className="text-xs text-blue-300 border-l border-gray-500 pl-4">
-                  Mode Test - Pas de limite
+                  {t('noTimeLimit')}
                 </div>
               )}
             </div>
@@ -863,7 +862,7 @@ export default function CallPage({
               <Alert className="bg-orange-500 text-white border-orange-600">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  {isReconnecting ? 'Reconnexion en cours...' : 'Connexion perdue'}
+                  {isReconnecting ? t('reconnecting') : t('connectionLost')}
                 </AlertDescription>
               </Alert>
             </div>
@@ -881,7 +880,7 @@ export default function CallPage({
                   variant={isCameraOn ? "default" : "destructive"}
                   size="lg"
                   className="rounded-full w-14 h-14"
-                  title={isCameraOn ? "Désactiver la caméra" : "Activer la caméra"}
+                  title={isCameraOn ? t('disableCamera') : t('enableCamera')}
                 >
                   {isCameraOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
                 </Button>
@@ -891,7 +890,7 @@ export default function CallPage({
                   variant={isMicOn ? "default" : "destructive"}
                   size="lg"
                   className="rounded-full w-14 h-14"
-                  title={isMicOn ? "Désactiver le micro" : "Activer le micro"}
+                  title={isMicOn ? t('disableMic') : t('enableMic')}
                 >
                   {isMicOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
                 </Button>
@@ -905,7 +904,7 @@ export default function CallPage({
                 className="rounded-full px-8 h-14 font-semibold flex items-center gap-2"
               >
                 <LogOut className="w-5 h-5" />
-                Quitter l'appel
+                {t('leaveCall')}
               </Button>
               
               {/* Right - Fullscreen */}
@@ -914,7 +913,7 @@ export default function CallPage({
                 variant="outline"
                 size="lg"
                 className="rounded-full w-14 h-14 bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
-                title={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+                title={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
               >
                 {isFullscreen ? <Minimize className="w-6 h-6" /> : <Maximize className="w-6 h-6" />}
               </Button>
@@ -937,9 +936,9 @@ export default function CallPage({
                   <CheckCircle2 className="w-8 h-8 text-green-600" />
                 </div>
               </div>
-              <h2 className="text-2xl font-bold mb-2">Appel terminé</h2>
+              <h2 className="text-2xl font-bold mb-2">{t('ended')}</h2>
               <p className="text-gray-600 mb-6">
-                Redirection vers le résumé...
+                {t('redirecting')}
               </p>
               <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
             </CardContent>
@@ -958,17 +957,17 @@ export default function CallPage({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="w-6 h-6 text-red-500" />
-                Erreur
+                {t('error')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-gray-600">{callState.error}</p>
               <div className="flex gap-4">
                 <Button onClick={() => router.push('/dashboard/user')} variant="outline">
-                  Retour au dashboard
+                  {t('backToDashboard')}
                 </Button>
                 <Button onClick={() => window.location.reload()}>
-                  Réessayer
+                  {t('retry')}
                 </Button>
               </div>
             </CardContent>

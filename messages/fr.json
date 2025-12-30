@@ -312,7 +312,9 @@
       "weakConnection": "Connexion faible",
       "weakConnectionDesc": "Votre connexion internet est instable",
       "connectionLostDesc": "Tentative de reconnexion...",
-      "aParticipant": "Un participant"
+      "aParticipant": "Un participant",
+      "cannotAccessCall": "Impossible d'accéder à l'appel",
+      "cannotJoinCall": "Impossible de rejoindre l'appel"
     },
     "summary": {
       "title": "Résumé de l'appel",
@@ -349,7 +351,9 @@
       "date": "Date",
       "duration": "Durée",
       "amount": "Montant",
-      "backToHome": "Retour à l'accueil"
+      "backToHome": "Retour à l'accueil",
+      "cannotFetchSummary": "Impossible de récupérer le résumé",
+      "errorOccurred": "Une erreur est survenue"
     }
   },
   "legal": {
@@ -1000,5 +1004,90 @@
   "layout": {
     "title": "Callastar",
     "description": "Plateforme de réservation d'appels vidéo avec des créateurs"
+  },
+  "toast": {
+    "success": {
+      "saved": "Enregistré avec succès",
+      "updated": "Mis à jour avec succès",
+      "deleted": "Supprimé avec succès",
+      "sent": "Envoyé avec succès",
+      "created": "Créé avec succès",
+      "calendarDownloaded": "Fichier calendrier téléchargé !",
+      "dataRefreshed": "Données actualisées",
+      "reviewSent": "Avis envoyé avec succès!",
+      "allNotificationsRead": "Toutes les notifications ont été marquées comme lues",
+      "settingsSaved": "Paramètres sauvegardés avec succès !",
+      "profileUpdated": "Profil mis à jour avec succès",
+      "imageUploaded": "Image uploadée et profil mis à jour avec succès !",
+      "imageDeleted": "Image supprimée avec succès !",
+      "passwordChanged": "Mot de passe modifié avec succès",
+      "preferenceSaved": "Préférences enregistrées",
+      "timezoneDetected": "Fuseau horaire détecté : {timezone}",
+      "offerCreated": "Offre créée avec succès!",
+      "offerDeleted": "Offre supprimée avec succès",
+      "requestAccepted": "Demande acceptée et offre créée!",
+      "requestRejected": "Demande rejetée",
+      "payoutRequested": "Demande de virement soumise avec succès !",
+      "payoutSettingsSaved": "Paramètres enregistrés avec succès",
+      "settingsUpdated": "Paramètres mis à jour!",
+      "paymentCreated": "Paiement créé avec succès!",
+      "logsDeleted": "{count} log(s) supprimé(s)",
+      "refundCreated": "Remboursement créé avec succès",
+      "paymentsUnblocked": "Paiements débloqués",
+      "paymentsBlocked": "Paiements bloqués",
+      "settingsUpdatedStripe": "Paramètres mis à jour",
+      "eligibilityVerified": "Éligibilité vérifiée",
+      "stripeCopied": "ID Stripe copié",
+      "redirecting": "Redirection en cours...",
+      "stripeConfigured": "✅ Votre compte Stripe est maintenant configuré !",
+      "creatorsPageOpened": "Page créateurs ouverte",
+      "adminDashboardOpened": "Dashboard admin ouvert",
+      "twoLoginWindowsOpened": "Deux fenêtres de connexion ouvertes",
+      "copiedToClipboard": "Copié dans le presse-papier"
+    },
+    "error": {
+      "loadingFailed": "Erreur lors du chargement",
+      "savingFailed": "Erreur lors de la sauvegarde",
+      "deletingFailed": "Erreur lors de la suppression",
+      "sendingFailed": "Erreur lors de l'envoi",
+      "creatingFailed": "Erreur lors de la création",
+      "downloadFailed": "Erreur lors du téléchargement",
+      "updateFailed": "Erreur lors de la mise à jour",
+      "genericError": "Une erreur est survenue",
+      "fillAllFields": "Veuillez remplir tous les champs",
+      "fillAllRequiredFields": "Veuillez remplir tous les champs requis",
+      "unsupportedFormat": "Format non supporté. Utilisez JPG, PNG ou WEBP",
+      "fileTooLarge": "Fichier trop lourd. Taille maximale : 5MB",
+      "uploadError": "Erreur lors de l'upload de l'image",
+      "serverError": "Erreur serveur lors de l'upload. Veuillez réessayer.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "stripeError": "Erreur Stripe",
+      "cannotStartStripe": "Impossible de démarrer Stripe",
+      "onboardingError": "Erreur lors de la création du lien d'onboarding",
+      "dashboardOpenError": "Erreur lors de l'ouverture du tableau de bord",
+      "cannotCopy": "Impossible de copier",
+      "dateRangeRequired": "Veuillez sélectionner une plage de dates",
+      "enterValidAmount": "Veuillez entrer un montant valide",
+      "minimumAmount": "Le montant doit être au moins {amount} {currency}",
+      "amountExceedsBalance": "Le montant demandé dépasse votre solde disponible",
+      "payoutsNotEnabled": "Les virements ne sont pas activés sur votre compte",
+      "manualPayoutsNotEnabled": "Les demandes manuelles ne sont pas activées",
+      "cannotFetchBalance": "Impossible de récupérer le solde",
+      "minAmountStripe": "Le montant minimum doit être au moins 10 {currency}",
+      "maxAmountStripe": "Le montant minimum ne peut pas dépasser 1 000 000 {currency}",
+      "enterReason": "Veuillez entrer une raison",
+      "rejectReasonRequired": "Veuillez fournir une raison de refus"
+    },
+    "info": {
+      "verifyingStripe": "Vérification de votre configuration Stripe en cours...",
+      "checkingStripeAccount": "Vérification de votre compte Stripe en cours...",
+      "configInProgress": "Configuration en cours de vérification...",
+      "featureToImplement": "Fonctionnalité à implémenter via l'API Stripe"
+    },
+    "warning": {
+      "incompleteConfig": "Configuration incomplète: {message}",
+      "settingsNotSynced": "Les paramètres ne sont pas synchronisés avec Stripe"
+    }
   }
 }
