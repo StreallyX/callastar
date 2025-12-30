@@ -33,10 +33,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-export default async function HomePage() {
+export default async function HomePage({ params,}: { params: { locale: string };}) {
+
   const data = await getCreators();
   const creators = data?.creators ?? [];
-  const t = await getTranslations('homepage');
+  const t = await getTranslations({
+    locale: params.locale,
+    namespace: 'homepage',
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
