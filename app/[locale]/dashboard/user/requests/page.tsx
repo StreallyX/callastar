@@ -9,10 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Clock, Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 
 export default function RequestsPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('dashboard.user.requests');
   const [user, setUser] = useState<any>(null);
   const [callRequests, setCallRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,9 +70,9 @@ export default function RequestsPage() {
   };
 
   const statusLabels = {
-    PENDING: 'En attente',
-    ACCEPTED: 'Acceptée',
-    REJECTED: 'Rejetée',
+    PENDING: t('pending'),
+    ACCEPTED: t('accepted'),
+    REJECTED: t('rejected'),
   };
 
   const renderRequestCard = (request: any) => (
@@ -78,7 +81,7 @@ export default function RequestsPage() {
         <div className="flex items-start justify-between">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-3">
-              <h3 className="font-semibold text-lg">Demande à {request?.creator?.user?.name}</h3>
+              <h3 className="font-semibold text-lg">{t('requestTo')} {request?.creator?.user?.name}</h3>
               <Badge className={statusColors[request.status as keyof typeof statusColors]}>
                 {statusLabels[request.status as keyof typeof statusLabels]}
               </Badge>
@@ -124,8 +127,8 @@ export default function RequestsPage() {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Mes Demandes d'Appels</h1>
-          <p className="text-gray-600">Suivez vos demandes envoyées aux créateurs</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Statistics */}
@@ -208,8 +211,8 @@ export default function RequestsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Aucune demande envoyée</p>
-              <p className="text-sm text-gray-400 mt-2">Visitez un profil de créateur pour proposer un appel</p>
+              <p className="text-gray-500">{t('noRequests')}</p>
+              <p className="text-sm text-gray-400 mt-2">{t('visitCreatorProfile')}</p>
               <Link href="/creators">
                 <Button variant="outline" className="mt-4">
                   Parcourir les créateurs

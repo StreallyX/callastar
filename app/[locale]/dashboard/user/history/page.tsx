@@ -13,10 +13,13 @@ import { CheckCircle, Loader2, Star, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 
 export default function HistoryPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('dashboard.user.history');
   const [user, setUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,8 +141,8 @@ export default function HistoryPage() {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Historique des Appels</h1>
-          <p className="text-gray-600">Tous vos appels passés</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         <Card>
@@ -178,7 +181,7 @@ export default function HistoryPage() {
                             {booking?.review && (
                               <div className="flex items-center gap-2 mt-2">
                                 <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span className="text-sm text-green-600">Avis laissé</span>
+                                <span className="text-sm text-green-600">{t('reviewLeft')}</span>
                               </div>
                             )}
                           </div>
@@ -191,7 +194,7 @@ export default function HistoryPage() {
                               variant="outline"
                             >
                               <Star className="w-4 h-4 mr-2" />
-                              Laisser un avis
+                              {t('leaveReview')}
                             </Button>
                           )}
                         </div>
@@ -203,7 +206,7 @@ export default function HistoryPage() {
             ) : (
               <div className="py-12 text-center">
                 <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Aucun appel terminé</p>
+                <p className="text-gray-500">{t('noCalls')}</p>
               </div>
             )}
           </CardContent>

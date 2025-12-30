@@ -12,10 +12,13 @@ import { Loader2, ArrowLeft, Save, Globe, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from '@/navigation';
 import { getCommonTimezones, detectUserTimezone, getTimezoneAbbreviation } from '@/lib/timezone';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 
 export default function UserSettingsPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('dashboard.user.settings');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -126,8 +129,8 @@ export default function UserSettingsPage() {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Paramètres du compte</h1>
-          <p className="text-gray-600">Gérez vos préférences et informations personnelles</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         <div className="space-y-6">
@@ -144,7 +147,7 @@ export default function UserSettingsPage() {
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Votre nom"
+                  placeholder={t('yourName')}
                 />
               </div>
 
@@ -240,12 +243,12 @@ export default function UserSettingsPage() {
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Sauvegarde...
+                  Saving...
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Sauvegarder
+                  {t('saveChanges')}
                 </>
               )}
             </Button>
