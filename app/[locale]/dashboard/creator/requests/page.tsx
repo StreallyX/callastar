@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +19,7 @@ import { Link } from '@/navigation';
 export default function RequestsPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('dashboard.creator.requests');
   const [user, setUser] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +80,7 @@ export default function RequestsPage() {
 
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des données');
+      toast.error(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -166,9 +169,9 @@ export default function RequestsPage() {
   const rejectedRequests = requests.filter((r) => r.status === 'REJECTED');
 
   const rejectReasons = [
-    { value: 'NOT_AVAILABLE', label: 'Non disponible' },
-    { value: 'PRICE_TOO_LOW', label: 'Prix trop bas' },
-    { value: 'OTHER', label: 'Autre (précisez)' },
+    { value: 'NOT_AVAILABLE', label: t('reasonNotAvailable') },
+    { value: 'PRICE_TOO_LOW', label: t('reasonPriceTooLow') },
+    { value: 'OTHER', label: t('reasonOther') },
   ];
 
   return (
@@ -184,15 +187,15 @@ export default function RequestsPage() {
               Retour au dashboard
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold mb-2">Demandes de rendez-vous</h1>
-          <p className="text-gray-600">Gérez les demandes d'appels reçues</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">En attente</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('pending')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-yellow-600">{pendingRequests.length}</div>
@@ -200,7 +203,7 @@ export default function RequestsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Acceptées</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('accepted')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">{acceptedRequests.length}</div>
@@ -208,7 +211,7 @@ export default function RequestsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Refusées</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('rejected')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-600">{rejectedRequests.length}</div>
@@ -219,7 +222,7 @@ export default function RequestsPage() {
         {/* Pending Requests */}
         {pendingRequests.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Demandes en attente</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('pendingRequests')}</h2>
             <div className="grid gap-4">
               {pendingRequests.map((request: any) => (
                 <Card key={request.id} className="border-yellow-200 bg-yellow-50">
@@ -234,7 +237,7 @@ export default function RequestsPage() {
                             <p className="font-semibold text-lg">{request?.user?.name ?? 'Utilisateur'}</p>
                             <p className="text-sm text-gray-600">{request?.user?.email}</p>
                           </div>
-                          <Badge className="bg-yellow-500">En attente</Badge>
+                          <Badge className="bg-yellow-500">{t('pending')}</Badge>
                         </div>
                         <div className="space-y-1 text-sm text-gray-700 ml-14">
                           <div className="flex items-center gap-2">
@@ -260,7 +263,7 @@ export default function RequestsPage() {
                         className="flex-1 bg-green-600 hover:bg-green-700"
                       >
                         <Check className="w-4 h-4 mr-2" />
-                        Accepter
+                        {t('accept')}
                       </Button>
                       <Button
                         onClick={() => openRejectDialog(request)}
@@ -268,7 +271,7 @@ export default function RequestsPage() {
                         className="flex-1"
                       >
                         <X className="w-4 h-4 mr-2" />
-                        Refuser
+                        {t('reject')}
                       </Button>
                     </div>
                   </CardContent>
@@ -377,7 +380,7 @@ export default function RequestsPage() {
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmer l'acceptation</DialogTitle>
+            <DialogTitle>{t('confirmAccept')}</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir accepter cette demande ? Une offre sera créée automatiquement.
             </DialogDescription>
@@ -425,7 +428,7 @@ export default function RequestsPage() {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Refuser la demande</DialogTitle>
+            <DialogTitle>{t('reject')} la demande</DialogTitle>
             <DialogDescription>
               Veuillez indiquer la raison du refus. L'utilisateur sera notifié.
             </DialogDescription>
@@ -481,7 +484,7 @@ export default function RequestsPage() {
               ) : (
                 <>
                   <X className="w-4 h-4 mr-2" />
-                  Refuser
+                  {t('reject')}
                 </>
               )}
             </Button>

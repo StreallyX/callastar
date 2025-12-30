@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,8 @@ interface PayoutSettings {
 
 export default function PayoutSettingsPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.creator.payouts.settings');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<PayoutSettings>({

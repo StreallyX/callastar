@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +16,7 @@ import { CurrencyDisplay } from '@/components/ui/currency-display';
 export default function PaymentsPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('dashboard.creator.payments');
   const [user, setUser] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +65,7 @@ export default function PaymentsPage() {
 
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des données');
+      toast.error(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -98,15 +101,15 @@ export default function PaymentsPage() {
               Retour au dashboard
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold mb-2">Historique des Paiements</h1>
-          <p className="text-gray-600">Consultez tous vos paiements reçus</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('total')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -116,7 +119,7 @@ export default function PaymentsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Transférés</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('transferred')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">{paidPayments.length}</div>
@@ -132,7 +135,7 @@ export default function PaymentsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Disponibles</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('available')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">{readyPayments.length}</div>
@@ -144,8 +147,8 @@ export default function PaymentsPage() {
         {payments.length > 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle>Tous les paiements</CardTitle>
-              <CardDescription>Liste complète de vos paiements</CardDescription>
+              <CardTitle>{t('allPayments')}</CardTitle>
+              <CardDescription>{t('allPaymentsDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -203,7 +206,7 @@ export default function PaymentsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Aucun paiement pour le moment</p>
+              <p className="text-gray-500">{t('noPayments')}</p>
             </CardContent>
           </Card>
         )}

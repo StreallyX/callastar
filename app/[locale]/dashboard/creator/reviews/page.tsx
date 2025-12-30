@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +14,7 @@ import { Link } from '@/navigation';
 export default function ReviewsPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('dashboard.creator.reviews');
   const [user, setUser] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [averageRating, setAverageRating] = useState(0);
@@ -52,7 +55,7 @@ export default function ReviewsPage() {
 
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des données');
+      toast.error(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -93,16 +96,16 @@ export default function ReviewsPage() {
               Retour au dashboard
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold mb-2">Mes Avis</h1>
-          <p className="text-gray-600">Consultez les avis laissés par vos fans</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Rating Summary */}
         {totalReviews > 0 && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Résumé des avis</CardTitle>
-              <CardDescription>Vue d'ensemble de vos évaluations</CardDescription>
+              <CardTitle>{t('summary')}</CardTitle>
+              <CardDescription>{t('summaryDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-8">
@@ -157,7 +160,7 @@ export default function ReviewsPage() {
         {/* Reviews List */}
         {reviews.length > 0 ? (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold mb-4">Tous les avis ({totalReviews})</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('allReviews')} ({totalReviews})</h2>
             {reviews.map((review: any) => (
               <Card key={review.id}>
                 <CardContent className="pt-6">
@@ -208,9 +211,9 @@ export default function ReviewsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Aucun avis pour le moment</p>
+              <p className="text-gray-500">{t('noReviews')}</p>
               <p className="text-sm text-gray-400 mt-2">
-                Les avis de vos fans apparaîtront ici après vos appels
+                {t('noReviewsDesc')}
               </p>
             </CardContent>
           </Card>

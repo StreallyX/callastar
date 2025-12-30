@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +16,8 @@ import { DateTimeDisplay, LiveCountdown } from '@/components/ui/datetime-display
 
 export default function CallsPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.creator.calls');
   const [user, setUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +67,7 @@ export default function CallsPage() {
 
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des données');
+      toast.error(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -110,15 +114,15 @@ export default function CallsPage() {
     const now = new Date();
     
     if (booking.status === 'CANCELLED') {
-      return { label: 'Annulé', color: 'bg-red-500' };
+      return { label: t('status.cancelled'), color: 'bg-red-500' };
     } else if (booking.status === 'COMPLETED') {
-      return { label: 'Terminé', color: 'bg-blue-500' };
+      return { label: t('status.completed'), color: 'bg-blue-500' };
     } else if (booking.status === 'CONFIRMED' && callDate > now) {
-      return { label: 'Confirmé', color: 'bg-green-500' };
+      return { label: t('status.confirmed'), color: 'bg-green-500' };
     } else if (booking.status === 'PENDING') {
-      return { label: 'En attente', color: 'bg-yellow-500' };
+      return { label: t('status.pending'), color: 'bg-yellow-500' };
     } else {
-      return { label: 'Passé', color: 'bg-gray-500' };
+      return { label: t('status.past'), color: 'bg-gray-500' };
     }
   };
 
@@ -132,18 +136,18 @@ export default function CallsPage() {
           <Link href="/dashboard/creator">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold mb-2">Mes Appels</h1>
-          <p className="text-gray-600">Gérez vos appels passés et à venir</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('total')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{statusCounts.ALL}</div>
@@ -151,7 +155,7 @@ export default function CallsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">À venir</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('upcoming')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">{statusCounts.UPCOMING}</div>
@@ -159,7 +163,7 @@ export default function CallsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Passés</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('past')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-blue-600">{statusCounts.PAST}</div>
@@ -167,7 +171,7 @@ export default function CallsPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Annulés</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('cancelled')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-600">{statusCounts.CANCELLED}</div>
@@ -184,7 +188,7 @@ export default function CallsPage() {
                 onClick={() => setFilter('ALL')}
                 size="sm"
               >
-                Tous ({statusCounts.ALL})
+                {t('filters.all')} ({statusCounts.ALL})
               </Button>
               <Button
                 variant={filter === 'UPCOMING' ? 'default' : 'outline'}
@@ -192,7 +196,7 @@ export default function CallsPage() {
                 size="sm"
                 className={filter === 'UPCOMING' ? 'bg-green-500' : ''}
               >
-                À venir ({statusCounts.UPCOMING})
+                {t('filters.upcoming')} ({statusCounts.UPCOMING})
               </Button>
               <Button
                 variant={filter === 'PAST' ? 'default' : 'outline'}
@@ -200,7 +204,7 @@ export default function CallsPage() {
                 size="sm"
                 className={filter === 'PAST' ? 'bg-blue-500' : ''}
               >
-                Passés ({statusCounts.PAST})
+                {t('filters.past')} ({statusCounts.PAST})
               </Button>
               <Button
                 variant={filter === 'CANCELLED' ? 'default' : 'outline'}
@@ -208,7 +212,7 @@ export default function CallsPage() {
                 size="sm"
                 className={filter === 'CANCELLED' ? 'bg-red-500' : ''}
               >
-                Annulés ({statusCounts.CANCELLED})
+                {t('filters.cancelled')} ({statusCounts.CANCELLED})
               </Button>
             </div>
           </CardContent>
@@ -240,13 +244,13 @@ export default function CallsPage() {
                               </Badge>
                               {booking?.isTestBooking && (
                                 <Badge className="bg-blue-500 text-white">
-                                  🧪 Mode Test
+                                  🧪 {t('status.testMode')}
                                 </Badge>
                               )}
                             </div>
                             <div className="flex items-center gap-2 text-sm text-gray-600">
                               <User className="w-4 h-4" />
-                              <span>Avec: {booking?.user?.name}</span>
+                              <span>{t('status.with')} {booking?.user?.name}</span>
                             </div>
                           </div>
                         </div>
@@ -293,11 +297,11 @@ export default function CallsPage() {
                             className="bg-gradient-to-r from-purple-600 to-pink-600"
                           >
                             <Video className="w-4 h-4 mr-2" />
-                            Rejoindre
+                            {t('actions.join')}
                           </Button>
                         ) : booking.status === 'CONFIRMED' && callDate > now ? (
                           <Button variant="outline" disabled>
-                            Débute bientôt
+                            {t('actions.startingSoon')}
                           </Button>
                         ) : null}
                       </div>
@@ -313,12 +317,12 @@ export default function CallsPage() {
               <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">
                 {filter === 'ALL' 
-                  ? 'Aucun appel' 
+                  ? t('noCallsFor.all') 
                   : filter === 'UPCOMING'
-                  ? 'Aucun appel à venir'
+                  ? t('noCallsFor.upcoming')
                   : filter === 'PAST'
-                  ? 'Aucun appel passé'
-                  : 'Aucun appel annulé'
+                  ? t('noCallsFor.past')
+                  : t('noCallsFor.cancelled')
                 }
               </p>
             </CardContent>

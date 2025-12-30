@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ type ViewMode = 'list' | 'calendar';
 export default function OffersPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('dashboard.creator.offers');
   const [user, setUser] = useState<any>(null);
   const [offers, setOffers] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -113,7 +116,7 @@ export default function OffersPage() {
 
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des données');
+      toast.error(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -143,7 +146,7 @@ export default function OffersPage() {
       });
 
       if (response.ok) {
-        toast.success('Offre créée avec succès!');
+        toast.success(t('createSuccess'));
         setCreateDialogOpen(false);
         setNewOffer({
           title: '',
@@ -155,17 +158,17 @@ export default function OffersPage() {
         fetchData();
       } else {
         const error = await response.json();
-        throw new Error(error?.error ?? 'Erreur lors de la création');
+        throw new Error(error?.error ?? t('createError'));
       }
     } catch (error: any) {
-      toast.error(error?.message ?? 'Une erreur est survenue');
+      toast.error(error?.message ?? t('genericError'));
     } finally {
       setCreatingOffer(false);
     }
   };
 
   const handleDeleteOffer = async (offerId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette offre ?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
 
     try {
       const response = await fetch(`/api/call-offers/${offerId}`, {
@@ -173,13 +176,13 @@ export default function OffersPage() {
       });
 
       if (response.ok) {
-        toast.success('Offre supprimée avec succès');
+        toast.success(t('deleteSuccess'));
         fetchData();
       } else {
-        throw new Error('Erreur lors de la suppression');
+        throw new Error(t('deleteError'));
       }
     } catch (error) {
-      toast.error('Impossible de supprimer l\'offre');
+      toast.error(t('deleteError'));
     }
   };
 
@@ -239,9 +242,9 @@ export default function OffersPage() {
   const handleEventClick = (info: any) => {
     const props = info.event.extendedProps;
     if (props.type === 'offer') {
-      alert(`📋 ${info.event.title}\n\n${props.description}\n\nStatut: ${statusLabels[props.status]}\nDurée: ${props.duration} min`);
+      alert(`📋 ${info.event.title}\n\n${props.description}\n\n${t('table.status')}: ${statusLabels[props.status]}\n${t('table.duration')}: ${props.duration} ${t('minutes')}`);
     } else {
-      alert(`📞 Appel confirmé\n\nAvec: ${props.userName}\nStatut: ${props.status}`);
+      alert(`${t('legend.confirmedCall')}\n\n${t('with')}: ${props.userName}\n${t('table.status')}: ${props.status}`);
     }
   };
 
@@ -265,10 +268,10 @@ export default function OffersPage() {
   };
 
   const statusLabels: Record<string, string> = {
-    AVAILABLE: 'Disponible',
-    BOOKED: 'Réservée',
-    COMPLETED: 'Terminée',
-    CANCELLED: 'Annulée',
+    AVAILABLE: t('status.available'),
+    BOOKED: t('status.booked'),
+    COMPLETED: t('status.completed'),
+    CANCELLED: t('status.cancelled'),
   };
 
   return (
@@ -281,32 +284,32 @@ export default function OffersPage() {
           <Link href="/dashboard/creator">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Mes Offres</h1>
-              <p className="text-gray-600">Gérez vos offres d'appels et rendez-vous</p>
+              <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+              <p className="text-gray-600">{t('subtitle')}</p>
             </div>
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
                   <Plus className="w-4 h-4 mr-2" />
-                  Créer une offre
+                  {t('createOffer')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <form onSubmit={handleCreateOffer}>
                   <DialogHeader>
-                    <DialogTitle>Nouvelle offre d'appel</DialogTitle>
+                    <DialogTitle>{t('new')}</DialogTitle>
                     <DialogDescription>
-                      Créez une nouvelle offre d'appel pour vos fans
+                      {t('newDescription')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div>
-                      <Label htmlFor="title">Titre</Label>
+                      <Label htmlFor="title">{t('titleField')}</Label>
                       <Input
                         id="title"
                         value={newOffer.title}
@@ -315,7 +318,7 @@ export default function OffersPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="description">Description</Label>
+                      <Label htmlFor="description">{t('description')}</Label>
                       <Textarea
                         id="description"
                         value={newOffer.description}
@@ -326,7 +329,7 @@ export default function OffersPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="price">Prix ({creatorCurrency})</Label>
+                        <Label htmlFor="price">{t('price')} ({creatorCurrency})</Label>
                         <Input
                           id="price"
                           type="number"
@@ -337,7 +340,7 @@ export default function OffersPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="duration">Durée (minutes)</Label>
+                        <Label htmlFor="duration">{t('durationMinutes')}</Label>
                         <Input
                           id="duration"
                           type="number"
@@ -348,7 +351,7 @@ export default function OffersPage() {
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="dateTime">Date et heure</Label>
+                      <Label htmlFor="dateTime">{t('dateTime')}</Label>
                       <Input
                         id="dateTime"
                         type="datetime-local"
@@ -363,10 +366,10 @@ export default function OffersPage() {
                       {creatingOffer ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Création...
+                          {t('creating')}
                         </>
                       ) : (
-                        'Créer'
+                        t('createButton')
                       )}
                     </Button>
                   </DialogFooter>
@@ -389,7 +392,7 @@ export default function OffersPage() {
                   className="gap-2"
                 >
                   <List className="w-4 h-4" />
-                  Vue Liste
+                  {t('viewMode.list')}
                 </Button>
                 <Button
                   variant={viewMode === 'calendar' ? 'default' : 'outline'}
@@ -398,7 +401,7 @@ export default function OffersPage() {
                   className="gap-2"
                 >
                   <CalendarDays className="w-4 h-4" />
-                  Vue Calendrier
+                  {t('viewMode.calendar')}
                 </Button>
               </div>
 
@@ -410,7 +413,7 @@ export default function OffersPage() {
                     onClick={() => setStatusFilter('ALL')}
                     size="sm"
                   >
-                    Toutes ({statusCounts.ALL})
+                    {t('filters.all', { count: statusCounts.ALL })}
                   </Button>
                   <Button
                     variant={statusFilter === 'AVAILABLE' ? 'default' : 'outline'}
@@ -418,7 +421,7 @@ export default function OffersPage() {
                     size="sm"
                     className={statusFilter === 'AVAILABLE' ? 'bg-green-500 hover:bg-green-600' : ''}
                   >
-                    Disponibles ({statusCounts.AVAILABLE})
+                    {t('filters.available', { count: statusCounts.AVAILABLE })}
                   </Button>
                   <Button
                     variant={statusFilter === 'BOOKED' ? 'default' : 'outline'}
@@ -426,7 +429,7 @@ export default function OffersPage() {
                     size="sm"
                     className={statusFilter === 'BOOKED' ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
                   >
-                    Réservées ({statusCounts.BOOKED})
+                    {t('filters.booked', { count: statusCounts.BOOKED })}
                   </Button>
                   <Button
                     variant={statusFilter === 'COMPLETED' ? 'default' : 'outline'}
@@ -434,7 +437,7 @@ export default function OffersPage() {
                     size="sm"
                     className={statusFilter === 'COMPLETED' ? 'bg-blue-500 hover:bg-blue-600' : ''}
                   >
-                    Terminées ({statusCounts.COMPLETED})
+                    {t('filters.completed', { count: statusCounts.COMPLETED })}
                   </Button>
                   <Button
                     variant={statusFilter === 'CANCELLED' ? 'default' : 'outline'}
@@ -442,7 +445,7 @@ export default function OffersPage() {
                     size="sm"
                     className={statusFilter === 'CANCELLED' ? 'bg-red-500 hover:bg-red-600' : ''}
                   >
-                    Annulées ({statusCounts.CANCELLED})
+                    {t('filters.cancelled', { count: statusCounts.CANCELLED })}
                   </Button>
                 </div>
               )}
@@ -461,7 +464,7 @@ export default function OffersPage() {
                     <CardContent className="pt-6">
                       <div className="text-center">
                         <div className="text-3xl font-bold text-green-600">{statusCounts.AVAILABLE}</div>
-                        <p className="text-sm text-gray-600 mt-1">Disponibles</p>
+                        <p className="text-sm text-gray-600 mt-1">{t('status.available')}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -469,7 +472,7 @@ export default function OffersPage() {
                     <CardContent className="pt-6">
                       <div className="text-center">
                         <div className="text-3xl font-bold text-yellow-600">{statusCounts.BOOKED}</div>
-                        <p className="text-sm text-gray-600 mt-1">Réservées</p>
+                        <p className="text-sm text-gray-600 mt-1">{t('status.booked')}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -477,7 +480,7 @@ export default function OffersPage() {
                     <CardContent className="pt-6">
                       <div className="text-center">
                         <div className="text-3xl font-bold text-blue-600">{statusCounts.COMPLETED}</div>
-                        <p className="text-sm text-gray-600 mt-1">Terminées</p>
+                        <p className="text-sm text-gray-600 mt-1">{t('status.completed')}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -485,7 +488,7 @@ export default function OffersPage() {
                     <CardContent className="pt-6">
                       <div className="text-center">
                         <div className="text-3xl font-bold text-red-600">{statusCounts.CANCELLED}</div>
-                        <p className="text-sm text-gray-600 mt-1">Annulées</p>
+                        <p className="text-sm text-gray-600 mt-1">{t('status.cancelled')}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -498,12 +501,12 @@ export default function OffersPage() {
                       <table className="w-full">
                         <thead>
                           <tr className="border-b">
-                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Offre</th>
-                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Date & Heure</th>
-                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Durée</th>
-                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Prix</th>
-                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Statut</th>
-                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+                            <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('table.offer')}</th>
+                            <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('table.dateTime')}</th>
+                            <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('table.duration')}</th>
+                            <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('table.price')}</th>
+                            <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('table.status')}</th>
+                            <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('table.actions')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -523,7 +526,7 @@ export default function OffersPage() {
                                     <div className="text-sm text-gray-600 line-clamp-1">{offer?.description}</div>
                                     {offer?.status === 'BOOKED' && offer?.booking?.user && (
                                       <div className="text-sm text-purple-600 mt-1">
-                                        📞 Réservé par {offer.booking.user.name}
+                                        📞 {t('bookedBy', { name: offer.booking.user.name })}
                                       </div>
                                     )}
                                   </div>
@@ -544,7 +547,7 @@ export default function OffersPage() {
                                 <td className="py-4 px-4">
                                   <div className="flex items-center gap-1 text-sm">
                                     <Clock className="w-4 h-4 text-gray-500" />
-                                    {offer?.duration} min
+                                    {offer?.duration} {t('minutes')}
                                   </div>
                                 </td>
                                 <td className="py-4 px-4">
@@ -588,8 +591,8 @@ export default function OffersPage() {
                   <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500">
                     {statusFilter === 'ALL' 
-                      ? 'Aucune offre créée' 
-                      : `Aucune offre avec le statut "${statusLabels[statusFilter as keyof typeof statusLabels] || statusFilter}"`
+                      ? t('noOffers') 
+                      : t('noOffersWithStatus', { status: statusLabels[statusFilter as keyof typeof statusLabels] || statusFilter })
                     }
                   </p>
                 </CardContent>
@@ -606,23 +609,23 @@ export default function OffersPage() {
               <div className="mb-4 flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded bg-green-500"></div>
-                  <span>Disponible</span>
+                  <span>{t('legend.available')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded bg-yellow-500"></div>
-                  <span>Réservée</span>
+                  <span>{t('legend.booked')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded bg-blue-500"></div>
-                  <span>Terminée</span>
+                  <span>{t('legend.completed')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded bg-red-500"></div>
-                  <span>Annulée</span>
+                  <span>{t('legend.cancelled')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded bg-purple-500"></div>
-                  <span>📞 Appel confirmé</span>
+                  <span>{t('legend.confirmedCall')}</span>
                 </div>
               </div>
 

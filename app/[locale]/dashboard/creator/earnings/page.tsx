@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { CurrencyDisplay } from '@/components/ui/currency-display';
 export default function EarningsPage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('dashboard.creator.earnings');
   const [user, setUser] = useState<any>(null);
   const [payoutData, setPayoutData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export default function EarningsPage() {
 
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des données');
+      toast.error(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -88,18 +90,18 @@ export default function EarningsPage() {
           <Link href="/dashboard/creator">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold mb-2">Mes Revenus</h1>
-          <p className="text-gray-600">Consultez vos revenus et statistiques</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Revenue Summary Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total transféré</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('totalTransferred')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
@@ -108,13 +110,13 @@ export default function EarningsPage() {
                   currency={creatorCurrency} 
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Déjà sur votre compte Stripe</p>
+              <p className="text-xs text-gray-500 mt-1">{t('onStripeAccount')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">En attente</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('pending')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-600">
@@ -123,13 +125,13 @@ export default function EarningsPage() {
                   currency={creatorCurrency} 
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Période de sécurité (7 jours)</p>
+              <p className="text-xs text-gray-500 mt-1">{t('securityPeriod')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Disponible</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">{t('available')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
@@ -138,7 +140,7 @@ export default function EarningsPage() {
                   currency={creatorCurrency} 
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Prêt pour transfert</p>
+              <p className="text-xs text-gray-500 mt-1">{t('readyForTransfer')}</p>
             </CardContent>
           </Card>
         </div>
@@ -149,15 +151,15 @@ export default function EarningsPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-lg mb-1">Demander un paiement</h3>
+                  <h3 className="font-semibold text-lg mb-1">{t('requestPayout')}</h3>
                   <p className="text-sm text-gray-600">
-                    Transférez vos revenus disponibles vers votre compte bancaire
+                    {t('requestPayoutDesc')}
                   </p>
                 </div>
                 <Link href="/dashboard/creator/payouts">
                   <Button className="bg-purple-600 hover:bg-purple-700">
                     <DollarSign className="w-4 h-4 mr-2" />
-                    Payouts
+                    {t('payouts')}
                   </Button>
                 </Link>
               </div>
@@ -168,15 +170,15 @@ export default function EarningsPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-lg mb-1">Historique des paiements</h3>
+                  <h3 className="font-semibold text-lg mb-1">{t('paymentHistory')}</h3>
                   <p className="text-sm text-gray-600">
-                    Consultez tous vos paiements reçus
+                    {t('paymentHistoryDesc')}
                   </p>
                 </div>
                 <Link href="/dashboard/creator/payments">
                   <Button variant="outline">
                     <ArrowRight className="w-4 h-4 mr-2" />
-                    Voir
+                    {t('view')}
                   </Button>
                 </Link>
               </div>
@@ -188,8 +190,8 @@ export default function EarningsPage() {
         {payoutData?.payments && payoutData.payments.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Paiements récents</CardTitle>
-              <CardDescription>Vos derniers paiements reçus</CardDescription>
+              <CardTitle>{t('recentPayments')}</CardTitle>
+              <CardDescription>{t('recentPaymentsDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -216,7 +218,7 @@ export default function EarningsPage() {
                 <div className="mt-4 text-center">
                   <Link href="/dashboard/creator/payments">
                     <Button variant="outline" size="sm">
-                      Voir tous les paiements
+                      {t('viewAllPayments')}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </Link>
@@ -229,17 +231,17 @@ export default function EarningsPage() {
         {/* Info Card */}
         <Card className="mt-6 bg-blue-50 border-blue-200">
           <CardHeader>
-            <CardTitle className="text-blue-800 text-base">📋 Comment fonctionnent les revenus ?</CardTitle>
+            <CardTitle className="text-blue-800 text-base">📋 {t('howItWorks')}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-blue-700 space-y-2">
-            <p><strong>1. Période de sécurité (7 jours) :</strong> Après chaque réservation payée, le montant est sécurisé pendant 7 jours.</p>
-            <p><strong>2. Disponibilité :</strong> Après 7 jours, le montant devient disponible pour transfert.</p>
-            <p><strong>3. Demande de paiement :</strong> Vous pouvez demander le transfert via la page Payouts.</p>
-            <p><strong>4. Transfert automatique :</strong> Le montant est transféré vers votre compte Stripe Connect, puis vers votre compte bancaire.</p>
+            <p><strong>1. {t('securityPeriod')}:</strong> {t('securityPeriodDesc')}</p>
+            <p><strong>2. {t('availability')}:</strong> {t('availabilityDesc')}</p>
+            <p><strong>3. {t('requestPayout')}:</strong> {t('requestPayoutInfo')}</p>
+            <p><strong>4. {t('automaticTransfer')}:</strong> {t('automaticTransferDesc')}</p>
             <p className="pt-2 border-t border-blue-300 mt-2">
-              <strong>Configuration bancaire :</strong> Pour configurer votre compte bancaire, connectez-vous à votre{' '}
+              <strong>{t('bankSetup')}:</strong> {t('bankSetupDesc')}{' '}
               <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold">
-                tableau de bord Stripe
+                {t('stripeDashboard')}
               </a>.
             </p>
           </CardContent>

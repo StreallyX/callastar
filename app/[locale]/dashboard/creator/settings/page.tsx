@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import Image from 'next/image';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -214,6 +216,7 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
 
 export default function CreatorSettings() {
   const router = useRouter();
+  const t = useTranslations('dashboard.creator.settings');
   const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

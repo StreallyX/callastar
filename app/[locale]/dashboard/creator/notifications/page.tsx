@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Navbar } from "@/components/navbar";
 import { 
   Bell, 
@@ -23,7 +25,7 @@ import { fr } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
+import { Link } from '@/navigation';
 
 interface Notification {
   id: string;
@@ -94,6 +96,8 @@ const NOTIFICATION_TYPES = [
 
 export default function CreatorNotificationsPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.creator.notifications');
   const [user, setUser] = useState<any>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);

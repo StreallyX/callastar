@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,6 +41,8 @@ interface StripeAccountData {
 
 export default function PaymentSetupPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.creator.paymentSetup');
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [accountData, setAccountData] = useState<StripeAccountData | null>(null);
