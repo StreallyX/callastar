@@ -37,10 +37,10 @@ async function getCreators() {
 }
 
 export default async function CreatorsPage({ params }: { params: { locale: string } }) {
-  const t = await getTranslations('creators.list');
   const data = await getCreators();
   const creators = data?.creators ?? [];
   const locale = params.locale;
+  const t = await getTranslations({locale: params.locale, namespace: 'creators.list', });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
