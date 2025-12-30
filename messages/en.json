@@ -345,7 +345,11 @@
       "viewHistory": "View history",
       "backToDashboard": "Back to dashboard",
       "summaryInfo": "This summary is dynamically calculated from the call logs and reflects the actual cumulative duration of all sessions.",
-      "onSessions": "Over {count} session(s)"
+      "onSessions": "Over {count} session(s)",
+      "date": "Date",
+      "duration": "Duration",
+      "amount": "Amount",
+      "backToHome": "Back to home"
     }
   },
   "legal": {
@@ -401,22 +405,31 @@
         "reviewLeft": "Review left"
       },
       "requests": {
-        "title": "My Call Requests",
+        "title": "My Requests",
         "description": "Requests you sent to creators",
-        "noRequests": "No pending requests",
+        "noRequests": "No requests sent",
         "noRequestsDescription": "Visit a creator's profile to propose a call",
         "requestTo": "Request to",
         "pending": "Pending",
         "accepted": "Accepted",
         "rejected": "Rejected",
-        "sentOn": "Sent on"
+        "sentOn": "Sent on",
+        "subtitle": "Track your requests sent to creators",
+        "visitCreatorProfile": "Visit a creator profile to propose a call",
+        "proposedDate": "Proposed date",
+        "backToDashboard": "Back to dashboard"
       },
       "history": {
         "title": "Call History",
         "description": "Past and completed calls",
         "noHistory": "No completed calls",
         "noHistoryDescription": "Your call history will appear here",
-        "viewSummary": "View Summary"
+        "viewSummary": "View Summary",
+        "subtitle": "All your past calls",
+        "reviewLeft": "Review left",
+        "leaveReview": "Leave a review",
+        "noCalls": "No past calls",
+        "backToDashboard": "Back to dashboard"
       },
       "calls": {
         "title": "My Upcoming Calls",
@@ -426,24 +439,36 @@
         "exploreCreators": "Browse Creators",
         "confirmBook": "Confirmed",
         "pendingStatus": "Pending",
-        "duration": "Duration: {duration} minutes",
-        "join": "Join"
+        "duration": "Duration",
+        "join": "Join",
+        "noCalls": "No upcoming calls",
+        "with": "With",
+        "price": "Price",
+        "backToDashboard": "Back to dashboard"
       },
       "settings": {
-        "title": "Settings",
+        "title": "Account settings",
         "profile": "User Profile",
         "profileDesc": "Manage your personal information",
         "name": "Name",
         "email": "Email",
         "role": "Role",
         "save": "Save",
-        "saving": "Saving..."
+        "saving": "Saving...",
+        "subtitle": "Manage your preferences and personal information",
+        "yourName": "Your name",
+        "timezone": "Timezone",
+        "language": "Language",
+        "saveChanges": "Save changes",
+        "backToDashboard": "Back to dashboard"
       },
       "notifications": {
         "title": "Notifications",
         "description": "Manage your notifications",
         "noNotifications": "No notifications",
-        "markAsRead": "Mark as read"
+        "markAsRead": "Mark as read",
+        "noNotificationsDesc": "You will receive notifications here for your calls and requests",
+        "backToDashboard": "Back to dashboard"
       },
       "booking": {
         "with": "with",
@@ -470,6 +495,9 @@
         "cancel": "Cancel",
         "success": "Review sent successfully!",
         "error": "Failed to send review"
+      },
+      "main": {
+        "reviewPlaceholder": "Share your experience..."
       }
     },
     "creator": {
@@ -481,13 +509,23 @@
         "required": "Payment setup required",
         "description": "Manage your Stripe account and payments",
         "completeSetup": "To receive your payments automatically via Stripe Connect, you must complete your setup. This only takes a few minutes.",
-        "configureStripe": "Configure Stripe Connect",
+        "configureStripe": "Configure Stripe",
         "paymentsEnabled": "Payments enabled",
         "incomplete": "Setup incomplete",
         "accountReady": "Your account is set up and ready to receive payments",
         "completeConfig": "Complete your setup to receive payments",
         "viewDetails": "View details",
-        "configure": "Configure"
+        "configure": "Configure",
+        "verifying": "Verifying your Stripe configuration...",
+        "errorFetching": "Error fetching Stripe status",
+        "errorStripe": "Stripe error",
+        "cannotStart": "Cannot start Stripe",
+        "stripeStatus": "Stripe status",
+        "stripeStatusDesc": "Current state of your Stripe Connect account",
+        "incompleteConfig": "Incomplete configuration",
+        "stripeAccountCreated": "Stripe account created",
+        "accountOperational": "Account operational",
+        "accountConfigured": "Your Stripe account is properly configured."
       },
       "cards": {
         "offers": {
@@ -532,14 +570,14 @@
       },
       "offers": {
         "title": "My Offers",
-        "subtitle": "Manage your call offers and appointments",
+        "subtitle": "Manage your call offers",
         "create": "Create an offer",
         "new": "New call offer",
         "newDescription": "Create a new call offer for your fans",
         "titleField": "Title",
         "description": "Description",
         "price": "Price",
-        "duration": "Duration (minutes)",
+        "duration": "Duration",
         "dateTime": "Date and time",
         "creating": "Creating...",
         "createButton": "Create",
@@ -554,10 +592,11 @@
         },
         "filters": {
           "all": "All ({count})",
-          "available": "Available ({count})",
-          "booked": "Booked ({count})",
+          "available": "Available",
+          "booked": "Booked",
           "completed": "Completed ({count})",
-          "cancelled": "Cancelled ({count})"
+          "cancelled": "Cancelled ({count})",
+          "archived": "Archived"
         },
         "status": {
           "available": "Available",
@@ -574,7 +613,7 @@
           "actions": "Actions"
         },
         "bookedBy": "Booked by {name}",
-        "noOffers": "No offers created",
+        "noOffers": "No offers",
         "noOffersWithStatus": "No offers with status \"{status}\"",
         "legend": {
           "available": "Available",
@@ -582,7 +621,12 @@
           "completed": "Completed",
           "cancelled": "Cancelled",
           "confirmedCall": "📞 Confirmed Call"
-        }
+        },
+        "createOffer": "Create offer",
+        "editOffer": "Edit offer",
+        "deleteOffer": "Delete offer",
+        "minutes": "min",
+        "backToDashboard": "Back to dashboard"
       },
       "earnings": {
         "title": "My Earnings",
@@ -591,7 +635,16 @@
         "available": "Available",
         "pending": "Pending",
         "totalPayouts": "Total Payouts",
-        "noEarnings": "No earnings yet"
+        "noEarnings": "No earnings yet",
+        "alreadyInStripe": "Already in your Stripe account",
+        "availableForPayout": "Available for payout",
+        "pendingPayments": "Pending payments",
+        "recentPayments": "Recent payments",
+        "recentPaymentsSubtitle": "Your latest received payments",
+        "viewAllPayments": "View all payments",
+        "viewPayouts": "Payouts",
+        "view": "View",
+        "backToDashboard": "Back to dashboard"
       },
       "calls": {
         "title": "My Calls",
@@ -599,39 +652,88 @@
         "upcoming": "Upcoming Calls",
         "past": "Past Calls",
         "youHave": "You have {count} upcoming call(s)",
-        "noCalls": "No scheduled calls"
+        "noCalls": "No scheduled calls",
+        "filters": {
+          "all": "All",
+          "upcoming": "Upcoming",
+          "past": "Past",
+          "cancelled": "Cancelled"
+        },
+        "status": {
+          "confirmed": "Confirmed",
+          "testMode": "Test Mode",
+          "with": "With:"
+        },
+        "actions": {
+          "join": "Join",
+          "startingSoon": "Starting Soon"
+        },
+        "noCallsFor": {
+          "all": "No calls",
+          "upcoming": "No upcoming calls",
+          "past": "No past calls",
+          "cancelled": "No cancelled calls"
+        }
       },
       "requests": {
-        "title": "Call Requests",
-        "subtitle": "Manage requests from your fans",
-        "pending": "Pending",
-        "accepted": "Accepted",
+        "title": "Requests",
+        "subtitle": "Manage call requests from your fans",
+        "pending": "Pending requests",
+        "accepted": "Accepted requests",
         "rejected": "Rejected",
         "noRequests": "No requests at the moment",
         "requestFrom": "Request from {name}",
         "accept": "Accept",
         "reject": "Reject",
         "accepting": "Accepting...",
-        "rejecting": "Rejecting..."
+        "rejecting": "Rejecting...",
+        "refused": "Refused requests",
+        "from": "From",
+        "proposedDate": "Proposed date",
+        "message": "Message",
+        "actions": {
+          "accept": "Accept",
+          "refuse": "Refuse",
+          "confirmAccept": "Confirm acceptance",
+          "confirmRefuse": "Confirm refusal",
+          "cancel": "Cancel"
+        },
+        "noPending": "No pending requests",
+        "noAccepted": "No accepted requests",
+        "noRefused": "No refused requests",
+        "backToDashboard": "Back to dashboard"
       },
       "reviews": {
-        "title": "Received Reviews",
-        "subtitle": "View reviews from your fans",
+        "title": "My Reviews",
+        "subtitle": "View reviews left by your fans",
         "noReviews": "No reviews yet",
-        "averageRating": "Average rating"
+        "averageRating": "Average rating",
+        "totalReviews": "reviews",
+        "allReviews": "All reviews",
+        "anonymousUser": "Anonymous user",
+        "backToDashboard": "Back to dashboard"
       },
       "payments": {
         "title": "Payment History",
         "subtitle": "View all your received payments",
-        "noPayments": "No payments received",
+        "noPayments": "No payments yet",
         "amount": "Amount",
         "date": "Date",
         "from": "From",
-        "status": "Status"
+        "status": {
+          "transferred": "✓ Transferred",
+          "available": "✓ Available",
+          "pending": "⏳ Pending",
+          "processing": "⏳ Processing"
+        },
+        "total": "Total payments",
+        "availableOn": "Available on",
+        "transferredOn": "Transferred on",
+        "backToDashboard": "Back to dashboard"
       },
       "payouts": {
-        "title": "My Payouts",
-        "subtitle": "Manage transfers to your bank account",
+        "title": "Payments and transfers",
+        "subtitle": "Manage your transfers and history",
         "request": "Request a payout",
         "noPayouts": "No payouts requested",
         "balance": "Available balance",
@@ -641,24 +743,86 @@
           "amount": "Amount",
           "requesting": "Requesting...",
           "submit": "Request"
-        }
+        },
+        "requestManualPayout": "Request manual transfer",
+        "noPayoutHistory": "No transfer history yet",
+        "availableBalance": "Available balance",
+        "pendingBalance": "Pending balance",
+        "status": {
+          "paid": "✓ Paid",
+          "pending": "⏳ Pending",
+          "processing": "⏳ Processing",
+          "failed": "✗ Failed"
+        },
+        "backToDashboard": "Back to dashboard"
       },
       "settings": {
-        "title": "Creator Settings",
+        "title": "Settings",
         "profile": "Profile",
         "bio": "Biography",
         "socialLinks": "Social links",
         "save": "Save",
-        "saving": "Saving..."
+        "saving": "Saving...",
+        "subtitle": "Manage your profile and preferences",
+        "noImage": "No image",
+        "bannerImage": "Banner image",
+        "profileImage": "Profile image",
+        "displayName": "Display name",
+        "bioPlaceholder": "Tell us about yourself...",
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "twitter": "Twitter",
+        "website": "Website",
+        "timezone": "Timezone",
+        "currency": "Currency",
+        "saveChanges": "Save changes",
+        "successTitle": "Profile updated",
+        "successMessage": "Your changes have been saved successfully",
+        "errorTitle": "Error",
+        "errorMessage": "Unable to save changes",
+        "backToDashboard": "Back to dashboard"
       },
       "notifications": {
         "title": "Notifications",
-        "noNotifications": "No notifications"
+        "noNotifications": "No notifications",
+        "subtitle": "Manage your system and financial notifications",
+        "loading": "Loading...",
+        "markAllRead": "Mark all as read",
+        "backToDashboard": "Back to dashboard"
       },
       "fees": {
-        "title": "Platform Fees",
+        "title": "Fees and commissions",
         "platformFee": "Platform commission",
-        "description": "Callastar takes a commission on each call"
+        "description": "Callastar takes a commission on each call",
+        "subtitle": "Understand how remuneration works on Call a Star",
+        "platformCommission": "Platform commission",
+        "platformCommissionDesc": "Call a Star takes a commission of",
+        "paymentFees": "Payment fees (Stripe)",
+        "paymentFeesDesc": "Credit card payment processing fees",
+        "calculationExample": "Calculation example",
+        "forACallOf": "For a call of",
+        "initialAmount": "Initial amount",
+        "stripeFee": "Stripe fees (2.9% + 0.30)",
+        "netAmount": "Net amount received",
+        "percentageNote": "Approximately",
+        "percentOf": "% of total amount",
+        "backToDashboard": "Back to dashboard"
+      },
+      "payoutSettings": {
+        "title": "Transfer settings",
+        "subtitle": "Configure your transfer preferences",
+        "automaticPayouts": "Automatic transfers",
+        "minimumAmount": "Minimum amount",
+        "backToDashboard": "Back to dashboard"
+      },
+      "payoutRequest": {
+        "title": "Request manual transfer",
+        "subtitle": "Request a transfer of your available funds",
+        "amount": "Amount",
+        "submit": "Request transfer",
+        "submitting": "Submitting...",
+        "backToDashboard": "Back to dashboard"
       }
     },
     "admin": {
@@ -734,7 +898,11 @@
           "failed": "Failed",
           "pending": "Pending"
         },
-        "noPayouts": "No payments found"
+        "noPayouts": "No payments found",
+        "approve": "Approve",
+        "reject": "Reject",
+        "viewDetails": "View details",
+        "backToDashboard": "Back to dashboard"
       },
       "testCalls": {
         "title": "Test Calls",
@@ -754,8 +922,83 @@
         "commission": "Platform Commission (%)",
         "save": "Save",
         "saving": "Saving...",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "subtitle": "Complete configuration of financial and operational settings",
+        "stripeMode": "Stripe mode",
+        "administrator": "Administrator",
+        "platformFee": "Platform fee",
+        "backToDashboard": "Back to dashboard"
+      },
+      "testing": {
+        "title": "Tests & Tools",
+        "subtitle": "Test and validate all platform features",
+        "adminAccount": "Administrator Account",
+        "userAccount": "User Account",
+        "backToDashboard": "Back to dashboard"
+      },
+      "payments": {
+        "noPaymentFound": "No payment found",
+        "paymentId": "Payment ID",
+        "stripeId": "Stripe ID",
+        "amount": "Amount",
+        "status": "Status",
+        "date": "Date",
+        "backToDashboard": "Back to dashboard"
+      },
+      "logs": {
+        "noLogFound": "No log found",
+        "logId": "Log ID",
+        "timestamp": "Timestamp",
+        "type": "Type",
+        "message": "Message",
+        "backToDashboard": "Back to dashboard"
+      },
+      "refundsDisputes": {
+        "title": "Refunds and disputes",
+        "status": "Status",
+        "backToDashboard": "Back to dashboard"
+      },
+      "payoutsDashboard": {
+        "blockedPayments": "Blocked payments",
+        "affectedCreators": "Affected creators",
+        "backToDashboard": "Back to dashboard"
+      },
+      "creatorsStripe": {
+        "stripeId": "Stripe ID",
+        "onboarding": "Onboarding",
+        "chargesEnabled": "Charges enabled",
+        "payoutsEnabled": "Payouts enabled",
+        "detailsSubmitted": "Details submitted",
+        "externalAccount": "External account",
+        "requirements": "Requirements",
+        "backToDashboard": "Back to dashboard"
+      },
+      "refunds": {
+        "noRefundFound": "No refund found",
+        "enterPaymentId": "Enter payment ID to refund",
+        "refundAmount": "Refund amount",
+        "reason": "Reason",
+        "processRefund": "Process refund",
+        "backToDashboard": "Back to dashboard"
+      },
+      "systemLogs": {
+        "noLogFound": "No log found",
+        "logId": "Log ID",
+        "date": "Date",
+        "level": "Level",
+        "category": "Category",
+        "message": "Message",
+        "backToDashboard": "Back to dashboard"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "noNotifications": "No notifications",
+        "backToDashboard": "Back to dashboard"
       }
     }
+  },
+  "layout": {
+    "title": "Callastar",
+    "description": "Video call booking platform with creators"
   }
 }

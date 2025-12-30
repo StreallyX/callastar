@@ -1,0 +1,105 @@
+{
+  "dashboard": {
+    "common": {
+      "loading": "Chargement...",
+      "welcome": "Bienvenue",
+      "myDashboard": "Mon Dashboard",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "edit": "Modifier",
+      "view": "Voir",
+      "download": "Télécharger",
+      "submit": "Soumettre",
+      "close": "Fermer",
+      "confirm": "Confirmer",
+      "back": "Retour",
+      "next": "Suivant",
+      "previous": "Précédent",
+      "search": "Rechercher",
+      "filter": "Filtrer",
+      "all": "Tous",
+      "none": "Aucun",
+      "yes": "Oui",
+      "no": "Non",
+      "ok": "OK",
+      "error": "Erreur",
+      "success": "Succès",
+      "warning": "Attention",
+      "info": "Information"
+    },
+    "user": {
+      "title": "Dashboard Utilisateur",
+      "welcome": "Bienvenue, {name}",
+      "quickActions": "Actions rapides",
+      "stats": {
+        "upcomingCalls": "Appels à venir",
+        "sentRequests": "Demandes envoyées",
+        "completedCalls": "Appels terminés",
+        "notifications": "Notifications"
+      },
+      "tabs": {
+        "upcoming": "À venir",
+        "requests": "Mes demandes",
+        "history": "Historique"
+      },
+      "upcoming": {
+        "title": "Mes appels à venir",
+        "description": "Vos prochains appels programmés",
+        "noBookings": "Aucun appel à venir",
+        "noBookingsDescription": "Explorez nos créateurs pour réserver votre premier appel",
+        "exploreCreators": "Explorer les créateurs",
+        "joinCall": "Rejoindre l'appel",
+        "downloadCalendar": "Télécharger calendrier",
+        "leaveReview": "Laisser un avis",
+        "calendarDownloadSuccess": "Fichier calendrier téléchargé !",
+        "calendarDownloadError": "Impossible de télécharger le fichier calendrier"
+      },
+      "requests": {
+        "title": "Mes demandes d'appel",
+        "description": "Demandes en attente de réponse",
+        "noRequests": "Aucune demande en cours",
+        "noRequestsDescription": "Vous pouvez envoyer une demande personnalisée à un créateur depuis son profil",
+        "status": {
+          "pending": "En attente",
+          "accepted": "Acceptée",
+          "declined": "Refusée",
+          "expired": "Expirée"
+        }
+      },
+      "history": {
+        "title": "Historique des appels",
+        "description": "Tous vos appels passés",
+        "noHistory": "Aucun appel terminé",
+        "noHistoryDescription": "Votre historique d'appels apparaîtra ici",
+        "viewSummary": "Voir le résumé"
+      },
+      "booking": {
+        "with": "avec",
+        "duration": "Durée",
+        "minutes": "minutes",
+        "scheduledFor": "Prévu le",
+        "price": "Prix",
+        "status": "Statut",
+        "bookingId": "ID de réservation"
+      },
+      "status": {
+        "confirmed": "Confirmé",
+        "pending": "En attente",
+        "completed": "Terminé",
+        "cancelled": "Annulé"
+      },
+      "review": {
+        "title": "Laisser un avis",
+        "description": "Partagez votre expérience avec",
+        "rating": "Note",
+        "comment": "Commentaire (optionnel)",
+        "commentPlaceholder": "Partagez votre expérience...",
+        "submit": "Envoyer l'avis",
+        "submitting": "Envoi en cours...",
+        "success": "Avis publié avec succès !",
+        "error": "Erreur lors de la publication de l'avis"
+      }
+    }
+  }
+}

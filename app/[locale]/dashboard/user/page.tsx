@@ -353,7 +353,7 @@ export default function UserDashboard() {
                                 <div className="flex items-center gap-3">
                                   <h3 className="font-semibold text-lg">{t('requests.requestTo')} {request?.creator?.user?.name}</h3>
                                   <Badge className={statusColors[request.status as keyof typeof statusColors]}>
-                                    {request.status === 'PENDING' ? request.status === 'PENDING' ? t('requests.pending') : request.status === 'ACCEPTED' ? t('requests.accepted') : t('requests.rejected')}
+                                    {request.status === 'PENDING' ? t('requests.pending') : request.status === 'ACCEPTED' ? t('requests.accepted') : t('requests.rejected')}
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-gray-600">

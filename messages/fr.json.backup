@@ -1,0 +1,365 @@
+{
+  "common": {
+    "appName": "Call a Star",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "all": "Tous",
+    "none": "Aucun"
+  },
+  "navbar": {
+    "creators": "Créateurs",
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "dashboard": "Dashboard",
+    "payments": "Paiements",
+    "settings": "Paramètres",
+    "testsTools": "Tests & Outils",
+    "logout": "Déconnexion"
+  },
+  "homepage": {
+    "meta": {
+      "title": "Callastar - Connectez-vous avec des créateurs et experts pour des appels vidéo payants",
+      "description": "Réservez des appels vidéo avec des créateurs, experts et influenceurs. Paiements sécurisés via Stripe, appels vidéo via Daily.co. Monétisez votre temps ou obtenez des conseils personnalisés."
+    },
+    "hero": {
+      "title": "Connectez-vous avec des créateurs et experts",
+      "subtitle": "La plateforme qui connecte fans et créateurs pour des appels vidéo privés",
+      "description": "Callastar est une plateforme de réservation d'appels vidéo payants qui permet aux utilisateurs de se connecter directement avec des créateurs, experts et influenceurs pour des consultations, du coaching ou des conseils personnalisés.",
+      "becomeCreator": "Devenir créateur",
+      "exploreCreators": "Explorer les créateurs"
+    },
+    "about": {
+      "title": "Qu'est-ce que Callastar ?",
+      "description": "Callastar est une plateforme innovante qui met en relation des utilisateurs avec des créateurs de contenu, experts et influenceurs pour des appels vidéo privés et payants.",
+      "usedFor": {
+        "title": "À quoi sert Callastar ?",
+        "consultations": "Consultations personnalisées avec des experts",
+        "coaching": "Séances de coaching et mentorat",
+        "advice": "Conseils professionnels dans divers domaines",
+        "meetGreet": "Rencontres virtuelles avec vos créateurs préférés"
+      },
+      "forWhom": {
+        "title": "Pour qui ?",
+        "users": {
+          "title": "Pour les utilisateurs",
+          "description": "Obtenez des conseils d'experts, du coaching personnalisé ou discutez avec vos créateurs favoris"
+        },
+        "creators": {
+          "title": "Pour les créateurs",
+          "description": "Monétisez votre temps et expertise en offrant des appels vidéo à votre communauté"
+        }
+      }
+    },
+    "features": {
+      "title": "Fonctionnalités clés",
+      "description": "Tout ce dont vous avez besoin pour des appels vidéo professionnels",
+      "booking": {
+        "title": "Réservation facile",
+        "description": "Système de réservation simple et intuitif. Choisissez votre créateur, sélectionnez une offre et réservez en quelques clics."
+      },
+      "payments": {
+        "title": "Paiements sécurisés",
+        "description": "Transactions sécurisées via Stripe. Protection complète des données bancaires et paiements instantanés."
+      },
+      "videoCalls": {
+        "title": "Appels vidéo HD",
+        "description": "Appels vidéo de haute qualité via Daily.co. Connexion stable et fiable pour une expérience optimale."
+      },
+      "reviews": {
+        "title": "Avis et évaluations",
+        "description": "Système de reviews transparent. Consultez les avis des autres utilisateurs avant de réserver."
+      },
+      "profiles": {
+        "title": "Profils créateurs",
+        "description": "Profils détaillés avec biographie, tarifs et disponibilités. Trouvez le créateur parfait pour vos besoins."
+      },
+      "offers": {
+        "title": "Offres personnalisées",
+        "description": "Les créateurs proposent différentes durées et tarifs. Choisissez l'offre qui vous convient le mieux."
+      }
+    },
+    "journey": {
+      "title": "Comment ça marche ?",
+      "description": "Quatre étapes simples pour connecter avec des créateurs",
+      "step1": {
+        "title": "1. Découvrez",
+        "description": "Explorez les profils des créateurs et découvrez leurs offres d'appels vidéo"
+      },
+      "step2": {
+        "title": "2. Inscrivez-vous",
+        "description": "Créez votre compte gratuitement en quelques secondes"
+      },
+      "step3": {
+        "title": "3. Réservez",
+        "description": "Choisissez une offre, effectuez le paiement sécurisé et confirmez votre réservation"
+      },
+      "step4": {
+        "title": "4. Connectez",
+        "description": "Rejoignez votre appel vidéo à l'heure prévue et profitez de votre échange"
+      }
+    },
+    "cta": {
+      "users": {
+        "title": "Vous cherchez des conseils d'expert ?",
+        "description": "Explorez nos créateurs et réservez votre premier appel dès maintenant",
+        "button": "Explorer les créateurs"
+      },
+      "creators": {
+        "title": "Vous êtes créateur ou expert ?",
+        "description": "Rejoignez Callastar et commencez à monétiser votre temps et expertise",
+        "button": "Devenir créateur"
+      }
+    },
+    "popularCreators": {
+      "title": "Créateurs populaires",
+      "description": "Découvrez nos créateurs les plus demandés",
+      "seeAll": "Voir tous les créateurs"
+    },
+    "footer": {
+      "copyright": "© 2024 Callastar. Tous droits réservés.",
+      "terms": "Conditions Générales",
+      "privacy": "Politique de confidentialité",
+      "legal": "Mentions légales"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "description": "Connectez-vous pour accéder à votre compte",
+      "email": "Email",
+      "emailPlaceholder": "votre@email.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "loginButton": "Se connecter",
+      "loggingIn": "Connexion...",
+      "orContinueWith": "Ou continuer avec",
+      "googleLogin": "Se connecter avec Google",
+      "testAccounts": "Comptes de test",
+      "admin": "Admin",
+      "creator": "Créateur",
+      "user": "Utilisateur",
+      "noAccount": "Pas encore de compte ?",
+      "registerLink": "S'inscrire",
+      "backToHome": "Retour à l'accueil",
+      "successMessage": "Connexion réussie ! Bienvenue",
+      "errorMessage": "Erreur de connexion",
+      "genericError": "Une erreur est survenue lors de la connexion",
+      "googleError": "Erreur lors de la connexion avec Google"
+    },
+    "register": {
+      "title": "Inscription",
+      "description": "Créez votre compte pour commencer",
+      "fullName": "Nom complet",
+      "fullNamePlaceholder": "John Doe",
+      "email": "Email",
+      "emailPlaceholder": "votre@email.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "accountType": "Type de compte",
+      "accountTypePlaceholder": "Sélectionnez un type",
+      "userRole": "Utilisateur (Fan)",
+      "creatorRole": "Créateur (Influenceur)",
+      "termsAcceptance": "J'accepte les",
+      "termsLink": "conditions générales d'utilisation",
+      "termsRequired": "Vous devez accepter les conditions générales pour continuer",
+      "registerButton": "S'inscrire",
+      "registering": "Inscription...",
+      "orContinueWith": "Ou continuer avec",
+      "googleRegister": "S'inscrire avec Google",
+      "haveAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter",
+      "backToHome": "Retour à l'accueil",
+      "successTitle": "Inscription réussie !",
+      "successDescription": "Votre compte a été créé avec succès",
+      "errorTitle": "Erreur d'inscription",
+      "errorDescription": "Une erreur est survenue",
+      "genericError": "Une erreur est survenue lors de l'inscription",
+      "googleError": "Erreur lors de la connexion avec Google"
+    }
+  },
+  "creators": {
+    "list": {
+      "title": "Nos Créateurs",
+      "description": "Découvrez tous nos créateurs et réservez un appel vidéo privé avec votre star préférée",
+      "noCreators": "Aucun créateur disponible pour le moment"
+    },
+    "profile": {
+      "notFound": "Créateur introuvable",
+      "backToCreators": "Retour aux créateurs",
+      "noBio": "Pas de bio disponible",
+      "offersAvailable": "offre(s) disponible(s)",
+      "availableOffers": "Appels disponibles",
+      "noOffers": "Aucun appel disponible pour le moment",
+      "noOffersDescription": "Utilisez le bouton \"Proposer un appel\" pour envoyer une demande personnalisée",
+      "minutes": "minutes",
+      "reserve": "Réserver",
+      "reviews": "Avis des utilisateurs",
+      "anonymous": "Anonyme",
+      "rating": "avis",
+      "other": "Site web"
+    }
+  },
+  "booking": {
+    "title": "Réservation et paiement",
+    "callDetails": "Détails de l'appel",
+    "verifyInfo": "Vérifiez les informations avant de payer",
+    "payment": "Paiement",
+    "paymentInfo": "Entrez vos informations de paiement",
+    "total": "Total",
+    "creator": "Créateur",
+    "loading": "Chargement...",
+    "error": "Erreur de réservation",
+    "backToCreators": "Retour aux créateurs",
+    "offerNotFound": "Offre introuvable",
+    "bookingError": "Erreur lors de la réservation",
+    "paymentError": "Erreur de paiement",
+    "paymentSuccess": "Paiement réussi !",
+    "bookingConfirmed": "Votre réservation est confirmée",
+    "processing": "Traitement...",
+    "payAndBook": "Payer et réserver",
+    "genericError": "Une erreur est survenue lors du paiement",
+    "yourBooking": "✅ Votre réservation",
+    "offerUnavailable": "❌ Offre indisponible",
+    "yourBookingDesc": "Cette réservation vous appartient",
+    "offerUnavailableDesc": "Cette offre a déjà été réservée par un autre utilisateur",
+    "status": "Statut",
+    "confirmed": "Confirmé ✓",
+    "pending": "En attente de paiement",
+    "viewBookings": "Voir mes réservations",
+    "joinCall": "Rejoindre l'appel",
+    "offerNotAvailable": "Cette offre n'est plus disponible. Explorez d'autres opportunités !",
+    "viewCreatorProfile": "Voir le profil du créateur",
+    "exploreCreators": "Explorer d'autres créateurs",
+    "minutes": "minutes"
+  },
+  "call": {
+    "room": {
+      "title": "Appel vidéo",
+      "waitingRoom": "Salle d'attente - Prêt à rejoindre",
+      "testMode": "🧪 Mode Test",
+      "callastar": "Callastar",
+      "with": "avec",
+      "scheduledDuration": "Durée prévue",
+      "minutes": "minutes",
+      "testCallInfo": "ℹ️ Ceci est un appel de test pour le développement",
+      "callStatusTitle": "Statut de l'appel",
+      "callEnded": "L'appel est terminé",
+      "canStartNow": "L'appel peut commencer maintenant !",
+      "startsIn": "Commence dans",
+      "scheduledFor": "Prévu le",
+      "callRulesTitle": "Règles de l'appel",
+      "ruleDuration": "Durée:",
+      "minutesAllocated": "minutes allouées",
+      "ruleBehavior": "Comportement:",
+      "ruleeBehaviorDesc": "Soyez respectueux et courtois",
+      "ruleConfidentiality": "Confidentialité:",
+      "ruleConfidentialityDesc": "Ne partagez pas le contenu de l'appel",
+      "ruleDisconnection": "Déconnexion:",
+      "ruleDisconnectionDesc": "Si vous êtes déconnecté, vous pouvez rejoindre à nouveau",
+      "testEquipment": "Testez vos équipements",
+      "testCameraAndMic": "Tester caméra et micro",
+      "testInProgress": "Test en cours...",
+      "checkCamera": "✓ Vérifiez que votre caméra fonctionne",
+      "checkMic": "✓ Testez votre microphone",
+      "findQuietPlace": "✓ Trouvez un endroit calme",
+      "freeAccessTitle": "✨ Accès libre :",
+      "freeAccessDesc": "Vous pouvez rejoindre l'appel à tout moment. Arrivez en avance pour tester votre équipement ou rejoignez si vous êtes en retard - l'accès n'est jamais bloqué.",
+      "joinCall": "Rejoindre l'appel",
+      "loading": "Chargement de l'appel...",
+      "inCall": "Appel en cours",
+      "ended": "Appel terminé",
+      "redirecting": "Redirection vers le résumé...",
+      "error": "Erreur",
+      "callError": "Une erreur est survenue lors de l'appel",
+      "retry": "Réessayer",
+      "timeRemaining": "Restant",
+      "noTimeLimit": "Mode Test - Pas de limite",
+      "joinedInProgress": "(rejoint en cours)",
+      "connectionLost": "Connexion perdue",
+      "reconnecting": "Reconnexion en cours...",
+      "reconnected": "Reconnecté",
+      "reconnectedDesc": "Vous êtes de nouveau connecté",
+      "leaveCall": "Quitter l'appel",
+      "disableCamera": "Désactiver la caméra",
+      "enableCamera": "Activer la caméra",
+      "disableMic": "Désactiver le micro",
+      "enableMic": "Activer le micro",
+      "enterFullscreen": "Plein écran",
+      "exitFullscreen": "Quitter le plein écran",
+      "backToDashboard": "Retour au dashboard",
+      "bookingNotFound": "Réservation introuvable",
+      "testSuccess": "Test réussi",
+      "testSuccessDesc": "Votre caméra et micro fonctionnent correctement",
+      "testError": "Erreur",
+      "testErrorDesc": "Impossible d'accéder à la caméra ou au micro",
+      "participantJoined": "Participant rejoint",
+      "participantJoinedDesc": "a rejoint l'appel",
+      "participantLeft": "Participant parti",
+      "participantLeftDesc": "a quitté l'appel",
+      "callErrorDuring": "Erreur durant l'appel",
+      "weakConnection": "Connexion faible",
+      "weakConnectionDesc": "Votre connexion internet est instable",
+      "connectionLostDesc": "Tentative de reconnexion...",
+      "aParticipant": "Un participant"
+    },
+    "summary": {
+      "title": "Résumé de l'appel",
+      "loading": "Chargement du résumé...",
+      "error": "Erreur",
+      "notFound": "Résumé introuvable",
+      "status": "Statut",
+      "completedNormally": "✓ Terminé normalement",
+      "completedMultiple": "✓ Terminé (sessions multiples)",
+      "interrupted": "⚠ Interrompu",
+      "inProgress": "⏳ En cours",
+      "noShow": "✗ Absent",
+      "unknown": "? Inconnu",
+      "totalDuration": "Durée totale cumulée",
+      "efficiency": "Efficacité",
+      "ofScheduled": "de la durée prévue",
+      "participants": "Participants",
+      "creator": "Créateur",
+      "fan": "Fan",
+      "temporalDetails": "Détails temporels",
+      "scheduledDate": "Date prévue",
+      "actualStart": "Début réel",
+      "actualEnd": "Fin réelle",
+      "sessions": "Sessions d'appel",
+      "sessionsDescription": "Cet appel a été interrompu et repris plusieurs fois. Voici le détail des sessions.",
+      "session": "Session",
+      "totalInfo": "La durée totale affichée est la somme de toutes les sessions.",
+      "timeline": "Chronologie de l'appel",
+      "timelineDescription": "Tous les événements enregistrés durant l'appel",
+      "viewHistory": "Voir l'historique",
+      "backToDashboard": "Retour au dashboard",
+      "summaryInfo": "Ce résumé est calculé dynamiquement à partir des logs de l'appel et reflète la durée réelle cumulée de toutes les sessions.",
+      "onSessions": "Sur {count} session(s)"
+    }
+  },
+  "legal": {
+    "terms": {
+      "title": "Conditions Générales d'Utilisation et de Vente (CGU/CGV)",
+      "lastUpdated": "Dernière mise à jour"
+    },
+    "privacy": {
+      "title": "Politique de Confidentialité",
+      "lastUpdated": "Dernière mise à jour"
+    },
+    "notice": {
+      "title": "Mentions Légales",
+      "lastUpdated": "Dernière mise à jour"
+    }
+  }
+}

@@ -242,7 +242,7 @@ export default function AdminDashboard() {
                     {tSettings('cancel')}
                   </Button>
                   <Button type="submit" disabled={updatingSettings}>
-                    {updatingSettings ? '{tSettings('saving')}' : '{tSettings('save')}'}
+                    {updatingSettings ? tSettings('saving') : tSettings('save')}
                   </Button>
                 </DialogFooter>
               </form>
@@ -284,7 +284,7 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold text-purple-600">
                 <MultiCurrencyDisplay 
                   amounts={Object.entries(revenueByCurrency).reduce((acc, [currency, data]) => {
-                    acc[currency] = (data as any).total{tStats('commissions')};
+                    acc[currency] = (data as any).totalCommissions;
                     return acc;
                   }, {} as Record<string, number>)}
                   emptyMessage="0.00"
@@ -536,7 +536,7 @@ export default function AdminDashboard() {
                             {tSettings('cancel')}
                           </Button>
                           <Button type="submit" disabled={submittingPayout}>
-                            {submittingPayout ? '{tPayouts('creating')}' : tPayouts('createButton')}
+                            {submittingPayout ? tPayouts('creating') : tPayouts('createButton')}
                           </Button>
                         </DialogFooter>
                       </form>
@@ -576,12 +576,12 @@ export default function AdminDashboard() {
                                 }
                               >
                                 {p.status === 'PAID'
-                                  ? '{tPayouts('status.paid')}'
+                                  ? tPayouts('status.paid')
                                   : p.status === 'PROCESSING'
-                                  ? '{tPayouts('status.processing')}'
+                                  ? tPayouts('status.processing')
                                   : p.status === 'FAILED'
-                                  ? '{tPayouts('status.failed')}'
-                                  : '{tPayouts('status.pending')}'}
+                                  ? tPayouts('status.failed')
+                                  : tPayouts('status.pending')}
                               </Badge>
                             </TableCell>
                             <TableCell>
@@ -668,7 +668,7 @@ export default function AdminDashboard() {
                                   className={!isPast ? 'bg-gradient-to-r from-purple-600 to-pink-600' : ''}
                                 >
                                   <Video className="w-4 h-4 mr-2" />
-                                  {isPast ? '{tTestCalls('joinTest')}' : tTestCalls('join')}
+                                  {isPast ? tTestCalls('joinTest') : tTestCalls('join')}
                                 </Button>
                               )}
                             </div>

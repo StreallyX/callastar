@@ -26,7 +26,7 @@ import {
 import { toast } from 'sonner';
 import { Link } from '@/navigation';
 
-interface {t('navigation')}Card {
+interface NavigationCard {
   title: string;
   description: string;
   icon: React.ReactNode;
@@ -216,18 +216,18 @@ export default function CreatorDashboard() {
     );
   }
 
-  // {t('navigation')} cards configuration
-  const navigationCards: {t('navigation')}Card[] = [
+  // Navigation cards configuration
+  const navigationCards: NavigationCard[] = [
     {
       title: tCards('offers.title'),
-      description: '{tCards('offers.description')}',
+      description: tCards('offers.description'),
       icon: <Calendar className="w-6 h-6" />,
       href: '/dashboard/creator/offers',
       count: stats.activeOffers,
     },
     {
       title: tCards('requests.title'),
-      description: '{tCards('requests.description')}',
+      description: tCards('requests.description'),
       icon: <FileText className="w-6 h-6" />,
       href: '/dashboard/creator/requests',
       count: stats.pendingRequests,
@@ -238,32 +238,32 @@ export default function CreatorDashboard() {
     },
     {
       title: tCards('calls.title'),
-      description: '{tCards('calls.description')}',
+      description: tCards('calls.description'),
       icon: <Phone className="w-6 h-6" />,
       href: '/dashboard/creator/calls',
       count: stats.upcomingCalls,
     },
     {
       title: tCards('reviews.title'),
-      description: '{tCards('reviews.description')}',
+      description: tCards('reviews.description'),
       icon: <Star className="w-6 h-6" />,
       href: '/dashboard/creator/reviews',
     },
     {
       title: tCards('payments.title'),
-      description: '{tCards('payments.description')}',
+      description: tCards('payments.description'),
       icon: <CreditCard className="w-6 h-6" />,
       href: '/dashboard/creator/payments',
     },
     {
       title: tCards('earnings.title'),
-      description: '{tCards('earnings.description')}',
+      description: tCards('earnings.description'),
       icon: <TrendingUp className="w-6 h-6" />,
       href: '/dashboard/creator/earnings',
     },
     {
       title: tCards('notifications.title'),
-      description: '{tCards('notifications.description')}',
+      description: tCards('notifications.description'),
       icon: <Bell className="w-6 h-6" />,
       href: '/dashboard/creator/notifications',
       count: stats.unreadNotifications,
@@ -334,8 +334,8 @@ export default function CreatorDashboard() {
                 )}
                 <span className="text-sm text-gray-600">
                   {stripeOnboarding.onboarded 
-                    ? '{tPayment('accountReady')}'
-                    : '{tPayment('completeConfig')}'
+                    ? tPayment('accountReady')
+                    : tPayment('completeConfig')
                   }
                 </span>
               </div>
