@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,8 @@ interface Payment {
 
 export default function AdminPayments() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.admin.payments');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -109,11 +112,11 @@ export default function AdminPayments() {
         setTotalCount(data.pagination.totalCount);
         setTotalPages(data.pagination.totalPages);
       } else {
-        toast.error(data.error || 'Erreur lors du chargement');
+        toast.error(data.error || t('errors.loadingError'));
       }
     } catch (error) {
       console.error('Error fetching payments:', error);
-      toast.error('Erreur lors du chargement des paiements');
+      toast.error(t('errors.loadingPayments'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -138,20 +141,20 @@ export default function AdminPayments() {
   const filterConfigs = [
     {
       key: 'status',
-      label: 'Statut',
+      label: t('filters.status'),
       type: 'select' as const,
       options: [
-        { label: 'Réussi', value: 'SUCCEEDED' },
-        { label: 'Échoué', value: 'FAILED' },
-        { label: 'En attente', value: 'PENDING' },
-        { label: 'Remboursé', value: 'REFUNDED' },
+        { label: t('filters.statusSucceeded'), value: 'SUCCEEDED' },
+        { label: t('filters.statusFailed'), value: 'FAILED' },
+        { label: t('filters.statusPending'), value: 'PENDING' },
+        { label: t('filters.statusRefunded'), value: 'REFUNDED' },
       ],
     },
     {
       key: 'search',
-      label: 'Recherche',
+      label: t('filters.search'),
       type: 'search' as const,
-      placeholder: 'ID paiement, email utilisateur...',
+      placeholder: t('filters.searchPlaceholder'),
     },
   ];
 
@@ -160,7 +163,7 @@ export default function AdminPayments() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
         <div className="container mx-auto max-w-7xl px-4 py-12">
-          <LoadingSpinner text="Chargement..." />
+          <LoadingSpinner text={t('loading')} />
         </div>
       </div>
     );
@@ -177,10 +180,10 @@ export default function AdminPayments() {
             <div>
               <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
                 <CreditCard className="w-8 h-8" />
-                Historique des Paiements
+                {t('title')}
               </h1>
               <p className="text-gray-600">
-                Gérez et consultez tous les paiements de la plateforme
+                {t('description')}
               </p>
             </div>
             <div className="flex gap-2">
@@ -190,10 +193,10 @@ export default function AdminPayments() {
                 disabled={refreshing}
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Actualiser
+                {t('refresh')}
               </Button>
               <Button variant="outline" onClick={() => router.push('/dashboard/admin')}>
-                Retour
+                {t('backToDashboard')}
               </Button>
             </div>
           </div>
@@ -214,9 +217,9 @@ export default function AdminPayments() {
         {/* Payments Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Paiements ({totalCount})</CardTitle>
+            <CardTitle>{t('paymentsTitle', { count: totalCount })}</CardTitle>
             <CardDescription>
-              Liste de tous les paiements effectués sur la plateforme
+              {t('paymentsDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -226,14 +229,14 @@ export default function AdminPayments() {
                   <table className="w-full text-sm">
                     <thead className="border-b">
                       <tr className="text-left">
-                        <th className="py-3 px-2">ID</th>
-                        <th className="py-3 px-2">Utilisateur</th>
-                        <th className="py-3 px-2">Créateur</th>
-                        <th className="py-3 px-2">Montant</th>
-                        <th className="py-3 px-2">Statut</th>
-                        <th className="py-3 px-2">Remboursé</th>
-                        <th className="py-3 px-2">Date</th>
-                        <th className="py-3 px-2">Actions</th>
+                        <th className="py-3 px-2">{t('table.id')}</th>
+                        <th className="py-3 px-2">{t('table.user')}</th>
+                        <th className="py-3 px-2">{t('table.creator')}</th>
+                        <th className="py-3 px-2">{t('table.amount')}</th>
+                        <th className="py-3 px-2">{t('table.status')}</th>
+                        <th className="py-3 px-2">{t('table.refunded')}</th>
+                        <th className="py-3 px-2">{t('table.date')}</th>
+                        <th className="py-3 px-2">{t('table.actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -276,7 +279,7 @@ export default function AdminPayments() {
                             )}
                           </td>
                           <td className="py-3 px-2">
-                            <DateDisplay date={payment.createdAt} format="datetime" />
+                            <DateDisplay date={payment.createdAt} format="datetime" locale={locale} />
                           </td>
                           <td className="py-3 px-2">
                             <Button
@@ -307,8 +310,8 @@ export default function AdminPayments() {
             ) : (
               <EmptyState
                 icon={CreditCard}
-                title="Aucun paiement trouvé"
-                description="Aucun paiement ne correspond à vos critères de recherche."
+                title={t('emptyState.title')}
+                description={t('emptyState.description')}
               />
             )}
           </CardContent>
@@ -319,9 +322,9 @@ export default function AdminPayments() {
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Détails du Paiement</DialogTitle>
+            <DialogTitle>{t('dialog.title')}</DialogTitle>
             <DialogDescription>
-              Informations complètes sur le paiement
+              {t('dialog.description')}
             </DialogDescription>
           </DialogHeader>
           {selectedPayment && (
@@ -329,56 +332,56 @@ export default function AdminPayments() {
               {/* Payment Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Informations de Paiement</CardTitle>
+                  <CardTitle className="text-base">{t('dialog.paymentInfo')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">ID Paiement</p>
+                      <p className="text-sm text-gray-600">{t('dialog.paymentId')}</p>
                       <p className="text-sm font-mono bg-gray-100 px-2 py-1 rounded mt-1">
                         {selectedPayment.id}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">ID Stripe</p>
+                      <p className="text-sm text-gray-600">{t('dialog.stripeId')}</p>
                       <p className="text-sm font-mono bg-gray-100 px-2 py-1 rounded mt-1">
                         {selectedPayment.stripePaymentIntentId}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Montant total</p>
+                      <p className="text-sm text-gray-600">{t('dialog.totalAmount')}</p>
                       <p className="text-lg font-bold text-green-600 mt-1">
                         <CurrencyDisplay amount={selectedPayment.amount} />
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Statut</p>
+                      <p className="text-sm text-gray-600">{t('dialog.status')}</p>
                       <div className="mt-1">
                         <StatusBadge status={selectedPayment.status} type="payment" />
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Frais plateforme</p>
+                      <p className="text-sm text-gray-600">{t('dialog.platformFee')}</p>
                       <p className="text-sm font-medium mt-1">
                         <CurrencyDisplay amount={selectedPayment.platformFee} />
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Montant créateur</p>
+                      <p className="text-sm text-gray-600">{t('dialog.creatorAmount')}</p>
                       <p className="text-sm font-medium mt-1">
                         <CurrencyDisplay amount={selectedPayment.creatorAmount} />
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Montant remboursé</p>
+                      <p className="text-sm text-gray-600">{t('dialog.refundedAmount')}</p>
                       <p className="text-sm font-medium text-yellow-600 mt-1">
                         <CurrencyDisplay amount={selectedPayment.refundedAmount} />
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Date</p>
+                      <p className="text-sm text-gray-600">{t('dialog.date')}</p>
                       <p className="text-sm font-medium mt-1">
-                        <DateDisplay date={selectedPayment.createdAt} format="datetime" />
+                        <DateDisplay date={selectedPayment.createdAt} format="datetime" locale={locale} />
                       </p>
                     </div>
                   </div>
@@ -387,7 +390,7 @@ export default function AdminPayments() {
                     <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
                       <div className="flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 text-red-600" />
-                        <p className="text-sm font-semibold text-red-900">Litige</p>
+                        <p className="text-sm font-semibold text-red-900">{t('dialog.dispute')}</p>
                       </div>
                       <p className="text-sm text-red-700 mt-1">{selectedPayment.disputeStatus}</p>
                     </div>
@@ -398,7 +401,7 @@ export default function AdminPayments() {
               {/* User Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Utilisateur</CardTitle>
+                  <CardTitle className="text-base">{t('dialog.user')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -411,7 +414,7 @@ export default function AdminPayments() {
               {/* Creator Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Créateur</CardTitle>
+                  <CardTitle className="text-base">{t('dialog.creator')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -422,7 +425,7 @@ export default function AdminPayments() {
                       {selectedPayment.booking.callOffer.creator.user.email}
                     </p>
                     <p className="text-sm text-gray-500">
-                      Offre: {selectedPayment.booking.callOffer.title}
+                      {t('dialog.offer')}: {selectedPayment.booking.callOffer.title}
                     </p>
                   </div>
                 </CardContent>
@@ -432,7 +435,7 @@ export default function AdminPayments() {
               {selectedPayment.refunds.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Remboursements</CardTitle>
+                    <CardTitle className="text-base">{t('dialog.refunds')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
@@ -443,7 +446,7 @@ export default function AdminPayments() {
                               <CurrencyDisplay amount={refund.amount} />
                             </p>
                             <p className="text-xs text-gray-500">
-                              <DateDisplay date={refund.createdAt} format="datetime" />
+                              <DateDisplay date={refund.createdAt} format="datetime" locale={locale} />
                             </p>
                           </div>
                           <StatusBadge status={refund.status} type="refund" />

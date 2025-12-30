@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,8 @@ interface PlatformSettings {
 
 export default function AdminSettings() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.admin.settings');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -88,7 +91,7 @@ export default function AdminSettings() {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des données');
+      toast.error(t('errors.loadingData'));
     } finally {
       setLoading(false);
     }
@@ -114,13 +117,13 @@ export default function AdminSettings() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('Paramètres enregistrés avec succès');
+        toast.success(t('successMessage'));
         fetchData(); // Refresh data
       } else {
-        toast.error(data?.error ?? 'Erreur lors de l\'enregistrement');
+        toast.error(data?.error ?? t('errors.savingSettings'));
       }
     } catch (error) {
-      toast.error('Une erreur est survenue');
+      toast.error(t('errors.genericError'));
     } finally {
       setSaving(false);
     }
@@ -139,7 +142,7 @@ export default function AdminSettings() {
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
         <div className="container mx-auto max-w-7xl px-4 py-12">
-          <LoadingSpinner text="Chargement..." />
+          <LoadingSpinner text={t('loading')} />
         </div>
       </div>
     );
@@ -158,23 +161,23 @@ export default function AdminSettings() {
             <div>
               <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
                 <SettingsIcon className="w-8 h-8" />
-                Paramètres de la Plateforme
+                {t('title')}
               </h1>
-              <p className="text-gray-600">Configuration complète des paramètres financiers et opérationnels</p>
+              <p className="text-gray-600">{t('subtitle')}</p>
             </div>
             <Button variant="outline" onClick={() => router.push('/dashboard/admin')}>
-              Retour au tableau de bord
+              {t('backToDashboard')}
             </Button>
           </div>
 
           {/* Stripe Mode & Last Updated */}
           <div className="flex items-center gap-4">
             <Badge className={stripeMode === 'test' ? 'bg-yellow-500' : 'bg-green-500'}>
-              Mode Stripe: {stripeMode === 'test' ? 'Test' : 'Production'}
+              {t('stripeMode')}: {stripeMode === 'test' ? t('stripeModeTest') : t('stripeModeProduction')}
             </Badge>
             {settings?.updatedAt && (
               <span className="text-sm text-gray-500">
-                Dernière mise à jour: <DateDisplay date={settings.updatedAt} format="datetime" />
+                {t('lastUpdate')}: <DateDisplay date={settings.updatedAt} format="datetime" locale={locale} />
               </span>
             )}
           </div>
@@ -187,17 +190,17 @@ export default function AdminSettings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
-                Frais de la Plateforme
+                {t('feesSection.title')}
               </CardTitle>
               <CardDescription>
-                Configurez les frais prélevés sur les transactions
+                {t('feesSection.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="platformFeePercentage">
-                    Pourcentage de frais (%)
+                    {t('feesSection.feePercentage')}
                     <span className="text-red-500 ml-1">*</span>
                   </Label>
                   <div className="relative">
@@ -217,13 +220,13 @@ export default function AdminSettings() {
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">%</span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    Pourcentage prélevé sur chaque transaction
+                    {t('feesSection.feePercentageHelp')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="platformFeeFixed">
-                    Frais fixes (optionnel)
+                    {t('feesSection.feeFixed')}
                   </Label>
                   <div className="relative">
                     <Input
@@ -243,7 +246,7 @@ export default function AdminSettings() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    Montant fixe ajouté aux frais (laissez 0 si non utilisé)
+                    {t('feesSection.feeFixedHelp')}
                   </p>
                 </div>
               </div>
@@ -251,7 +254,11 @@ export default function AdminSettings() {
               <Alert>
                 <Info className="w-4 h-4" />
                 <AlertDescription>
-                  Les frais totaux seront calculés comme: (Montant × {formData.platformFeePercentage}%) + {formData.platformFeeFixed} {formData.currency}
+                  {t('feesSection.calculationFormula', { 
+                    percentage: formData.platformFeePercentage, 
+                    fixed: formData.platformFeeFixed, 
+                    currency: formData.currency 
+                  })}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -262,17 +269,17 @@ export default function AdminSettings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5" />
-                Paramètres de Paiement
+                {t('payoutSection.title')}
               </CardTitle>
               <CardDescription>
-                Configurez les paiements aux créateurs
+                {t('payoutSection.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="minimumPayoutAmount">
-                    Montant minimum de paiement
+                    {t('payoutSection.minimumAmount')}
                     <span className="text-red-500 ml-1">*</span>
                   </Label>
                   <div className="relative">
@@ -293,13 +300,13 @@ export default function AdminSettings() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    Montant minimum requis pour déclencher un paiement
+                    {t('payoutSection.minimumAmountHelp')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="holdingPeriodDays">
-                    Période de rétention (jours)
+                    {t('payoutSection.holdingPeriod')}
                     <span className="text-red-500 ml-1">*</span>
                   </Label>
                   <Input
@@ -314,7 +321,7 @@ export default function AdminSettings() {
                     })}
                   />
                   <p className="text-sm text-gray-500">
-                    Nombre de jours avant que les fonds ne soient disponibles
+                    {t('payoutSection.holdingPeriodHelp')}
                   </p>
                 </div>
               </div>
@@ -324,7 +331,7 @@ export default function AdminSettings() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="payoutMode">
-                    Mode de paiement
+                    {t('payoutSection.payoutMode')}
                     <span className="text-red-500 ml-1">*</span>
                   </Label>
                   <Select
@@ -337,18 +344,18 @@ export default function AdminSettings() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="AUTOMATIC">Automatique</SelectItem>
-                      <SelectItem value="MANUAL">Manuel</SelectItem>
+                      <SelectItem value="AUTOMATIC">{t('payoutSection.modeAutomatic')}</SelectItem>
+                      <SelectItem value="MANUAL">{t('payoutSection.modeManual')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-gray-500">
-                    Automatique: paiements déclenchés par cron. Manuel: admin doit approuver
+                    {t('payoutSection.payoutModeHelp')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="currency">
-                    Devise
+                    {t('payoutSection.currency')}
                     <span className="text-red-500 ml-1">*</span>
                   </Label>
                   <Select
@@ -367,14 +374,14 @@ export default function AdminSettings() {
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-gray-500">
-                    Devise utilisée pour toutes les transactions
+                    {t('payoutSection.currencyHelp')}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label>
-                  Fréquences de paiement disponibles
+                  {t('payoutSection.frequencies')}
                   <span className="text-red-500 ml-1">*</span>
                 </Label>
                 <div className="flex flex-wrap gap-2">
@@ -385,19 +392,19 @@ export default function AdminSettings() {
                       className="cursor-pointer"
                       onClick={() => toggleFrequency(freq)}
                     >
-                      {freq === 'DAILY' ? 'Quotidien' : freq === 'WEEKLY' ? 'Hebdomadaire' : 'Mensuel'}
+                      {freq === 'DAILY' ? t('payoutSection.frequencyDaily') : freq === 'WEEKLY' ? t('payoutSection.frequencyWeekly') : t('payoutSection.frequencyMonthly')}
                     </Badge>
                   ))}
                 </div>
                 <p className="text-sm text-gray-500">
-                  Les créateurs pourront choisir parmi ces options
+                  {t('payoutSection.frequenciesHelp')}
                 </p>
               </div>
 
               <Alert>
                 <Calendar className="w-4 h-4" />
                 <AlertDescription>
-                  Les paiements automatiques sont traités par le cron job à intervalles réguliers selon la fréquence choisie par chaque créateur.
+                  {t('payoutSection.cronInfo')}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -406,21 +413,21 @@ export default function AdminSettings() {
           {/* General Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Informations Générales</CardTitle>
+              <CardTitle>{t('generalSection.title')}</CardTitle>
               <CardDescription>
-                Informations sur l'environnement et la configuration
+                {t('generalSection.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-600">Mode Stripe</p>
+                  <p className="text-sm font-medium text-gray-600">{t('stripeMode')}</p>
                   <Badge className={stripeMode === 'test' ? 'bg-yellow-500' : 'bg-green-500'}>
-                    {stripeMode === 'test' ? 'Test' : 'Production'}
+                    {stripeMode === 'test' ? t('stripeModeTest') : t('stripeModeProduction')}
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-600">Administrateur</p>
+                  <p className="text-sm font-medium text-gray-600">{t('generalSection.administrator')}</p>
                   <p className="text-sm">{user?.name} ({user?.email})</p>
                 </div>
               </div>
@@ -428,15 +435,15 @@ export default function AdminSettings() {
               {settings && (
                 <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-600">Créé le</p>
+                    <p className="text-sm font-medium text-gray-600">{t('generalSection.createdAt')}</p>
                     <p className="text-sm">
-                      <DateDisplay date={settings.createdAt} format="datetime" />
+                      <DateDisplay date={settings.createdAt} format="datetime" locale={locale} />
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-600">Dernière modification</p>
+                    <p className="text-sm font-medium text-gray-600">{t('generalSection.lastModified')}</p>
                     <p className="text-sm">
-                      <DateDisplay date={settings.updatedAt} format="datetime" />
+                      <DateDisplay date={settings.updatedAt} format="datetime" locale={locale} />
                     </p>
                   </div>
                 </div>
@@ -451,7 +458,7 @@ export default function AdminSettings() {
             variant="outline"
             onClick={() => router.push('/dashboard/admin')}
           >
-            Annuler
+            {t('cancel')}
           </Button>
           <Button
             onClick={handleSaveSettings}
@@ -461,12 +468,12 @@ export default function AdminSettings() {
             {saving ? (
               <>
                 <LoadingSpinner size="sm" className="mr-2" />
-                Enregistrement...
+                {t('saving')}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                Enregistrer les paramètres
+                {t('save')}
               </>
             )}
           </Button>
