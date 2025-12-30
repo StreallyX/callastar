@@ -121,7 +121,7 @@ export default function RequestsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reason: rejectReason,
-          custom{t('message')}: rejectCustomMessage,
+          customMessage: rejectCustomMessage,
         }),
       });
 

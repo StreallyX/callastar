@@ -31,6 +31,7 @@ interface ImageUploadProps {
 }
 
 function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, imageType, previewClassName }: ImageUploadProps) {
+  const t = useTranslations('dashboard.creator.settings');
   const tToast = useTranslations('toast');
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -178,7 +179,7 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
             ) : (
               <>
                 <Upload className="w-4 h-4 mr-2" />
-                {imageUrl ? '{t('publicProfile.changeImage')}' : '{t('publicProfile.uploadImage')}'}
+                {imageUrl ? t('publicProfile.changeImage') : t('publicProfile.uploadImage')}
               </>
             )}
           </Button>
@@ -860,8 +861,8 @@ export default function CreatorSettings() {
                     <h4 className="font-semibold mb-1">{t('paymentsTab.stripeStatus')}</h4>
                     <p className="text-sm text-gray-500">
                       {stripeOnboarding.onboarded 
-                        ? '{t('paymentsTab.accountReady')}'
-                        : '{t('paymentsTab.configRequired')}'}
+                        ? t('paymentsTab.accountReady')
+                        : t('paymentsTab.configRequired')}
                     </p>
                   </div>
                   {stripeOnboarding.onboarded ? (
