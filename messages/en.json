@@ -366,7 +366,12 @@
     "common": {
       "loading": "Loading...",
       "welcome": "Welcome",
-      "myDashboard": "My Dashboard"
+      "myDashboard": "My Dashboard",
+      "backToDashboard": "Back to dashboard",
+      "error": "Error",
+      "success": "Success",
+      "calendar": "Calendar",
+      "testMode": "Test Mode"
     },
     "user": {
       "title": "User Dashboard",
@@ -384,28 +389,61 @@
       },
       "upcoming": {
         "title": "My Upcoming Calls",
-        "description": "Your scheduled upcoming calls",
+        "description": "Confirmed and paid calls",
         "noBookings": "No upcoming calls",
         "noBookingsDescription": "Explore our creators to book your first call",
-        "exploreCreators": "Explore Creators",
+        "exploreCreators": "Browse Creators",
         "joinCall": "Join Call",
-        "downloadCalendar": "Download Calendar",
+        "downloadCalendar": "Calendar",
         "leaveReview": "Leave a Review",
         "calendarDownloadSuccess": "Calendar file downloaded!",
-        "calendarDownloadError": "Unable to download calendar file"
+        "calendarDownloadError": "Unable to download calendar file",
+        "reviewLeft": "Review left"
       },
       "requests": {
         "title": "My Call Requests",
-        "description": "Requests awaiting response",
+        "description": "Requests you sent to creators",
         "noRequests": "No pending requests",
-        "noRequestsDescription": "You can send a custom request to a creator from their profile"
+        "noRequestsDescription": "Visit a creator's profile to propose a call",
+        "requestTo": "Request to",
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "rejected": "Rejected",
+        "sentOn": "Sent on"
       },
       "history": {
         "title": "Call History",
-        "description": "All your past calls",
+        "description": "Past and completed calls",
         "noHistory": "No completed calls",
         "noHistoryDescription": "Your call history will appear here",
         "viewSummary": "View Summary"
+      },
+      "calls": {
+        "title": "My Upcoming Calls",
+        "subtitle": "All your confirmed and upcoming calls",
+        "youHave": "You have {count} upcoming call(s)",
+        "noUpcoming": "No upcoming calls",
+        "exploreCreators": "Browse Creators",
+        "confirmBook": "Confirmed",
+        "pendingStatus": "Pending",
+        "duration": "Duration: {duration} minutes",
+        "join": "Join"
+      },
+      "settings": {
+        "title": "Settings",
+        "profile": "User Profile",
+        "profileDesc": "Manage your personal information",
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Manage your notifications",
+        "noNotifications": "No notifications",
+        "markAsRead": "Mark as read"
       },
       "booking": {
         "with": "with",
@@ -423,14 +461,300 @@
       },
       "review": {
         "title": "Leave a Review",
-        "description": "Share your experience with",
+        "description": "Share your experience with {name}",
         "rating": "Rating",
         "comment": "Comment (optional)",
         "commentPlaceholder": "Share your experience...",
         "submit": "Submit Review",
         "submitting": "Submitting...",
-        "success": "Review published successfully!",
-        "error": "Error publishing review"
+        "cancel": "Cancel",
+        "success": "Review sent successfully!",
+        "error": "Failed to send review"
+      }
+    },
+    "creator": {
+      "title": "Creator Dashboard",
+      "welcome": "Welcome, {name}",
+      "navigation": "Navigation",
+      "paymentSetup": {
+        "title": "Payment Setup",
+        "required": "Payment setup required",
+        "description": "Manage your Stripe account and payments",
+        "completeSetup": "To receive your payments automatically via Stripe Connect, you must complete your setup. This only takes a few minutes.",
+        "configureStripe": "Configure Stripe Connect",
+        "paymentsEnabled": "Payments enabled",
+        "incomplete": "Setup incomplete",
+        "accountReady": "Your account is set up and ready to receive payments",
+        "completeConfig": "Complete your setup to receive payments",
+        "viewDetails": "View details",
+        "configure": "Configure"
+      },
+      "cards": {
+        "offers": {
+          "title": "Offers",
+          "description": "Manage your available call offers"
+        },
+        "requests": {
+          "title": "Requests",
+          "description": "Respond to appointment requests",
+          "pending": "{count} pending"
+        },
+        "calls": {
+          "title": "Calls",
+          "description": "View your past and upcoming calls"
+        },
+        "reviews": {
+          "title": "Reviews",
+          "description": "View reviews from your fans"
+        },
+        "payments": {
+          "title": "Payments",
+          "description": "History of your received payments"
+        },
+        "earnings": {
+          "title": "Earnings",
+          "description": "View your earnings and statistics"
+        },
+        "notifications": {
+          "title": "Notifications",
+          "description": "Manage your notifications",
+          "unread": "{count} unread"
+        },
+        "settings": {
+          "title": "Settings",
+          "description": "Customize your profile and preferences"
+        },
+        "payouts": {
+          "title": "Manage your payouts",
+          "description": "Request the transfer of your earnings to your bank account",
+          "button": "Payouts"
+        }
+      },
+      "offers": {
+        "title": "My Offers",
+        "subtitle": "Manage your call offers and appointments",
+        "create": "Create an offer",
+        "new": "New call offer",
+        "newDescription": "Create a new call offer for your fans",
+        "titleField": "Title",
+        "description": "Description",
+        "price": "Price",
+        "duration": "Duration (minutes)",
+        "dateTime": "Date and time",
+        "creating": "Creating...",
+        "createButton": "Create",
+        "deleteConfirm": "Are you sure you want to delete this offer?",
+        "deleteSuccess": "Offer deleted successfully",
+        "deleteError": "Unable to delete offer",
+        "createSuccess": "Offer created successfully!",
+        "createError": "Error during creation",
+        "viewMode": {
+          "list": "List View",
+          "calendar": "Calendar View"
+        },
+        "filters": {
+          "all": "All ({count})",
+          "available": "Available ({count})",
+          "booked": "Booked ({count})",
+          "completed": "Completed ({count})",
+          "cancelled": "Cancelled ({count})"
+        },
+        "status": {
+          "available": "Available",
+          "booked": "Booked",
+          "completed": "Completed",
+          "cancelled": "Cancelled"
+        },
+        "table": {
+          "offer": "Offer",
+          "dateTime": "Date & Time",
+          "duration": "Duration",
+          "price": "Price",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "bookedBy": "Booked by {name}",
+        "noOffers": "No offers created",
+        "noOffersWithStatus": "No offers with status \"{status}\"",
+        "legend": {
+          "available": "Available",
+          "booked": "Booked",
+          "completed": "Completed",
+          "cancelled": "Cancelled",
+          "confirmedCall": "📞 Confirmed Call"
+        }
+      },
+      "earnings": {
+        "title": "My Earnings",
+        "subtitle": "View your earnings and statistics",
+        "totalEarnings": "Total Earnings",
+        "available": "Available",
+        "pending": "Pending",
+        "totalPayouts": "Total Payouts",
+        "noEarnings": "No earnings yet"
+      },
+      "calls": {
+        "title": "My Calls",
+        "subtitle": "Manage your past and upcoming calls",
+        "upcoming": "Upcoming Calls",
+        "past": "Past Calls",
+        "youHave": "You have {count} upcoming call(s)",
+        "noCalls": "No scheduled calls"
+      },
+      "requests": {
+        "title": "Call Requests",
+        "subtitle": "Manage requests from your fans",
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "rejected": "Rejected",
+        "noRequests": "No requests at the moment",
+        "requestFrom": "Request from {name}",
+        "accept": "Accept",
+        "reject": "Reject",
+        "accepting": "Accepting...",
+        "rejecting": "Rejecting..."
+      },
+      "reviews": {
+        "title": "Received Reviews",
+        "subtitle": "View reviews from your fans",
+        "noReviews": "No reviews yet",
+        "averageRating": "Average rating"
+      },
+      "payments": {
+        "title": "Payment History",
+        "subtitle": "View all your received payments",
+        "noPayments": "No payments received",
+        "amount": "Amount",
+        "date": "Date",
+        "from": "From",
+        "status": "Status"
+      },
+      "payouts": {
+        "title": "My Payouts",
+        "subtitle": "Manage transfers to your bank account",
+        "request": "Request a payout",
+        "noPayouts": "No payouts requested",
+        "balance": "Available balance",
+        "minimum": "Minimum required",
+        "requestPayout": {
+          "title": "Request a payout",
+          "amount": "Amount",
+          "requesting": "Requesting...",
+          "submit": "Request"
+        }
+      },
+      "settings": {
+        "title": "Creator Settings",
+        "profile": "Profile",
+        "bio": "Biography",
+        "socialLinks": "Social links",
+        "save": "Save",
+        "saving": "Saving..."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "noNotifications": "No notifications"
+      },
+      "fees": {
+        "title": "Platform Fees",
+        "platformFee": "Platform commission",
+        "description": "Callastar takes a commission on each call"
+      }
+    },
+    "admin": {
+      "title": "Admin Dashboard",
+      "welcome": "Welcome, {name}",
+      "stats": {
+        "totalRevenue": "Total Revenue",
+        "commissions": "Commissions",
+        "bookings": "Bookings",
+        "users": "Users"
+      },
+      "quickActions": {
+        "title": "Administrative Management",
+        "description": "Quick access to administration features",
+        "settings": {
+          "title": "Settings",
+          "description": "Platform configuration"
+        },
+        "payments": {
+          "title": "Payments",
+          "description": "Transaction history"
+        },
+        "payouts": {
+          "title": "Creator Payments",
+          "description": "Payout management"
+        },
+        "dashboard": {
+          "title": "Dashboard",
+          "description": "Payout overview"
+        },
+        "refunds": {
+          "title": "Refunds",
+          "description": "Refund management"
+        },
+        "logs": {
+          "title": "Logs",
+          "description": "Transaction journal"
+        }
+      },
+      "revenueChart": {
+        "title": "Revenue (Last 30 Days)",
+        "revenue": "Revenue (€)"
+      },
+      "tabs": {
+        "users": "Users",
+        "payouts": "Payments",
+        "testCalls": "Test Calls"
+      },
+      "users": {
+        "title": "User Management",
+        "description": "List of all platform users",
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "registered": "Registration",
+        "noUsers": "No users found"
+      },
+      "payouts": {
+        "title": "Payment Management",
+        "description": "Payments to creators",
+        "new": "New payment",
+        "create": "Create a payment",
+        "createDescription": "Send a payment to a creator",
+        "creator": "Creator",
+        "selectCreator": "Select a creator",
+        "amount": "Amount (€)",
+        "amountPlaceholder": "100.00",
+        "creating": "Creating...",
+        "createButton": "Create",
+        "status": {
+          "paid": "Paid",
+          "processing": "Processing",
+          "failed": "Failed",
+          "pending": "Pending"
+        },
+        "noPayouts": "No payments found"
+      },
+      "testCalls": {
+        "title": "Test Calls",
+        "description": "Test video calls as administrator",
+        "past": "Past",
+        "join": "Join call",
+        "joinTest": "Join (test)",
+        "noCalls": "No confirmed calls available for testing",
+        "callsInfo": "Confirmed calls with Daily.co rooms will appear here",
+        "creator": "Creator:",
+        "participant": "Participant:",
+        "id": "ID:"
+      },
+      "settings": {
+        "title": "Platform Settings",
+        "description": "Configure global settings",
+        "commission": "Platform Commission (%)",
+        "save": "Save",
+        "saving": "Saving...",
+        "cancel": "Cancel"
       }
     }
   }

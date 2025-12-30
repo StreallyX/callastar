@@ -1,23 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useRouter } from '@/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Calendar, Clock, Video, Loader2, CheckCircle, MessageSquare, Star, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 export default function UserDashboard() {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations('dashboard.user');
   const tCommon = useTranslations('dashboard.common');
   const [user, setUser] = useState<any>(null);
@@ -92,10 +93,10 @@ export default function UserDashboard() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Échec de l\'envoi de l\'avis');
+        throw new Error(data.error || t('review.error'));
       }
 
-      toast.success('Avis envoyé avec succès!');
+      toast.success(t('review.success'));
       setReviewDialogOpen(false);
       setReviewData({ rating: 5, comment: '' });
       setSelectedBooking(null);
@@ -251,20 +252,20 @@ export default function UserDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>{t('upcoming.title')}</CardTitle>
-                <CardDescription>Appels confirmés et payés</CardDescription>
+                <CardDescription>{t('upcoming.description')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {upcomingBookings.length > 0 ? (
                   <div className="space-y-4">
                     {upcomingBookings.map((booking: any) => {
                       const callDate = new Date(booking?.callOffer?.dateTime ?? new Date());
-                      const formattedDate = callDate.toLocaleDateString('fr-FR', {
+                      const formattedDate = callDate.toLocaleDateString(locale, {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
                       });
-                      const formattedTime = callDate.toLocaleTimeString('fr-FR', {
+                      const formattedTime = callDate.toLocaleTimeString(locale, {
                         hour: '2-digit',
                         minute: '2-digit',
                       });
@@ -278,7 +279,7 @@ export default function UserDashboard() {
                                   <h3 className="font-semibold text-lg">{booking?.callOffer?.title}</h3>
                                   {getStatusBadge(booking?.status)}
                                 </div>
-                                <p className="text-sm text-gray-600">avec {booking?.callOffer?.creator?.user?.name}</p>
+                                <p className="text-sm text-gray-600">{t('booking.with')} {booking?.callOffer?.creator?.user?.name}</p>
                                 <div className="flex items-center gap-2 text-sm text-gray-500">
                                   <Calendar className="w-4 h-4" />
                                   <span>{formattedDate}</span>
@@ -304,7 +305,7 @@ export default function UserDashboard() {
                                   size="sm"
                                 >
                                   <Download className="w-4 h-4 mr-2" />
-                                  Calendrier
+                                  {t('upcoming.downloadCalendar')}
                                 </Button>
                               </div>
                             </div>
@@ -319,7 +320,7 @@ export default function UserDashboard() {
                     <p className="text-gray-500">{t('upcoming.noBookings')}</p>
                     <Link href="/creators">
                       <Button variant="outline" className="mt-4">
-                        Parcourir les créateurs
+                        {t('upcoming.exploreCreators')}
                       </Button>
                     </Link>
                   </div>
@@ -333,7 +334,7 @@ export default function UserDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Mes demandes d'appels</CardTitle>
-                <CardDescription>Demandes que vous avez envoyées aux créateurs</CardDescription>
+                <CardDescription>{t('requests.description')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {callRequests.length > 0 ? (
@@ -350,9 +351,9 @@ export default function UserDashboard() {
                             <div className="flex items-start justify-between">
                               <div className="space-y-2 flex-1">
                                 <div className="flex items-center gap-3">
-                                  <h3 className="font-semibold text-lg">Demande à {request?.creator?.user?.name}</h3>
+                                  <h3 className="font-semibold text-lg">{t('requests.requestTo')} {request?.creator?.user?.name}</h3>
                                   <Badge className={statusColors[request.status as keyof typeof statusColors]}>
-                                    {request.status === 'PENDING' ? 'En attente' : request.status === 'ACCEPTED' ? 'Acceptée' : 'Rejetée'}
+                                    {request.status === 'PENDING' ? request.status === 'PENDING' ? t('requests.pending') : request.status === 'ACCEPTED' ? t('requests.accepted') : t('requests.rejected')}
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -373,7 +374,7 @@ export default function UserDashboard() {
                                   </div>
                                 )}
                                 <p className="text-xs text-gray-400">
-                                  Envoyé le {new Date(request.createdAt).toLocaleDateString('fr-FR')}
+                                  {t('requests.sentOn')} {new Date(request.createdAt).toLocaleDateString(locale)}
                                 </p>
                               </div>
                             </div>
@@ -386,7 +387,7 @@ export default function UserDashboard() {
                   <div className="py-12 text-center">
                     <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500">{t('requests.noRequests')}</p>
-                    <p className="text-sm text-gray-400 mt-2">Visitez un profil de créateur pour proposer un appel</p>
+                    <p className="text-sm text-gray-400 mt-2">{t('requests.noRequestsDescription')}</p>
                   </div>
                 )}
               </CardContent>
@@ -397,8 +398,8 @@ export default function UserDashboard() {
           <TabsContent value="history">
             <Card>
               <CardHeader>
-                <CardTitle>Historique des appels</CardTitle>
-                <CardDescription>Appels passés et terminés</CardDescription>
+                <CardTitle>{t('history.title')}</CardTitle>
+                <CardDescription>{t('history.description')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {pastBookings.length > 0 ? (
@@ -420,12 +421,12 @@ export default function UserDashboard() {
                                   <h3 className="font-semibold text-lg">{booking?.callOffer?.title}</h3>
                                   {getStatusBadge(booking?.status)}
                                 </div>
-                                <p className="text-sm text-gray-600">avec {booking?.callOffer?.creator?.user?.name}</p>
+                                <p className="text-sm text-gray-600">{t('booking.with')} {booking?.callOffer?.creator?.user?.name}</p>
                                 <p className="text-sm text-gray-500">{formattedDate}</p>
                                 {booking?.review && (
                                   <div className="flex items-center gap-2 mt-2">
                                     <CheckCircle className="w-4 h-4 text-green-600" />
-                                    <span className="text-sm text-green-600">Avis laissé</span>
+                                    <span className="text-sm text-green-600">{t('upcoming.reviewLeft')}</span>
                                   </div>
                                 )}
                               </div>
@@ -466,13 +467,13 @@ export default function UserDashboard() {
             <DialogHeader>
               <DialogTitle>{t('review.title')}</DialogTitle>
               <DialogDescription>
-                Partagez votre expérience avec {selectedBooking?.callOffer?.creator?.user?.name}
+                {t('review.description', { name: selectedBooking?.callOffer?.creator?.user?.name || '' })}
               </DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>Note</Label>
+                <Label>{t('review.rating')}</Label>
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -494,7 +495,7 @@ export default function UserDashboard() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="comment">Commentaire (optionnel)</Label>
+                <Label htmlFor="comment">{t('review.comment')}</Label>
                 <Textarea
                   id="comment"
                   placeholder="Partagez votre expérience..."
@@ -522,7 +523,7 @@ export default function UserDashboard() {
                 disabled={submittingReview}
                 className="bg-gradient-to-r from-purple-600 to-pink-600"
               >
-                {submittingReview ? 'Envoi...' : 'Envoyer l\'avis'}
+                {submittingReview ? t('review.submitting') : t('review.submit')}
               </Button>
             </DialogFooter>
           </form>

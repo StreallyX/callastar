@@ -366,7 +366,12 @@
     "common": {
       "loading": "Chargement...",
       "welcome": "Bienvenue",
-      "myDashboard": "Mon Dashboard"
+      "myDashboard": "Mon Dashboard",
+      "backToDashboard": "Retour au dashboard",
+      "error": "Erreur",
+      "success": "Succès",
+      "calendar": "Calendrier",
+      "testMode": "Mode Test"
     },
     "user": {
       "title": "Dashboard Utilisateur",
@@ -384,28 +389,61 @@
       },
       "upcoming": {
         "title": "Mes appels à venir",
-        "description": "Vos prochains appels programmés",
+        "description": "Appels confirmés et payés",
         "noBookings": "Aucun appel à venir",
         "noBookingsDescription": "Explorez nos créateurs pour réserver votre premier appel",
-        "exploreCreators": "Explorer les créateurs",
+        "exploreCreators": "Parcourir les créateurs",
         "joinCall": "Rejoindre l'appel",
-        "downloadCalendar": "Télécharger calendrier",
+        "downloadCalendar": "Calendrier",
         "leaveReview": "Laisser un avis",
         "calendarDownloadSuccess": "Fichier calendrier téléchargé !",
-        "calendarDownloadError": "Impossible de télécharger le fichier calendrier"
+        "calendarDownloadError": "Impossible de télécharger le fichier calendrier",
+        "reviewLeft": "Avis laissé"
       },
       "requests": {
-        "title": "Mes demandes d'appel",
-        "description": "Demandes en attente de réponse",
+        "title": "Mes demandes d'appels",
+        "description": "Demandes que vous avez envoyées aux créateurs",
         "noRequests": "Aucune demande en cours",
-        "noRequestsDescription": "Vous pouvez envoyer une demande personnalisée à un créateur depuis son profil"
+        "noRequestsDescription": "Visitez un profil de créateur pour proposer un appel",
+        "requestTo": "Demande à",
+        "pending": "En attente",
+        "accepted": "Acceptée",
+        "rejected": "Rejetée",
+        "sentOn": "Envoyé le"
       },
       "history": {
         "title": "Historique des appels",
-        "description": "Tous vos appels passés",
+        "description": "Appels passés et terminés",
         "noHistory": "Aucun appel terminé",
         "noHistoryDescription": "Votre historique d'appels apparaîtra ici",
         "viewSummary": "Voir le résumé"
+      },
+      "calls": {
+        "title": "Mes Appels à Venir",
+        "subtitle": "Tous vos appels confirmés et à venir",
+        "youHave": "Vous avez {count} appel(s) à venir",
+        "noUpcoming": "Aucun appel à venir",
+        "exploreCreators": "Parcourir les créateurs",
+        "confirmBook": "Confirmé",
+        "pendingStatus": "En attente",
+        "duration": "Durée: {duration} minutes",
+        "join": "Rejoindre"
+      },
+      "settings": {
+        "title": "Paramètres",
+        "profile": "Profil utilisateur",
+        "profileDesc": "Gérez vos informations personnelles",
+        "name": "Nom",
+        "email": "Email",
+        "role": "Rôle",
+        "save": "Enregistrer",
+        "saving": "Enregistrement..."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Gérez vos notifications",
+        "noNotifications": "Aucune notification",
+        "markAsRead": "Marquer comme lu"
       },
       "booking": {
         "with": "avec",
@@ -423,14 +461,300 @@
       },
       "review": {
         "title": "Laisser un avis",
-        "description": "Partagez votre expérience avec",
+        "description": "Partagez votre expérience avec {name}",
         "rating": "Note",
         "comment": "Commentaire (optionnel)",
         "commentPlaceholder": "Partagez votre expérience...",
         "submit": "Envoyer l'avis",
-        "submitting": "Envoi en cours...",
-        "success": "Avis publié avec succès !",
-        "error": "Erreur lors de la publication de l'avis"
+        "submitting": "Envoi...",
+        "cancel": "Annuler",
+        "success": "Avis envoyé avec succès!",
+        "error": "Échec de l'envoi de l'avis"
+      }
+    },
+    "creator": {
+      "title": "Dashboard Créateur",
+      "welcome": "Bienvenue, {name}",
+      "navigation": "Navigation",
+      "paymentSetup": {
+        "title": "Configuration des paiements",
+        "required": "Configuration des paiements requise",
+        "description": "Gérez votre compte Stripe et vos paiements",
+        "completeSetup": "Pour recevoir vos paiements automatiquement via Stripe Connect, vous devez compléter votre configuration. Cela ne prend que quelques minutes.",
+        "configureStripe": "Configurer Stripe Connect",
+        "paymentsEnabled": "Paiements activés",
+        "incomplete": "Configuration incomplète",
+        "accountReady": "Votre compte est configuré et prêt à recevoir des paiements",
+        "completeConfig": "Complétez votre configuration pour recevoir des paiements",
+        "viewDetails": "Voir les détails",
+        "configure": "Configurer"
+      },
+      "cards": {
+        "offers": {
+          "title": "Offres",
+          "description": "Gérez vos offres d'appels disponibles"
+        },
+        "requests": {
+          "title": "Demandes",
+          "description": "Répondez aux demandes de rendez-vous",
+          "pending": "{count} en attente"
+        },
+        "calls": {
+          "title": "Appels",
+          "description": "Consultez vos appels passés et à venir"
+        },
+        "reviews": {
+          "title": "Avis",
+          "description": "Consultez les avis de vos fans"
+        },
+        "payments": {
+          "title": "Paiements",
+          "description": "Historique de vos paiements reçus"
+        },
+        "earnings": {
+          "title": "Revenus",
+          "description": "Consultez vos revenus et statistiques"
+        },
+        "notifications": {
+          "title": "Notifications",
+          "description": "Gérez vos notifications",
+          "unread": "{count} non lues"
+        },
+        "settings": {
+          "title": "Paramètres",
+          "description": "Personnalisez votre profil et vos préférences"
+        },
+        "payouts": {
+          "title": "Gérer vos payouts",
+          "description": "Demandez le transfert de vos revenus vers votre compte bancaire",
+          "button": "Payouts"
+        }
+      },
+      "offers": {
+        "title": "Mes Offres",
+        "subtitle": "Gérez vos offres d'appels et rendez-vous",
+        "create": "Créer une offre",
+        "new": "Nouvelle offre d'appel",
+        "newDescription": "Créez une nouvelle offre d'appel pour vos fans",
+        "titleField": "Titre",
+        "description": "Description",
+        "price": "Prix",
+        "duration": "Durée (minutes)",
+        "dateTime": "Date et heure",
+        "creating": "Création...",
+        "createButton": "Créer",
+        "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette offre ?",
+        "deleteSuccess": "Offre supprimée avec succès",
+        "deleteError": "Impossible de supprimer l'offre",
+        "createSuccess": "Offre créée avec succès!",
+        "createError": "Erreur lors de la création",
+        "viewMode": {
+          "list": "Vue Liste",
+          "calendar": "Vue Calendrier"
+        },
+        "filters": {
+          "all": "Toutes ({count})",
+          "available": "Disponibles ({count})",
+          "booked": "Réservées ({count})",
+          "completed": "Terminées ({count})",
+          "cancelled": "Annulées ({count})"
+        },
+        "status": {
+          "available": "Disponible",
+          "booked": "Réservée",
+          "completed": "Terminée",
+          "cancelled": "Annulée"
+        },
+        "table": {
+          "offer": "Offre",
+          "dateTime": "Date & Heure",
+          "duration": "Durée",
+          "price": "Prix",
+          "status": "Statut",
+          "actions": "Actions"
+        },
+        "bookedBy": "Réservé par {name}",
+        "noOffers": "Aucune offre créée",
+        "noOffersWithStatus": "Aucune offre avec le statut \"{status}\"",
+        "legend": {
+          "available": "Disponible",
+          "booked": "Réservée",
+          "completed": "Terminée",
+          "cancelled": "Annulée",
+          "confirmedCall": "📞 Appel confirmé"
+        }
+      },
+      "earnings": {
+        "title": "Mes Revenus",
+        "subtitle": "Consultez vos revenus et statistiques",
+        "totalEarnings": "Revenus totaux",
+        "available": "Disponible",
+        "pending": "En attente",
+        "totalPayouts": "Payouts totaux",
+        "noEarnings": "Aucun revenu pour le moment"
+      },
+      "calls": {
+        "title": "Mes Appels",
+        "subtitle": "Gérez vos appels passés et à venir",
+        "upcoming": "Appels à venir",
+        "past": "Appels passés",
+        "youHave": "Vous avez {count} appel(s) à venir",
+        "noCalls": "Aucun appel prévu"
+      },
+      "requests": {
+        "title": "Demandes d'Appels",
+        "subtitle": "Gérez les demandes de vos fans",
+        "pending": "En attente",
+        "accepted": "Acceptées",
+        "rejected": "Rejetées",
+        "noRequests": "Aucune demande pour le moment",
+        "requestFrom": "Demande de {name}",
+        "accept": "Accepter",
+        "reject": "Rejeter",
+        "accepting": "Acceptation...",
+        "rejecting": "Rejet..."
+      },
+      "reviews": {
+        "title": "Avis Reçus",
+        "subtitle": "Consultez les avis de vos fans",
+        "noReviews": "Aucun avis pour le moment",
+        "averageRating": "Note moyenne"
+      },
+      "payments": {
+        "title": "Historique des Paiements",
+        "subtitle": "Consultez tous vos paiements reçus",
+        "noPayments": "Aucun paiement reçu",
+        "amount": "Montant",
+        "date": "Date",
+        "from": "De",
+        "status": "Statut"
+      },
+      "payouts": {
+        "title": "Mes Payouts",
+        "subtitle": "Gérez les transferts vers votre compte bancaire",
+        "request": "Demander un payout",
+        "noPayouts": "Aucun payout demandé",
+        "balance": "Solde disponible",
+        "minimum": "Minimum requis",
+        "requestPayout": {
+          "title": "Demander un payout",
+          "amount": "Montant",
+          "requesting": "Demande...",
+          "submit": "Demander"
+        }
+      },
+      "settings": {
+        "title": "Paramètres Créateur",
+        "profile": "Profil",
+        "bio": "Biographie",
+        "socialLinks": "Liens sociaux",
+        "save": "Enregistrer",
+        "saving": "Enregistrement..."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "noNotifications": "Aucune notification"
+      },
+      "fees": {
+        "title": "Frais de la Plateforme",
+        "platformFee": "Commission plateforme",
+        "description": "Callastar prélève une commission sur chaque appel"
+      }
+    },
+    "admin": {
+      "title": "Admin Dashboard",
+      "welcome": "Bienvenue, {name}",
+      "stats": {
+        "totalRevenue": "Revenus totaux",
+        "commissions": "Commissions",
+        "bookings": "Réservations",
+        "users": "Utilisateurs"
+      },
+      "quickActions": {
+        "title": "Gestion Administrative",
+        "description": "Accès rapide aux fonctionnalités d'administration",
+        "settings": {
+          "title": "Paramètres",
+          "description": "Configuration plateforme"
+        },
+        "payments": {
+          "title": "Paiements",
+          "description": "Historique des transactions"
+        },
+        "payouts": {
+          "title": "Paiements créateurs",
+          "description": "Gestion des payouts"
+        },
+        "dashboard": {
+          "title": "Tableau de bord",
+          "description": "Vue d'ensemble payouts"
+        },
+        "refunds": {
+          "title": "Remboursements",
+          "description": "Gestion des refunds"
+        },
+        "logs": {
+          "title": "Logs",
+          "description": "Journal transactions"
+        }
+      },
+      "revenueChart": {
+        "title": "Revenus (30 derniers jours)",
+        "revenue": "Revenus (€)"
+      },
+      "tabs": {
+        "users": "Utilisateurs",
+        "payouts": "Paiements",
+        "testCalls": "Appels de test"
+      },
+      "users": {
+        "title": "Gestion des utilisateurs",
+        "description": "Liste de tous les utilisateurs de la plateforme",
+        "name": "Nom",
+        "email": "Email",
+        "role": "Rôle",
+        "registered": "Inscription",
+        "noUsers": "Aucun utilisateur trouvé"
+      },
+      "payouts": {
+        "title": "Gestion des paiements",
+        "description": "Paiements aux créateurs",
+        "new": "Nouveau paiement",
+        "create": "Créer un paiement",
+        "createDescription": "Envoyer un paiement à un créateur",
+        "creator": "Créateur",
+        "selectCreator": "Sélectionnez un créateur",
+        "amount": "Montant (€)",
+        "amountPlaceholder": "100.00",
+        "creating": "Création...",
+        "createButton": "Créer",
+        "status": {
+          "paid": "Payé",
+          "processing": "En cours",
+          "failed": "Échoué",
+          "pending": "En attente"
+        },
+        "noPayouts": "Aucun paiement trouvé"
+      },
+      "testCalls": {
+        "title": "Appels de test",
+        "description": "Tester les appels vidéo en tant qu'administrateur",
+        "past": "Passé",
+        "join": "Rejoindre l'appel",
+        "joinTest": "Rejoindre (test)",
+        "noCalls": "Aucun appel confirmé disponible pour le test",
+        "callsInfo": "Les appels confirmés avec des salles Daily.co créées apparaîtront ici",
+        "creator": "Créateur:",
+        "participant": "Participant:",
+        "id": "ID:"
+      },
+      "settings": {
+        "title": "Paramètres de la plateforme",
+        "description": "Configurer les paramètres globaux",
+        "commission": "Commission plateforme (%)",
+        "save": "Enregistrer",
+        "saving": "Enregistrement...",
+        "cancel": "Annuler"
       }
     }
   }
