@@ -630,7 +630,11 @@
         "editOffer": "Modifier l'offre",
         "deleteOffer": "Supprimer l'offre",
         "minutes": "min",
-        "backToDashboard": "Retour au dashboard"
+        "backToDashboard": "Retour au dashboard",
+        "calendar": {
+          "call": "Appel",
+          "user": "Utilisateur"
+        }
       },
       "earnings": {
         "title": "Mes Revenus",
@@ -715,7 +719,13 @@
         "totalReviews": "avis",
         "allReviews": "Tous les avis",
         "anonymousUser": "Utilisateur anonyme",
-        "backToDashboard": "Retour au dashboard"
+        "backToDashboard": "Retour au dashboard",
+        "summary": "Résumé des notes",
+        "summaryDesc": "Aperçu de vos évaluations",
+        "noReviewsDesc": "Vos futurs avis apparaîtront ici",
+        "loadError": "Erreur lors du chargement des avis",
+        "callLabel": "Appel",
+        "reviewsCount": "avis"
       },
       "payments": {
         "title": "Historique des Paiements",
@@ -1088,6 +1098,17 @@
     "warning": {
       "incompleteConfig": "Configuration incomplète: {message}",
       "settingsNotSynced": "Les paramètres ne sont pas synchronisés avec Stripe"
+    },
+    "stripe": {
+      "verifying": "Vérification de votre compte Stripe en cours...",
+      "configured": "✅ Votre compte Stripe est maintenant configuré !",
+      "incompleteConfig": "Configuration incomplète: {issue}",
+      "verificationInProgress": "Configuration en cours de vérification...",
+      "redirecting": "Redirection vers Stripe...",
+      "redirectingSuccess": "Redirection en cours...",
+      "onboardingError": "Erreur lors de la création du lien d'onboarding",
+      "unknownError": "Une erreur est survenue: {error}",
+      "genericError": "Erreur inconnue"
     }
   },
   "components": {
@@ -1130,6 +1151,80 @@
       "delete": "Supprimer",
       "viewDetails": "Voir les détails →",
       "viewAll": "Voir toutes les notifications"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Page non trouvée",
+      "description": "Désolé, la page que vous recherchez n'existe pas ou a été déplacée.",
+      "backHome": "Retour à l'accueil"
+    },
+    "serverError": {
+      "title": "Erreur du serveur",
+      "description": "Oups ! Quelque chose s'est mal passé de notre côté.",
+      "tryAgain": "Réessayer",
+      "backHome": "Retour à l'accueil"
+    },
+    "loading": {
+      "title": "Chargement en cours...",
+      "message": "Veuillez patienter"
+    }
+  },
+  "validation": {
+    "required": "Ce champ est requis",
+    "email": {
+      "invalid": "Adresse e-mail invalide",
+      "required": "L'adresse e-mail est requise"
+    },
+    "password": {
+      "tooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "required": "Le mot de passe est requis",
+      "mismatch": "Les mots de passe ne correspondent pas",
+      "weak": "Le mot de passe est trop faible"
+    },
+    "name": {
+      "required": "Le nom est requis",
+      "tooShort": "Le nom doit contenir au moins 2 caractères",
+      "tooLong": "Le nom ne peut pas dépasser 50 caractères"
+    },
+    "phone": {
+      "invalid": "Numéro de téléphone invalide",
+      "required": "Le numéro de téléphone est requis"
+    },
+    "price": {
+      "invalid": "Prix invalide",
+      "tooLow": "Le prix minimum est {min}",
+      "tooHigh": "Le prix maximum est {max}",
+      "required": "Le prix est requis"
+    },
+    "duration": {
+      "invalid": "Durée invalide",
+      "tooShort": "La durée minimum est {min} minutes",
+      "tooLong": "La durée maximum est {max} minutes",
+      "required": "La durée est requise"
+    },
+    "date": {
+      "invalid": "Date invalide",
+      "required": "La date est requise",
+      "past": "La date ne peut pas être dans le passé"
+    },
+    "file": {
+      "tooLarge": "Le fichier est trop volumineux (max: {max})",
+      "invalidType": "Type de fichier non supporté",
+      "required": "Un fichier est requis"
+    },
+    "text": {
+      "tooShort": "Le texte doit contenir au moins {min} caractères",
+      "tooLong": "Le texte ne peut pas dépasser {max} caractères",
+      "required": "Ce champ texte est requis"
+    },
+    "url": {
+      "invalid": "URL invalide",
+      "required": "L'URL est requise"
+    },
+    "generic": {
+      "invalid": "Valeur invalide",
+      "required": "Ce champ est requis"
     }
   }
 }

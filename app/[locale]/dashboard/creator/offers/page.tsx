@@ -222,7 +222,7 @@ export default function OffersPage() {
       if (booking.status === 'CONFIRMED' || booking.status === 'PAID') {
         events.push({
           id: `booking-${booking.id}`,
-          title: `📞 Appel: ${booking.user?.name || 'Utilisateur'}`,
+          title: `📞 ${t('calendar.call')}: ${booking.user?.name || t('calendar.user')}`,
           start: booking.callOffer?.dateTime,
           end: new Date(new Date(booking.callOffer?.dateTime).getTime() + (booking.callOffer?.duration || 30) * 60000).toISOString(),
           backgroundColor: '#8b5cf6', // purple for confirmed calls

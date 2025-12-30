@@ -630,7 +630,11 @@
         "editOffer": "Edit offer",
         "deleteOffer": "Delete offer",
         "minutes": "min",
-        "backToDashboard": "Back to dashboard"
+        "backToDashboard": "Back to dashboard",
+        "calendar": {
+          "call": "Call",
+          "user": "User"
+        }
       },
       "earnings": {
         "title": "My Earnings",
@@ -715,7 +719,13 @@
         "totalReviews": "reviews",
         "allReviews": "All reviews",
         "anonymousUser": "Anonymous user",
-        "backToDashboard": "Back to dashboard"
+        "backToDashboard": "Back to dashboard",
+        "summary": "Rating Summary",
+        "summaryDesc": "Overview of your reviews",
+        "noReviewsDesc": "Your future reviews will appear here",
+        "loadError": "Error loading reviews",
+        "callLabel": "Call",
+        "reviewsCount": "reviews"
       },
       "payments": {
         "title": "Payment History",
@@ -1088,6 +1098,17 @@
     "warning": {
       "incompleteConfig": "Incomplete configuration: {message}",
       "settingsNotSynced": "Settings are not synced with Stripe"
+    },
+    "stripe": {
+      "verifying": "Verifying your Stripe account...",
+      "configured": "✅ Your Stripe account is now configured!",
+      "incompleteConfig": "Incomplete configuration: {issue}",
+      "verificationInProgress": "Configuration being verified...",
+      "redirecting": "Redirecting to Stripe...",
+      "redirectingSuccess": "Redirecting...",
+      "onboardingError": "Error creating onboarding link",
+      "unknownError": "An error occurred: {error}",
+      "genericError": "Unknown error"
     }
   },
   "components": {
@@ -1130,6 +1151,80 @@
       "delete": "Delete",
       "viewDetails": "View details →",
       "viewAll": "View all notifications"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Page not found",
+      "description": "Sorry, the page you are looking for does not exist or has been moved.",
+      "backHome": "Back to home"
+    },
+    "serverError": {
+      "title": "Server Error",
+      "description": "Oops! Something went wrong on our end.",
+      "tryAgain": "Try again",
+      "backHome": "Back to home"
+    },
+    "loading": {
+      "title": "Loading...",
+      "message": "Please wait"
+    }
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": {
+      "invalid": "Invalid email address",
+      "required": "Email address is required"
+    },
+    "password": {
+      "tooShort": "Password must be at least 8 characters",
+      "required": "Password is required",
+      "mismatch": "Passwords do not match",
+      "weak": "Password is too weak"
+    },
+    "name": {
+      "required": "Name is required",
+      "tooShort": "Name must be at least 2 characters",
+      "tooLong": "Name cannot exceed 50 characters"
+    },
+    "phone": {
+      "invalid": "Invalid phone number",
+      "required": "Phone number is required"
+    },
+    "price": {
+      "invalid": "Invalid price",
+      "tooLow": "Minimum price is {min}",
+      "tooHigh": "Maximum price is {max}",
+      "required": "Price is required"
+    },
+    "duration": {
+      "invalid": "Invalid duration",
+      "tooShort": "Minimum duration is {min} minutes",
+      "tooLong": "Maximum duration is {max} minutes",
+      "required": "Duration is required"
+    },
+    "date": {
+      "invalid": "Invalid date",
+      "required": "Date is required",
+      "past": "Date cannot be in the past"
+    },
+    "file": {
+      "tooLarge": "File is too large (max: {max})",
+      "invalidType": "Unsupported file type",
+      "required": "File is required"
+    },
+    "text": {
+      "tooShort": "Text must be at least {min} characters",
+      "tooLong": "Text cannot exceed {max} characters",
+      "required": "This text field is required"
+    },
+    "url": {
+      "invalid": "Invalid URL",
+      "required": "URL is required"
+    },
+    "generic": {
+      "invalid": "Invalid value",
+      "required": "This field is required"
     }
   }
 }

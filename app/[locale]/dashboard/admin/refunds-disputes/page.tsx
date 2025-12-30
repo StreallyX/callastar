@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLocale } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -96,6 +97,7 @@ interface Summary {
 }
 
 export default function RefundsDisputesPage() {
+  const locale = useLocale();
   const [refunds, setRefunds] = useState<Refund[]>([]);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [summary, setSummary] = useState<Summary>({

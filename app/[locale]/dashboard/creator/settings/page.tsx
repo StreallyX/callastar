@@ -31,6 +31,7 @@ interface ImageUploadProps {
 }
 
 function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, imageType, previewClassName }: ImageUploadProps) {
+  const tToast = useTranslations('toast');
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [imageError, setImageError] = useState(false);

@@ -93,7 +93,7 @@ export default function ReviewsPage() {
           <Link href="/dashboard/creator">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
           <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
@@ -125,7 +125,7 @@ export default function ReviewsPage() {
                         />
                       ))}
                     </div>
-                    <p className="text-sm text-gray-600">{totalReviews} avis</p>
+                    <p className="text-sm text-gray-600">{totalReviews} {t('reviewsCount')}</p>
                   </div>
                 </div>
 
@@ -171,7 +171,7 @@ export default function ReviewsPage() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="font-semibold text-lg">{review?.user?.name ?? 'Anonyme'}</p>
+                          <p className="font-semibold text-lg">{review?.user?.name ?? t('anonymousUser')}</p>
                           <p className="text-xs text-gray-500">
                             {new Date(review.createdAt).toLocaleDateString(locale, {
                               year: 'numeric',
@@ -198,7 +198,7 @@ export default function ReviewsPage() {
                       )}
                       {review.booking?.callOffer && (
                         <div className="mt-3 p-2 bg-gray-50 rounded text-sm text-gray-600">
-                          Appel: {review.booking.callOffer.title}
+                          {t('callLabel')}: {review.booking.callOffer.title}
                         </div>
                       )}
                     </div>

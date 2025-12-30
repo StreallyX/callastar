@@ -44,6 +44,7 @@ export default function CreatorDashboard() {
   const t = useTranslations('dashboard.creator');
   const tCards = useTranslations('dashboard.creator.cards');
   const tPayment = useTranslations('dashboard.creator.paymentSetup');
+  const tToast = useTranslations('toast.stripe');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
@@ -69,7 +70,7 @@ export default function CreatorDashboard() {
       console.log('[Onboarding Return] Re-verifying account status...');
       
       if (onboardingParam === 'success') {
-        toast.info('Vérification de votre compte Stripe en cours...');
+        toast.info(tToast('verifying'));
       }
       
       setTimeout(async () => {
@@ -83,11 +84,11 @@ export default function CreatorDashboard() {
             });
             
             if (data?.onboarded) {
-              toast.success('✅ Votre compte Stripe est maintenant configuré !');
+              toast.success(tToast('configured'));
             } else if (data?.issues && data.issues.length > 0) {
-              toast.warning(`Configuration incomplète: ${data.issues[0]}`);
+              toast.warning(tToast('incompleteConfig', { issue: data.issues[0] }));
             } else {
-              toast.info('Configuration en cours de vérification...');
+              toast.info(tToast('verificationInProgress'));
             }
           }
         } catch (error) {
@@ -177,7 +178,7 @@ export default function CreatorDashboard() {
   };
 
   const handleStartStripeOnboarding = async () => {
-    const toastId = toast('Redirection vers Stripe...', { duration: Infinity });
+    const toastId = toast(tToast('redirecting'), { duration: Infinity });
     
     try {
       const response = await fetch('/api/stripe/connect-onboard', {
@@ -190,17 +191,17 @@ export default function CreatorDashboard() {
       if (response.ok) {
         const data = await response.json();
         toast.dismiss(toastId);
-        toast.success('Redirection en cours...');
+        toast.success(tToast('redirectingSuccess'));
         window.location.href = data.url;
       } else {
         const error = await response.json();
         toast.dismiss(toastId);
-        toast.error(error?.error ?? 'Erreur lors de la création du lien d\'onboarding');
+        toast.error(error?.error ?? tToast('onboardingError'));
         console.error('Stripe onboarding error:', error);
       }
     } catch (error: any) {
       toast.dismiss(toastId);
-      toast.error('Une erreur est survenue: ' + (error?.message || 'Erreur inconnue'));
+      toast.error(tToast('unknownError', { error: error?.message || tToast('genericError') }));
       console.error('Stripe onboarding error:', error);
     }
   };

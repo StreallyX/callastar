@@ -265,7 +265,7 @@ export default async function HomePage({ params,}: { params: { locale: string };
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {creators.map((creator: any) => (
-              <CreatorCard key={creator?.id} creator={creator} />
+              <CreatorCard key={creator?.id} creator={creator} locale={params.locale} />
             ))}
           </div>
 

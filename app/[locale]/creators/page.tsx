@@ -36,10 +36,11 @@ async function getCreators() {
   }
 }
 
-export default async function CreatorsPage() {
+export default async function CreatorsPage({ params }: { params: { locale: string } }) {
   const t = await getTranslations('creators.list');
   const data = await getCreators();
   const creators = data?.creators ?? [];
+  const locale = params.locale;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -58,7 +59,7 @@ export default async function CreatorsPage() {
         {creators?.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {creators.map((creator) => (
-              <CreatorCard key={creator?.id} creator={creator} />
+              <CreatorCard key={creator?.id} creator={creator} locale={locale} />
             ))}
           </div>
         ) : (
