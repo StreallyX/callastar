@@ -38,44 +38,6 @@ interface Notification {
   metadata?: any;
 }
 
-const NOTIFICATION_CATEGORIES = {
-  PAYMENTS: {
-    label: "Paiements",
-    types: ["PAYMENT_RECEIVED"],
-    icon: DollarSign,
-    color: "text-green-600",
-    bgColor: "bg-green-50",
-  },
-  PAYOUTS: {
-    label: "Payouts",
-    types: ["PAYOUT_REQUEST", "PAYOUT_APPROVED", "PAYOUT_FAILED", "TRANSFER_FAILED"],
-    icon: CreditCard,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-  },
-  BOOKINGS: {
-    label: "Rendez-vous",
-    types: ["BOOKING_CREATED", "BOOKING_CONFIRMED", "CALL_REQUEST_ACCEPTED", "CALL_REQUEST_REJECTED"],
-    icon: CheckCircle,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
-  },
-  DISPUTES: {
-    label: "Litiges & Remboursements",
-    types: ["REFUND_CREATED", "DISPUTE_CREATED", "DEBT_DEDUCTED", "DEBT_THRESHOLD_EXCEEDED"],
-    icon: AlertTriangle,
-    color: "text-orange-600",
-    bgColor: "bg-orange-50",
-  },
-  SYSTEM: {
-    label: "Système",
-    types: ["SYSTEM"],
-    icon: Bell,
-    color: "text-gray-600",
-    bgColor: "bg-gray-50",
-  },
-};
-
 const NOTIFICATION_TYPES = [
   { value: "", label: "Tous les types" },
   { value: "PAYMENT_RECEIVED", label: "Paiement reçu", category: "PAYMENTS" },
@@ -137,6 +99,44 @@ export default function CreatorNotificationsPage() {
       console.error('Error checking auth:', error);
       router.push('/auth/login');
     }
+  };
+
+  const NOTIFICATION_CATEGORIES = {
+    PAYMENTS: {
+      label: t('categories.payments'),
+      types: ["PAYMENT_RECEIVED"],
+      icon: DollarSign,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+    },
+    PAYOUTS: {
+      label: t('categories.payouts'),
+      types: ["PAYOUT_REQUEST", "PAYOUT_APPROVED", "PAYOUT_FAILED", "TRANSFER_FAILED"],
+      icon: CreditCard,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+    },
+    BOOKINGS: {
+      label: t('categories.bookings'),
+      types: ["BOOKING_CREATED", "BOOKING_CONFIRMED", "CALL_REQUEST_ACCEPTED", "CALL_REQUEST_REJECTED"],
+      icon: CheckCircle,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+    },
+    DISPUTES: {
+      label: t('categories.disputes'),
+      types: ["REFUND_CREATED", "DISPUTE_CREATED", "DEBT_DEDUCTED", "DEBT_THRESHOLD_EXCEEDED"],
+      icon: AlertTriangle,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+    },
+    SYSTEM: {
+      label: t('categories.system'),
+      types: ["SYSTEM"],
+      icon: Bell,
+      color: "text-gray-600",
+      bgColor: "bg-gray-50",
+    },
   };
 
   // Fetch notifications
@@ -209,7 +209,7 @@ export default function CreatorNotificationsPage() {
 
   // Delete notification
   const deleteNotification = async (notificationId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette notification ?")) {
+    if (!confirm(t('confirmDelete'))) {
       return;
     }
 
@@ -319,12 +319,12 @@ export default function CreatorNotificationsPage() {
           <Link href="/dashboard/creator">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold mb-2">Notifications</h1>
-            <p className="text-gray-600">Gérez vos notifications système et financières</p>
+            <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+            <p className="text-gray-600">{t('subtitle')}</p>
           </div>
         </div>
 
@@ -333,7 +333,7 @@ export default function CreatorNotificationsPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Total
+                {t('stats.total')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -343,7 +343,7 @@ export default function CreatorNotificationsPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Non lues
+                {t('stats.unread')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -353,7 +353,7 @@ export default function CreatorNotificationsPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Lues
+                {t('stats.read')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -376,7 +376,7 @@ export default function CreatorNotificationsPage() {
                 }}
                 size="sm"
               >
-                Toutes ({notifications.length})
+                {t('categories.all')} ({notifications.length})
               </Button>
               {Object.entries(NOTIFICATION_CATEGORIES).map(([key, cat]) => {
                 const Icon = cat.icon;
@@ -406,13 +406,13 @@ export default function CreatorNotificationsPage() {
                 className="gap-2"
               >
                 <Filter className="h-4 w-4" />
-                Filtres avancés
+                {t('filters.advanced')}
               </Button>
               
               {unreadCount > 0 && (
                 <Button onClick={markAllAsRead} variant="outline" size="sm" className="gap-2">
                   <Check className="h-4 w-4" />
-                  Tout marquer comme lu
+                  {t('actions.markAllRead')}
                 </Button>
               )}
             </div>
@@ -422,7 +422,7 @@ export default function CreatorNotificationsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg mt-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Statut de lecture
+                    {t('filters.readStatus')}
                   </label>
                   <select
                     value={filterRead}
@@ -432,15 +432,15 @@ export default function CreatorNotificationsPage() {
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
-                    <option value="all">Toutes</option>
-                    <option value="unread">Non lues</option>
-                    <option value="read">Lues</option>
+                    <option value="all">{t('filters.all')}</option>
+                    <option value="unread">{t('filters.unread')}</option>
+                    <option value="read">{t('filters.read')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type spécifique
+                    {t('filters.type')}
                   </label>
                   <select
                     value={filterType}
@@ -468,13 +468,13 @@ export default function CreatorNotificationsPage() {
             {isLoading ? (
               <div className="p-12 text-center text-gray-500">
                 <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-4" />
-                <p>Chargement...</p>
+                <p>{t('loading')}</p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-12 text-center text-gray-500">
                 <Bell className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg">Aucune notification</p>
-                <p className="text-sm mt-2">Vous n'avez aucune notification pour le moment</p>
+                <p className="text-lg">{t('empty.title')}</p>
+                <p className="text-sm mt-2">{t('empty.subtitle')}</p>
               </div>
             ) : (
               <>
@@ -508,7 +508,7 @@ export default function CreatorNotificationsPage() {
                               <span className="text-sm text-gray-500 whitespace-nowrap">
                                 {formatDistanceToNow(
                                   new Date(notification.createdAt),
-                                  { addSuffix: true, locale: locale === 'fr' ? fr : enUS }
+                                  { addSuffix: true, locale: enUS }
                                 )}
                               </span>
                             </div>
@@ -519,7 +519,7 @@ export default function CreatorNotificationsPage() {
                                 href={notification.link}
                                 className="inline-block text-sm text-purple-600 hover:text-purple-800 hover:underline"
                               >
-                                Voir les détails →
+                                {t('actions.viewDetails')} →
                               </a>
                             )}
                           </div>
@@ -532,7 +532,7 @@ export default function CreatorNotificationsPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="text-green-600 hover:text-green-800 hover:bg-green-50"
-                                title="Marquer comme lu"
+                                title={t('actions.markRead')}
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
@@ -542,7 +542,7 @@ export default function CreatorNotificationsPage() {
                               variant="ghost"
                               size="sm"
                               className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                              title="Supprimer"
+                              title={t('actions.delete')}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -557,7 +557,7 @@ export default function CreatorNotificationsPage() {
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
                     <div className="text-sm text-gray-600">
-                      Page {currentPage} sur {totalPages} • {notifications.length} notification{notifications.length > 1 ? 's' : ''}
+                      {t('pagination.page', { current: currentPage, total: totalPages })} • {notifications.length} notification{notifications.length > 1 ? 's' : ''}
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -566,7 +566,7 @@ export default function CreatorNotificationsPage() {
                         variant="outline"
                         size="sm"
                       >
-                        Précédent
+                        {t('pagination.previous')}
                       </Button>
                       <Button
                         onClick={() =>
@@ -576,7 +576,7 @@ export default function CreatorNotificationsPage() {
                         variant="outline"
                         size="sm"
                       >
-                        Suivant
+                        {t('pagination.next')}
                       </Button>
                     </div>
                   </div>

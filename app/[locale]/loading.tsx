@@ -1,14 +1,11 @@
-import { getTranslations } from 'next-intl/server';
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Loader2 } from 'lucide-react';
 
-export default async function Loading({
-  params,
-}: {
-  params: { locale: string };
-}) {
-  const { locale } = params;
-  const t = await getTranslations({ locale, namespace: 'errors.loading' });
+export default function Loading() {
+  const t = useTranslations('errors.loading');
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -19,7 +16,9 @@ export default async function Loading({
           <h2 className="text-2xl font-semibold text-gray-800 mb-2">
             {t('title')}
           </h2>
-          <p className="text-gray-600">{t('message')}</p>
+          <p className="text-gray-600">
+            {t('message')}
+          </p>
         </div>
       </div>
     </div>

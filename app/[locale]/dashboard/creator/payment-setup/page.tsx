@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
-import { useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,18 +31,13 @@ interface StripeAccountData {
   hasExternalAccount?: boolean;
   issues?: string[];
   recommendedAction?: string;
-  requirements?: {
-    currentlyDue?: string[];
-    pastDue?: string[];
-    eventuallyDue?: string[];
-  };
 }
 
 export default function PaymentSetupPage() {
   const router = useRouter();
-  const locale = useLocale();
   const t = useTranslations('dashboard.creator.paymentSetup');
   const tToast = useTranslations('toast');
+
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [accountData, setAccountData] = useState<StripeAccountData | null>(null);
@@ -80,8 +74,7 @@ export default function PaymentSetupPage() {
 
       const data = await res.json();
       setAccountData(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error(tToast('error.genericError'));
     } finally {
       setLoading(false);
@@ -108,10 +101,10 @@ export default function PaymentSetupPage() {
   };
 
   const status: OnboardingStatus = !accountData?.stripeAccountId
-  ? 'incomplete'
-  : accountData.canReceivePayments
-  ? 'complete'
-  : 'in_progress';
+    ? 'incomplete'
+    : accountData.canReceivePayments
+    ? 'complete'
+    : 'in_progress';
 
   if (loading) {
     return (
@@ -130,66 +123,49 @@ export default function PaymentSetupPage() {
 
       <div className="container mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Configuration des paiements</h1>
-          <p className="text-gray-600">
-            Configurez votre compte Stripe Connect pour recevoir vos paiements
-          </p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
-        {/* STATUS CARD */}
         <Card className="mb-8">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-xl">Statut Stripe</CardTitle>
-              <CardDescription>État réel de votre compte Stripe Connect</CardDescription>
+              <CardTitle className="text-xl">{t('status.title')}</CardTitle>
+              <CardDescription>{t('status.description')}</CardDescription>
             </div>
 
             {status === 'complete' && (
               <Badge className="bg-green-500 text-white px-4 py-2">
                 <CheckCircle2 className="w-4 h-4 mr-2" />
-                Paiements activés
+                {t('badges.complete')}
               </Badge>
             )}
 
             {status === 'in_progress' && (
               <Badge className="bg-yellow-500 text-white px-4 py-2">
                 <Clock className="w-4 h-4 mr-2" />
-                Action requise
+                {t('badges.inProgress')}
               </Badge>
             )}
 
             {status === 'incomplete' && (
               <Badge className="bg-red-500 text-white px-4 py-2">
                 <XCircle className="w-4 h-4 mr-2" />
-                Non configuré
+                {t('badges.incomplete')}
               </Badge>
             )}
           </CardHeader>
 
           <CardContent className="space-y-6">
-            <StatusItem
-              icon={CheckCircle}
-              label="Compte Stripe créé"
-              completed={!!accountData?.stripeAccountId}
-            />
-
-            <StatusItem
-              icon={FileText}
-              label="Informations soumises"
-              completed={!!accountData?.detailsSubmitted}
-            />
-
-            <StatusItem
-              icon={Shield}
-              label="Compte opérationnel"
-              completed={!!accountData?.canReceivePayments}
-            />
+            <StatusItem icon={CheckCircle} label={t('steps.accountCreated')} completed={!!accountData?.stripeAccountId} />
+            <StatusItem icon={FileText} label={t('steps.detailsSubmitted')} completed={!!accountData?.detailsSubmitted} />
+            <StatusItem icon={Shield} label={t('steps.operational')} completed={!!accountData?.canReceivePayments} />
 
             {/* ISSUES */}
             {accountData?.issues && accountData.issues.length > 0 && (
               <div className="pt-4 border-t">
                 <h4 className="font-semibold text-sm mb-2 text-gray-700">
-                  Problèmes détectés
+                  {t('issues.title')}
                 </h4>
                 <ul className="space-y-1">
                   {accountData.issues.map((issue, i) => (
@@ -202,23 +178,21 @@ export default function PaymentSetupPage() {
               </div>
             )}
 
-            {/* RECOMMENDED ACTION */}
             {accountData?.recommendedAction && !accountData?.canReceivePayments && (
               <Alert className="bg-blue-50 border-blue-200">
                 <AlertCircle className="w-4 h-4 text-blue-600" />
                 <AlertDescription className="text-blue-700">
-                  <strong>Action requise :</strong> {accountData.recommendedAction}
+                  <strong>{t('actionRequired')}:</strong> {accountData.recommendedAction}
                 </AlertDescription>
               </Alert>
             )}
 
-            {/* CTA */}
             <div className="pt-4 border-t">
               {status === 'complete' ? (
                 <Alert className="bg-green-50 border-green-200">
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
                   <AlertDescription className="text-green-700">
-                    Votre compte Stripe est correctement configuré.
+                    {t('success')}
                   </AlertDescription>
                 </Alert>
               ) : (
@@ -231,10 +205,10 @@ export default function PaymentSetupPage() {
                   {starting ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Redirection…
+                      {t('redirecting')}
                     </>
                   ) : (
-                    'Configurer Stripe'
+                    t('cta')
                   )}
                 </Button>
               )}
@@ -246,10 +220,7 @@ export default function PaymentSetupPage() {
   );
 }
 
-/* ----------------------------- */
-/* UI COMPONENT                  */
-/* ----------------------------- */
-
+/* UI */
 function StatusItem({
   icon: Icon,
   label,
@@ -261,11 +232,7 @@ function StatusItem({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <div
-        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-          completed ? 'bg-green-100' : 'bg-gray-100'
-        }`}
-      >
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${completed ? 'bg-green-100' : 'bg-gray-100'}`}>
         {completed ? (
           <CheckCircle2 className="w-5 h-5 text-green-600" />
         ) : (

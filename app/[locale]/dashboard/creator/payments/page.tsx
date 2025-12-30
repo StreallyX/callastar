@@ -8,46 +8,64 @@ import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, CreditCard, Calendar, DollarSign } from 'lucide-react';
+import { Loader2, ArrowLeft, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+
+type PayoutStatus = 'PAID' | 'READY' | 'HELD' | 'PROCESSING' | 'PENDING';
+
+type Payment = {
+  id: string;
+  amount: number;
+  currency?: string;
+  payoutStatus: PayoutStatus;
+  payoutDate?: string;
+  payoutReleaseDate?: string;
+  booking?: {
+    user?: { name?: string };
+    callOffer?: {
+      title?: string;
+      dateTime?: string;
+    };
+  };
+};
 
 export default function PaymentsPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard.creator.payments');
+
   const [user, setUser] = useState<any>(null);
-  const [payments, setPayments] = useState<any[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [creatorCurrency, setCreatorCurrency] = useState<string>('EUR');
-
+ 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
-      const userResponse = await fetch('/api/auth/me', {
-        credentials: 'include',
-      });
+      const userResponse = await fetch('/api/auth/me', { credentials: 'include' });
+
       if (!userResponse.ok) {
         document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
         router.push('/auth/login');
         return;
       }
+
       const userData = await userResponse.json();
-      
+
       if (userData?.user?.role !== 'CREATOR') {
         router.push('/dashboard/user');
         return;
       }
-      
+
       setUser(userData?.user);
-      
+
       const creatorId = userData?.user?.creator?.id;
 
-      // ✅ FIX: Get real Stripe currency from balance API (like payouts page)
       if (creatorId) {
         const balanceResponse = await fetch(`/api/stripe/balance/${creatorId}`);
         if (balanceResponse.ok) {
@@ -56,15 +74,13 @@ export default function PaymentsPage() {
         }
       }
 
-      // ✅ FIX: Get payments from earnings endpoint
       const earningsResponse = await fetch('/api/creator/earnings');
       if (earningsResponse.ok) {
         const earningsData = await earningsResponse.json();
         setPayments(earningsData?.payments ?? []);
       }
-
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error(error);
       toast.error(t('loadError'));
     } finally {
       setLoading(false);
@@ -75,18 +91,26 @@ export default function PaymentsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
         <Navbar />
-        <div className="container mx-auto max-w-7xl px-4 py-12 flex items-center justify-center">
+        <div className="container mx-auto py-12 flex justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
         </div>
       </div>
     );
   }
 
-  // ✅ FIX: Display gross amounts (what users paid), not net amounts after commission
   const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
-  const paidPayments = payments.filter((p) => p.payoutStatus === 'PAID');
-  const pendingPayments = payments.filter((p) => p.payoutStatus === 'HELD' || p.payoutStatus === 'PENDING');
-  const readyPayments = payments.filter((p) => p.payoutStatus === 'READY');
+  const paid = payments.filter(p => p.payoutStatus === 'PAID');
+  const pending = payments.filter(p => p.payoutStatus === 'HELD' || p.payoutStatus === 'PENDING');
+  const ready = payments.filter(p => p.payoutStatus === 'READY');
+
+  const statusMap: Record<PayoutStatus, { label: string; color: string }> = {
+    PAID: { label: t('status.paid'), color: 'bg-green-500' },
+    READY: { label: t('status.ready'), color: 'bg-purple-500' },
+    HELD: { label: t('status.held'), color: 'bg-yellow-500' },
+    PROCESSING: { label: t('status.processing'), color: 'bg-blue-500' },
+    PENDING: { label: t('status.pending'), color: 'bg-yellow-500' },
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -98,108 +122,94 @@ export default function PaymentsPage() {
           <Link href="/dashboard/creator">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('back')}
             </Button>
           </Link>
+
           <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
           <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">{t('total')}</CardTitle>
+              <CardTitle className="text-sm text-gray-600">{t('total')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                <CurrencyDisplay amount={totalAmount} currency={creatorCurrency} />
-              </div>
+              <CurrencyDisplay amount={totalAmount} currency={creatorCurrency} />
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">{t('transferred')}</CardTitle>
+              <CardTitle className="text-sm text-gray-600">{t('transferred')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{paidPayments.length}</div>
+              <div className="text-2xl font-bold text-green-600">{paid.length}</div>
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">En attente</CardTitle>
+              <CardTitle className="text-sm text-gray-600">{t('pending')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{pendingPayments.length}</div>
+              <div className="text-2xl font-bold text-yellow-600">{pending.length}</div>
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">{t('available')}</CardTitle>
+              <CardTitle className="text-sm text-gray-600">{t('available')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{readyPayments.length}</div>
+              <div className="text-2xl font-bold text-purple-600">{ready.length}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Payments List */}
+        {/* Payments list */}
         {payments.length > 0 ? (
           <Card>
             <CardHeader>
               <CardTitle>{t('allPayments')}</CardTitle>
               <CardDescription>{t('allPaymentsDesc')}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {payments.map((payment: any) => {
-                  const statusInfo = {
-                    PAID: { label: '✓ Transféré', color: 'bg-green-500' },
-                    READY: { label: '✓ Disponible', color: 'bg-purple-500' },
-                    HELD: { label: '⏳ En attente', color: 'bg-yellow-500' },
-                    PROCESSING: { label: '⏳ En cours', color: 'bg-blue-500' },
-                    PENDING: { label: '⏳ En attente', color: 'bg-yellow-500' },
-                  };
-                  const status = statusInfo[payment.payoutStatus as keyof typeof statusInfo] || { label: payment.payoutStatus, color: 'bg-gray-500' };
 
-                  return (
-                    <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="p-2 bg-purple-100 rounded-full">
-                            <CreditCard className="w-4 h-4 text-purple-600" />
-                          </div>
-                          <div>
-                            <div className="font-medium">{payment.booking?.callOffer?.title}</div>
-                            <div className="text-sm text-gray-500">
-                              {payment.booking?.user?.name} • {new Date(payment.booking?.callOffer?.dateTime).toLocaleDateString(locale)}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-xs text-gray-400 ml-11">
-                          {payment.payoutReleaseDate && payment.payoutStatus === 'HELD' && (
-                            <>Disponible le {new Date(payment.payoutReleaseDate).toLocaleDateString(locale)}</>
-                          )}
-                          {payment.payoutDate && payment.payoutStatus === 'PAID' && (
-                            <>Transféré le {new Date(payment.payoutDate).toLocaleDateString(locale)}</>
-                          )}
-                        </div>
+            <CardContent className="space-y-4">
+              {payments.map(payment => {
+                const status = statusMap[payment.payoutStatus] ?? {
+                  label: payment.payoutStatus,
+                  color: 'bg-gray-500',
+                };
+
+                const callDate = payment.booking?.callOffer?.dateTime;
+
+                return (
+                  <div key={payment.id} className="flex justify-between p-4 border rounded-lg">
+                    <div className="flex gap-3">
+                      <div className="p-2 bg-purple-100 rounded-full">
+                        <CreditCard className="w-4 h-4 text-purple-600" />
                       </div>
-                      <div className="text-right ml-4">
-                        <div className="font-semibold text-lg">
-                          <CurrencyDisplay 
-                            amount={Number(payment.amount)} 
-                            currency={payment.currency || creatorCurrency} 
-                          />
+                      <div>
+                        <div className="font-medium">{payment.booking?.callOffer?.title}</div>
+                        <div className="text-sm text-gray-500">
+                          {payment.booking?.user?.name ?? t('unknownUser')} •{' '}
+                          {callDate
+                            ? new Date(callDate).toLocaleDateString(locale)
+                            : t('unknownDate')}
                         </div>
-                        <Badge className={status.color}>
-                          {status.label}
-                        </Badge>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+
+                    <div className="text-right">
+                      <CurrencyDisplay amount={Number(payment.amount)} currency={payment.currency || creatorCurrency} />
+                      <Badge className={status.color}>{status.label}</Badge>
+                    </div>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         ) : (
@@ -211,16 +221,16 @@ export default function PaymentsPage() {
           </Card>
         )}
 
-        {/* Info Card */}
+        {/* Info */}
         <Card className="mt-6 bg-blue-50 border-blue-200">
           <CardHeader>
-            <CardTitle className="text-blue-800 text-base">📋 Information</CardTitle>
+            <CardTitle className="text-blue-800">{t('info.title')}</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-blue-700 space-y-2">
-            <p><strong>Montants affichés :</strong> Les montants affichés correspondent au montant total payé par l'utilisateur. Pour en savoir plus sur les frais et commissions, consultez la page <Link href="/dashboard/creator/fees" className="underline font-semibold">Frais et commissions</Link>.</p>
-            <p><strong>Période de sécurité :</strong> Les paiements restent en attente pendant 7 jours pour la protection contre les litiges.</p>
-            <p><strong>Transfert automatique :</strong> Après la période de sécurité, les fonds sont automatiquement transférés vers votre compte Stripe Connect.</p>
-            <p><strong>Gestion des payouts :</strong> Pour gérer vos virements vers votre compte bancaire, rendez-vous sur la page <Link href="/dashboard/creator/payouts" className="underline font-semibold">Payouts</Link>.</p>
+          <CardContent className="text-blue-700 space-y-2 text-sm">
+            <p>{t('info.amounts')}</p>
+            <p>{t('info.security')}</p>
+            <p>{t('info.transfer')}</p>
+            <p>{t('info.payouts')}</p>
           </CardContent>
         </Card>
       </div>

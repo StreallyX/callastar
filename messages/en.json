@@ -585,6 +585,7 @@
         "dateTime": "Date and time",
         "creating": "Creating...",
         "createButton": "Create",
+        "durationMinutes":"Minutes",
         "deleteConfirm": "Are you sure you want to delete this offer?",
         "deleteSuccess": "Offer deleted successfully",
         "deleteError": "Unable to delete offer",

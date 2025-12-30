@@ -1,22 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from '@/navigation';
-import { useTranslations } from 'next-intl';
-import { useLocale } from 'next-intl';
+import { useRouter, Link } from '@/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Info, Calculator, CreditCard, DollarSign } from 'lucide-react';
-import { Link } from '@/navigation';
 
 export default function FeesPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard.creator.fees');
+
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [platformFee, setPlatformFee] = useState(15); // Default 15%
+  const [platformFee, setPlatformFee] = useState(15); // %
 
   useEffect(() => {
     fetchData();
@@ -24,24 +23,21 @@ export default function FeesPage() {
 
   const fetchData = async () => {
     try {
-      const userResponse = await fetch('/api/auth/me', {
-        credentials: 'include',
-      });
+      const userResponse = await fetch('/api/auth/me', { credentials: 'include' });
       if (!userResponse.ok) {
         document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
         router.push('/auth/login');
         return;
       }
+
       const userData = await userResponse.json();
-      
       if (userData?.user?.role !== 'CREATOR') {
         router.push('/dashboard/user');
         return;
       }
-      
-      setUser(userData?.user);
 
-      // Get platform fee from settings
+      setUser(userData.user);
+
       try {
         const settingsResponse = await fetch('/api/admin/settings/platform-fee');
         if (settingsResponse.ok) {
@@ -50,12 +46,11 @@ export default function FeesPage() {
             setPlatformFee(Number(settingsData.platformFeePercentage));
           }
         }
-      } catch (error) {
-        console.error('Error fetching platform fee:', error);
+      } catch (err) {
+        console.error('Error fetching platform fee:', err);
       }
-
-    } catch (error) {
-      console.error('Error fetching data:', error);
+    } catch (err) {
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
@@ -63,7 +58,7 @@ export default function FeesPage() {
 
   const exampleAmount = 100;
   const platformFeeAmount = (exampleAmount * platformFee) / 100;
-  const stripeFeeAmount = 2.9 + (exampleAmount * 0.30) / 100; // Stripe standard fees: 2.9% + 0.30
+  const stripeFeeAmount = 2.9 + (exampleAmount * 0.30) / 100;
   const netAmount = exampleAmount - platformFeeAmount - stripeFeeAmount;
 
   return (
@@ -76,132 +71,118 @@ export default function FeesPage() {
           <Link href="/dashboard/creator">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold mb-2">Frais et commissions</h1>
-          <p className="text-gray-600">Comprendre comment fonctionne la rémunération sur Call a Star</p>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
-        {/* Platform Fee Card */}
+        {/* Platform Fee */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="w-5 h-5 text-purple-600" />
-              Commission de la plateforme
+              {t('platformFee.title')}
             </CardTitle>
             <CardDescription>
-              Call a Star prélève une commission de <strong>{platformFee}%</strong> sur chaque paiement reçu
+              {t('platformFee.description', { fee: platformFee })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 mb-4">
-              Cette commission couvre les coûts de fonctionnement de la plateforme : hébergement, 
-              maintenance, support client, fonctionnalités vidéo, et développement de nouvelles fonctionnalités.
+              {t('platformFee.details')}
             </p>
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="w-4 h-4 text-purple-600" />
-                <span className="font-semibold text-purple-900">Commission actuelle</span>
+                <span className="font-semibold text-purple-900">
+                  {t('platformFee.current')}
+                </span>
               </div>
               <p className="text-2xl font-bold text-purple-600">{platformFee}%</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stripe Fees Card */}
+        {/* Stripe Fees */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-blue-600" />
-              Frais de paiement (Stripe)
+              {t('stripe.title')}
             </CardTitle>
-            <CardDescription>
-              Frais de traitement des paiements par carte bancaire
-            </CardDescription>
+            <CardDescription>{t('stripe.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 mb-4">
-              Les paiements sont traités par Stripe, notre prestataire de paiement sécurisé. 
-              Stripe prélève des frais standards pour chaque transaction.
+              {t('stripe.details')}
             </p>
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <CreditCard className="w-4 h-4 text-blue-600" />
-                <span className="font-semibold text-blue-900">Frais Stripe</span>
-              </div>
               <p className="text-2xl font-bold text-blue-600">2.9% + 0.30 EUR</p>
-              <p className="text-xs text-blue-700 mt-1">Par transaction (frais standard Stripe Europe)</p>
+              <p className="text-xs text-blue-700 mt-1">
+                {t('stripe.standardFees')}
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Example Calculation Card */}
+        {/* Example */}
         <Card className="mb-6 border-2 border-green-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calculator className="w-5 h-5 text-green-600" />
-              Exemple de calcul
+              {t('example.title')}
             </CardTitle>
             <CardDescription>
-              Pour un appel de {exampleAmount.toFixed(2)} EUR
+              {t('example.subtitle', { amount: exampleAmount.toFixed(2) })}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center pb-2">
-                <span className="text-gray-700">Montant payé par l'utilisateur</span>
-                <span className="font-semibold text-lg">{exampleAmount.toFixed(2)} EUR</span>
-              </div>
-              
-              <div className="border-t pt-2">
-                <div className="flex justify-between items-center text-sm text-red-600">
-                  <span>- Commission plateforme ({platformFee}%)</span>
-                  <span>-{platformFeeAmount.toFixed(2)} EUR</span>
-                </div>
-              </div>
-              
-              <div className="border-t pt-2">
-                <div className="flex justify-between items-center text-sm text-red-600">
-                  <span>- Frais Stripe (2.9% + 0.30)</span>
-                  <span>-{stripeFeeAmount.toFixed(2)} EUR</span>
-                </div>
-              </div>
-              
-              <div className="border-t-2 border-green-600 pt-3 mt-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-green-700">Vous recevez</span>
-                  <span className="font-bold text-2xl text-green-600">{netAmount.toFixed(2)} EUR</span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Soit environ {((netAmount / exampleAmount) * 100).toFixed(1)}% du montant total
-                </p>
-              </div>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between">
+              <span>{t('example.paidByUser')}</span>
+              <span className="font-semibold">{exampleAmount.toFixed(2)} EUR</span>
             </div>
+
+            <div className="border-t pt-2 flex justify-between text-red-600 text-sm">
+              <span>{t('example.platformFee', { fee: platformFee })}</span>
+              <span>-{platformFeeAmount.toFixed(2)} EUR</span>
+            </div>
+
+            <div className="border-t pt-2 flex justify-between text-red-600 text-sm">
+              <span>{t('example.stripeFee')}</span>
+              <span>-{stripeFeeAmount.toFixed(2)} EUR</span>
+            </div>
+
+            <div className="border-t-2 border-green-600 pt-3 flex justify-between">
+              <span className="font-bold text-green-700">{t('example.net')}</span>
+              <span className="font-bold text-2xl text-green-600">
+                {netAmount.toFixed(2)} EUR
+              </span>
+            </div>
+
+            <p className="text-xs text-gray-500">
+              {t('example.percent', {
+                percent: ((netAmount / exampleAmount) * 100).toFixed(1),
+              })}
+            </p>
           </CardContent>
         </Card>
 
-        {/* Important Notes Card */}
+        {/* Notes */}
         <Card className="bg-yellow-50 border-yellow-200">
           <CardHeader>
-            <CardTitle className="text-yellow-800 text-base">📋 Notes importantes</CardTitle>
+            <CardTitle className="text-yellow-800 text-base">
+              📋 {t('notes.title')}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-yellow-700 space-y-2">
+            <p>{t('notes.amounts')}</p>
+            <p>{t('notes.security')}</p>
             <p>
-              <strong>Montants affichés :</strong> Les montants affichés dans votre historique de paiements 
-              correspondent au montant total payé par l'utilisateur (montant brut). Les frais sont automatiquement 
-              déduits lors du transfert vers votre compte Stripe Connect.
-            </p>
-            <p>
-              <strong>Transfert automatique :</strong> Les paiements sont transférés automatiquement vers votre 
-              compte Stripe Connect après une période de sécurité de 7 jours. Cette période permet de gérer 
-              d'éventuels litiges ou remboursements.
-            </p>
-            <p>
-              <strong>Virements bancaires :</strong> Pour transférer les fonds de votre compte Stripe Connect 
-              vers votre compte bancaire, consultez la page{' '}
+              {t('notes.payouts')}{' '}
               <Link href="/dashboard/creator/payouts" className="underline font-semibold">
-                Payouts
+                {t('notes.payoutLink')}
               </Link>.
             </p>
           </CardContent>
