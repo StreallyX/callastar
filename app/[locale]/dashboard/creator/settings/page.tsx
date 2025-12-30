@@ -121,7 +121,7 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
       {/* Preview */}
       {imageUrl ? (
         <div className="mt-3">
-          <Label className="text-xs text-gray-500 mb-2 block">Aperçu actuel :</Label>
+          <Label className="text-xs text-gray-500 mb-2 block">{t('publicProfile.currentPreview')}</Label>
           {!imageError ? (
             <div className={previewClassName || 'relative w-full h-32 border rounded-lg overflow-hidden bg-gray-50'}>
               <Image
@@ -136,18 +136,18 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
             <div className="relative w-full h-32 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
               <div className="text-center text-gray-400">
                 <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-                <p className="text-sm">Impossible de charger l&apos;image</p>
+                <p className="text-sm">{t('publicProfile.cannotLoadImage')}</p>
               </div>
             </div>
           )}
         </div>
       ) : (
         <div className="mt-3">
-          <Label className="text-xs text-gray-500 mb-2 block">Aperçu :</Label>
+          <Label className="text-xs text-gray-500 mb-2 block">{t('publicProfile.preview')}</Label>
           <div className="relative w-full h-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
             <div className="text-center text-gray-400">
               <ImageIcon className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-sm">Aucune image</p>
+              <p className="text-sm">{t('publicProfile.noImage')}</p>
             </div>
           </div>
         </div>
@@ -173,12 +173,12 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
             {uploading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Upload en cours...
+                {t('publicProfile.uploadInProgress')}
               </>
             ) : (
               <>
                 <Upload className="w-4 h-4 mr-2" />
-                {imageUrl ? 'Changer l\'image' : 'Uploader une image'}
+                {imageUrl ? '{t('publicProfile.changeImage')}' : '{t('publicProfile.uploadImage')}'}
               </>
             )}
           </Button>
@@ -196,12 +196,12 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
             {deleting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Suppression en cours...
+                {t('publicProfile.deleteInProgress')}
               </>
             ) : (
               <>
                 <XCircle className="w-4 h-4 mr-2" />
-                Supprimer l&apos;image
+                {t('publicProfile.deleteImage')}
               </>
             )}
           </Button>
@@ -209,7 +209,7 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
       </div>
 
       <p className="text-xs text-gray-500">
-        Formats acceptés: JPG, PNG, WEBP (max 5MB). L&apos;image sera enregistrée automatiquement.
+        {t('publicProfile.acceptedFormats')}
       </p>
     </div>
   );
@@ -474,7 +474,7 @@ export default function CreatorSettings() {
 
   const handleDeleteImage = async (imageType: 'profile' | 'banner') => {
     // Confirmation before deletion
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer cette image ?`)) {
+    if (!confirm(`{t('publicProfile.confirmDelete')}`)) {
       return;
     }
 
@@ -541,32 +541,32 @@ export default function CreatorSettings() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
             <User className="w-8 h-8" />
-            Paramètres Créateur
+            {t('title')}
           </h1>
-          <p className="text-gray-600">Gérez votre profil et vos préférences</p>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="profile">Profil</TabsTrigger>
-            <TabsTrigger value="public">Profil Public</TabsTrigger>
-            <TabsTrigger value="payments">Paiements</TabsTrigger>
-            <TabsTrigger value="security">Sécurité</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="profile">{t('tabs.profile')}</TabsTrigger>
+            <TabsTrigger value="public">{t('tabs.public')}</TabsTrigger>
+            <TabsTrigger value="payments">{t('tabs.payments')}</TabsTrigger>
+            <TabsTrigger value="security">{t('tabs.security')}</TabsTrigger>
+            <TabsTrigger value="notifications">{t('tabs.notifications')}</TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Informations personnelles</CardTitle>
+                <CardTitle>{t('profile.title')}</CardTitle>
                 <CardDescription>
-                  Ces informations seront visibles sur votre profil public
+                  {t('profile.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nom complet</Label>
+                  <Label htmlFor="name">{t('profile.fullName')}</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -591,17 +591,17 @@ export default function CreatorSettings() {
                     rows={4}
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    placeholder="Parlez un peu de vous..."
+                    placeholder="{t('profile.bioPlaceholder')}"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="expertise">Domaine d&apos;expertise</Label>
+                  <Label htmlFor="expertise">{t('profile.expertise')}</Label>
                   <Input
                     id="expertise"
                     value={formData.expertise}
                     onChange={(e) => setFormData({ ...formData, expertise: e.target.value })}
-                    placeholder="ex: Musique, Comédie, Sport..."
+                    placeholder="{t('profile.expertisePlaceholder')}"
                   />
                 </div>
               </CardContent>
@@ -611,10 +611,10 @@ export default function CreatorSettings() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="w-5 h-5" />
-                  Fuseau horaire
+                  {t('profile.timezone')}
                 </CardTitle>
                 <CardDescription>
-                  Configurez votre fuseau horaire pour afficher correctement les horaires des appels
+                  {t('profile.timezoneDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -622,7 +622,7 @@ export default function CreatorSettings() {
                   <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div className="text-sm">
                     <p className="font-medium text-blue-900 mb-1">
-                      Fuseau horaire détecté automatiquement
+                      {t('profile.timezone')} détecté automatiquement
                     </p>
                     <p className="text-blue-700">
                       {detectedTimezone} ({getTimezoneAbbreviation(detectedTimezone)})
@@ -631,11 +631,11 @@ export default function CreatorSettings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="timezone">Fuseau horaire actuel</Label>
+                  <Label htmlFor="timezone">{t('profile.timezone')} actuel</Label>
                   <div className="flex gap-2">
                     <Select value={timezone} onValueChange={setTimezone}>
                       <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Sélectionner un fuseau horaire" />
+                        <SelectValue placeholder="{t('profile.selectTimezone')}" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
                         {timezones.map((tz) => (
@@ -650,17 +650,17 @@ export default function CreatorSettings() {
                       variant="outline"
                       type="button"
                     >
-                      Auto-détecter
+                      {t('profile.autoDetect')}
                     </Button>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Tous les horaires seront affichés dans ce fuseau horaire
+                    {t('profile.allTimes')}
                   </p>
                 </div>
 
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                   <p className="text-sm text-purple-900">
-                    <strong>Aperçu :</strong> Il est actuellement{' '}
+                    <strong>{t('publicProfile.preview')}</strong> Il est actuellement{' '}
                     {new Date().toLocaleTimeString(locale, {
                       timeZone: timezone,
                       hour: '2-digit',
@@ -679,9 +679,9 @@ export default function CreatorSettings() {
                 className="bg-gradient-to-r from-purple-600 to-pink-600"
               >
                 {saving ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement...</>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('profile.saving')}</>
                 ) : (
-                  <><Save className="w-4 h-4 mr-2" />Enregistrer</>
+                  <><Save className="w-4 h-4 mr-2" />{t('profile.save')}</>
                 )}
               </Button>
             </div>
@@ -691,16 +691,16 @@ export default function CreatorSettings() {
           <TabsContent value="public" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Images du profil</CardTitle>
+                <CardTitle>{t('publicProfile.title')}</CardTitle>
                 <CardDescription>
-                  Gérez votre photo de profil et votre bannière
+                  {t('publicProfile.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* ✅ Profile Image Upload - Simplified */}
                 <ImageUpload
-                  label="Photo de profil"
-                  description="Votre photo sera affichée de manière circulaire"
+                  label="{t('publicProfile.profileImage')}"
+                  description="{t('publicProfile.profileImageDesc')}"
                   imageUrl={profileData.profileImage}
                   onUploadSuccess={fetchData}
                   onDelete={() => handleDeleteImage('profile')}
@@ -710,8 +710,8 @@ export default function CreatorSettings() {
 
                 {/* ✅ Banner Image Upload - Simplified */}
                 <ImageUpload
-                  label="Image de bannière"
-                  description="Image de couverture de votre profil (format paysage recommandé: 1200x300px)"
+                  label="{t('publicProfile.bannerImage')}"
+                  description="{t('publicProfile.bannerImageDesc')}"
                   imageUrl={profileData.bannerImage}
                   onUploadSuccess={fetchData}
                   onDelete={() => handleDeleteImage('banner')}
@@ -723,23 +723,23 @@ export default function CreatorSettings() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Bio et description</CardTitle>
+                <CardTitle>{t('publicProfile.bioTitle')}</CardTitle>
                 <CardDescription>
-                  Personnalisez votre profil visible par vos fans
+                  {t('publicProfile.bioDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="publicBio">Bio enrichie</Label>
+                  <Label htmlFor="publicBio">{t('publicProfile.richBio')}</Label>
                   <Textarea
                     id="publicBio"
                     rows={6}
                     value={profileData.bio}
                     onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                    placeholder="Parlez de vous, de votre parcours, de ce que vous proposez..."
+                    placeholder="{t('publicProfile.richBioPlaceholder')}"
                   />
                   <p className="text-xs text-gray-500">
-                    Cette bio sera affichée sur votre profil public. Utilisez des sauts de ligne pour structurer votre texte.
+                    {t('publicProfile.richBioHelp')}
                   </p>
                 </div>
               </CardContent>
@@ -747,9 +747,9 @@ export default function CreatorSettings() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Réseaux Sociaux</CardTitle>
+                <CardTitle>{t('publicProfile.socialLinks')}</CardTitle>
                 <CardDescription>
-                  Ajoutez vos liens de réseaux sociaux pour que vos fans puissent vous suivre
+                  {t('publicProfile.socialLinksDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -763,7 +763,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, instagram: e.target.value }
                     })}
-                    placeholder="https://instagram.com/votre-compte"
+                    placeholder="{t('publicProfile.instagramPlaceholder')}"
                   />
                 </div>
 
@@ -777,7 +777,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, tiktok: e.target.value }
                     })}
-                    placeholder="https://tiktok.com/@votre-compte"
+                    placeholder="{t('publicProfile.tiktokPlaceholder')}"
                   />
                 </div>
 
@@ -791,7 +791,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, twitter: e.target.value }
                     })}
-                    placeholder="https://twitter.com/votre-compte"
+                    placeholder="{t('publicProfile.twitterPlaceholder')}"
                   />
                 </div>
 
@@ -805,7 +805,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, youtube: e.target.value }
                     })}
-                    placeholder="https://youtube.com/@votre-chaine"
+                    placeholder="{t('publicProfile.youtubePlaceholder')}"
                   />
                 </div>
 
@@ -819,7 +819,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, other: e.target.value }
                     })}
-                    placeholder="https://votre-site.com"
+                    placeholder="{t('publicProfile.otherPlaceholder')}"
                   />
                 </div>
 
@@ -831,9 +831,9 @@ export default function CreatorSettings() {
                     className="bg-gradient-to-r from-purple-600 to-pink-600"
                   >
                     {saving ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement...</>
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('profile.saving')}</>
                     ) : (
-                      <><Save className="w-4 h-4 mr-2" />Enregistrer</>
+                      <><Save className="w-4 h-4 mr-2" />{t('profile.save')}</>
                     )}
                   </Button>
                 </div>
@@ -847,32 +847,32 @@ export default function CreatorSettings() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="w-5 h-5" />
-                  Configuration Stripe Connect
+                  {t('paymentsTab.title')}
                 </CardTitle>
                 <CardDescription>
-                  Gérez vos paiements et vos transferts
+                  {t('paymentsTab.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Stripe Status */}
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
-                    <h4 className="font-semibold mb-1">Statut Stripe Connect</h4>
+                    <h4 className="font-semibold mb-1">{t('paymentsTab.stripeStatus')}</h4>
                     <p className="text-sm text-gray-500">
                       {stripeOnboarding.onboarded 
-                        ? 'Votre compte est configuré et prêt à recevoir des paiements'
-                        : 'Configuration requise pour recevoir des paiements'}
+                        ? '{t('paymentsTab.accountReady')}'
+                        : '{t('paymentsTab.configRequired')}'}
                     </p>
                   </div>
                   {stripeOnboarding.onboarded ? (
                     <Badge className="bg-green-500">
                       <CheckCircle className="w-4 h-4 mr-1" />
-                      Configuré
+                      {t('paymentsTab.configured')}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-yellow-600 border-yellow-600">
                       <XCircle className="w-4 h-4 mr-1" />
-                      Non configuré
+                      {t('paymentsTab.notConfigured')}
                     </Badge>
                   )}
                 </div>
@@ -880,15 +880,15 @@ export default function CreatorSettings() {
                 {/* Onboarding Button */}
                 {!stripeOnboarding.onboarded && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-yellow-800 mb-2">⚠️ Configuration nécessaire</h4>
+                    <h4 className="font-semibold text-yellow-800 mb-2">{t('paymentsTab.warningTitle')}</h4>
                     <p className="text-sm text-yellow-700 mb-4">
-                      Pour recevoir vos paiements, vous devez compléter la configuration de votre compte Stripe Connect. Ce processus est sécurisé et prend environ 5 minutes.
+                      {t('paymentsTab.warningDesc')}
                     </p>
                     <Button
                       onClick={handleStartStripeOnboarding}
                       className="bg-yellow-600 hover:bg-yellow-700 text-white"
                     >
-                      Configurer Stripe Connect
+                      {t('paymentsTab.configureStripe')}
                     </Button>
                   </div>
                 )}
@@ -896,9 +896,9 @@ export default function CreatorSettings() {
                 {/* Stripe Connect Express Dashboard Link */}
                 {stripeOnboarding.onboarded && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-blue-800 mb-2">📊 Gérer votre compte Stripe</h4>
+                    <h4 className="font-semibold text-blue-800 mb-2">{t('paymentsTab.manageAccount')}</h4>
                     <p className="text-sm text-blue-700 mb-4">
-                      Accédez à votre espace Stripe Connect pour gérer vos paiements, vos transferts et vos informations bancaires (IBAN).
+                      {t('paymentsTab.manageAccountDesc')}
                     </p>
                     <Button
                       onClick={async () => {
@@ -919,7 +919,7 @@ export default function CreatorSettings() {
                       variant="outline"
                       className="border-blue-300 text-blue-700 hover:bg-blue-100"
                     >
-                      Ouvrir Stripe Connect
+                      {t('paymentsTab.openStripeConnect')}
                       <ExternalLink className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
@@ -927,26 +927,26 @@ export default function CreatorSettings() {
 
                 {/* Info about bank account */}
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">Comment ajouter mon compte bancaire ?</h4>
+                  <h4 className="font-semibold mb-2">{t('paymentsTab.howToAddBank')}</h4>
                   <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-                    <li>Cliquez sur le bouton <strong>&quot;Ouvrir Stripe Connect&quot;</strong> ci-dessus</li>
-                    <li>Connectez-vous à votre espace Stripe Connect</li>
-                    <li>Ajoutez votre IBAN et les informations de votre banque dans la section dédiée</li>
-                    <li>Vos virements seront automatiquement envoyés selon votre configuration</li>
+                    <li>Cliquez sur le bouton <strong>&quot;{t('paymentsTab.openStripeConnect')}&quot;</strong> ci-dessus</li>
+                    <li>{t('paymentsTab.bankStep2')}</li>
+                    <li>{t('paymentsTab.bankStep3')}</li>
+                    <li>{t('paymentsTab.bankStep4')}</li>
                   </ol>
                   <p className="text-sm text-gray-500 mt-3">
-                    ℹ️ Important : N&apos;utilisez jamais le Dashboard Stripe classique, utilisez toujours le lien Stripe Connect fourni ci-dessus.
+                    {t('paymentsTab.importantNote')}
                   </p>
                 </div>
 
                 {/* Payout info */}
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">💵 Comment fonctionnent les paiements ?</h4>
+                  <h4 className="font-semibold mb-2">{t('paymentsTab.howPaymentsWork')}</h4>
                   <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
-                    <li><strong>Période de sécurité:</strong> Les paiements sont retenus pendant 7 jours pour protéger contre les litiges</li>
-                    <li><strong>Commission:</strong> La plateforme prélève une commission de 10% sur chaque réservation</li>
-                    <li><strong>Demande de paiement:</strong> Après 7 jours, vous pouvez demander le transfert dans l&apos;onglet &quot;Revenus&quot; de votre dashboard</li>
-                    <li><strong>Réception:</strong> Les fonds sont transférés sur votre compte Stripe, puis vers votre banque selon votre configuration</li>
+                    <li><strong>{t('paymentsTab.securityPeriod')}</strong> {t('paymentsTab.securityPeriodDesc')}</li>
+                    <li><strong>{t('paymentsTab.commission')}</strong> {t('paymentsTab.commissionDesc')}</li>
+                    <li><strong>{t('paymentsTab.paymentRequest')}</strong> {t('paymentsTab.paymentRequestDesc')}</li>
+                    <li><strong>{t('paymentsTab.reception')}</strong> {t('paymentsTab.receptionDesc')}</li>
                   </ul>
                 </div>
               </CardContent>
@@ -957,14 +957,14 @@ export default function CreatorSettings() {
           <TabsContent value="security" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Changer le mot de passe</CardTitle>
+                <CardTitle>{t('security.title')}</CardTitle>
                 <CardDescription>
-                  Assurez-vous d&apos;utiliser un mot de passe fort et unique
+                  {t('security.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+                  <Label htmlFor="currentPassword">{t('security.currentPassword')}</Label>
                   <Input
                     id="currentPassword"
                     type="password"
@@ -974,7 +974,7 @@ export default function CreatorSettings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                  <Label htmlFor="newPassword">{t('security.newPassword')}</Label>
                   <Input
                     id="newPassword"
                     type="password"
@@ -984,7 +984,7 @@ export default function CreatorSettings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmer le nouveau mot de passe</Label>
+                  <Label htmlFor="confirmPassword">{t('security.confirmPassword')}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -1000,9 +1000,9 @@ export default function CreatorSettings() {
                     className="bg-gradient-to-r from-purple-600 to-pink-600"
                   >
                     {saving ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Modification...</>
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('security.changing')}</>
                     ) : (
-                      <>Changer le mot de passe</>
+                      <>{t('security.changePassword')}</>
                     )}
                   </Button>
                 </div>
@@ -1016,17 +1016,17 @@ export default function CreatorSettings() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="w-5 h-5" />
-                  Préférences de notification
+                  {t('notificationsTab.title')}
                 </CardTitle>
                 <CardDescription>
-                  Choisissez comment vous souhaitez être notifié
+                  {t('notificationsTab.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Notifications par email</Label>
-                    <p className="text-sm text-gray-500">Recevoir des emails de notification</p>
+                    <Label>{t('notificationsTab.emailNotifications')}</Label>
+                    <p className="text-sm text-gray-500">{t('notificationsTab.emailNotificationsDesc')}</p>
                   </div>
                   <Switch
                     checked={notifications.email}
@@ -1036,8 +1036,8 @@ export default function CreatorSettings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Nouvelle réservation</Label>
-                    <p className="text-sm text-gray-500">Notification lorsqu&apos;un fan réserve un appel</p>
+                    <Label>{t('notificationsTab.newBooking')}</Label>
+                    <p className="text-sm text-gray-500">{t('notificationsTab.newBookingDesc')}</p>
                   </div>
                   <Switch
                     checked={notifications.newBooking}
@@ -1047,8 +1047,8 @@ export default function CreatorSettings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Paiements disponibles</Label>
-                    <p className="text-sm text-gray-500">Notification lorsque des fonds sont prêts pour transfert</p>
+                    <Label>{t('notificationsTab.payoutAvailable')}</Label>
+                    <p className="text-sm text-gray-500">{t('notificationsTab.payoutAvailableDesc')}</p>
                   </div>
                   <Switch
                     checked={notifications.payoutAvailable}
@@ -1058,8 +1058,8 @@ export default function CreatorSettings() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Rappels d&apos;appel</Label>
-                    <p className="text-sm text-gray-500">Recevoir un rappel avant vos appels programmés</p>
+                    <Label>{t('notificationsTab.callReminder')}</Label>
+                    <p className="text-sm text-gray-500">{t('notificationsTab.callReminderDesc')}</p>
                   </div>
                   <Switch
                     checked={notifications.callReminder}
@@ -1073,7 +1073,7 @@ export default function CreatorSettings() {
                     className="bg-gradient-to-r from-purple-600 to-pink-600"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    Enregistrer les préférences
+                    {t('notificationsTab.savePreferences')}
                   </Button>
                 </div>
               </CardContent>

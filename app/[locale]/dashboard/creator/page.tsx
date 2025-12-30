@@ -233,7 +233,7 @@ export default function CreatorDashboard() {
       href: '/dashboard/creator/requests',
       count: stats.pendingRequests,
       badge: stats.pendingRequests > 0 ? {
-        text: `${stats.pendingRequests} en attente`,
+        text: tCards('requests.pending', { count: stats.pendingRequests }),
         variant: 'destructive'
       } : undefined,
     },
@@ -263,13 +263,19 @@ export default function CreatorDashboard() {
       href: '/dashboard/creator/earnings',
     },
     {
+      title: tCards('fees.title'),
+      description: tCards('fees.description'),
+      icon: <Package className="w-6 h-6" />,
+      href: '/dashboard/creator/fees',
+    },
+    {
       title: tCards('notifications.title'),
       description: tCards('notifications.description'),
       icon: <Bell className="w-6 h-6" />,
       href: '/dashboard/creator/notifications',
       count: stats.unreadNotifications,
       badge: stats.unreadNotifications > 0 ? {
-        text: `${stats.unreadNotifications} non lues`,
+        text: tCards('notifications.unread', { count: stats.unreadNotifications }),
         variant: 'destructive'
       } : undefined,
     },
@@ -281,7 +287,7 @@ export default function CreatorDashboard() {
 
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Dashboard Créateur</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
           <p className="text-gray-600">{t('welcome', { name: user?.name })}</p>
         </div>
 

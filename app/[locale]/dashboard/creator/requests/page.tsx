@@ -97,10 +97,10 @@ export default function RequestsPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Échec de l\'acceptation');
+        throw new Error(data.error || t('confirmAcceptDesc'));
       }
 
-      toast.success('Demande acceptée et offre créée!');
+      toast.success(t('acceptedRequests'));
       setConfirmDialogOpen(false);
       setSelectedRequest(null);
       fetchData();
@@ -121,7 +121,7 @@ export default function RequestsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reason: rejectReason,
-          customMessage: rejectCustomMessage,
+          custom{t('message')}: rejectCustomMessage,
         }),
       });
 
@@ -130,7 +130,7 @@ export default function RequestsPage() {
         throw new Error(data.error || 'Échec du rejet');
       }
 
-      toast.success('Demande rejetée');
+      toast.success(t('rejectedRequests'));
       setRejectDialogOpen(false);
       setSelectedRequest(null);
       setRejectReason('NOT_AVAILABLE');
@@ -184,7 +184,7 @@ export default function RequestsPage() {
           <Link href="/dashboard/creator">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
           <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
@@ -234,7 +234,7 @@ export default function RequestsPage() {
                             <User className="w-5 h-5 text-purple-600" />
                           </div>
                           <div>
-                            <p className="font-semibold text-lg">{request?.user?.name ?? 'Utilisateur'}</p>
+                            <p className="font-semibold text-lg">{request?.user?.name ?? t('user')}</p>
                             <p className="text-sm text-gray-600">{request?.user?.email}</p>
                           </div>
                           <Badge className="bg-yellow-500">{t('pending')}</Badge>
@@ -284,7 +284,7 @@ export default function RequestsPage() {
         {/* Accepted Requests */}
         {acceptedRequests.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Demandes acceptées</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('acceptedRequests')}</h2>
             <div className="grid gap-4">
               {acceptedRequests.map((request: any) => (
                 <Card key={request.id}>
@@ -296,10 +296,10 @@ export default function RequestsPage() {
                             <User className="w-5 h-5 text-purple-600" />
                           </div>
                           <div>
-                            <p className="font-semibold text-lg">{request?.user?.name ?? 'Utilisateur'}</p>
+                            <p className="font-semibold text-lg">{request?.user?.name ?? t('user')}</p>
                             <p className="text-sm text-gray-600">{request?.user?.email}</p>
                           </div>
-                          <Badge className="bg-green-500">Acceptée</Badge>
+                          <Badge className="bg-green-500">{t('accepted')}</Badge>
                         </div>
                         <div className="space-y-1 text-sm text-gray-600 ml-14">
                           <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export default function RequestsPage() {
         {/* Rejected Requests */}
         {rejectedRequests.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Demandes refusées</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('rejectedRequests')}</h2>
             <div className="grid gap-4">
               {rejectedRequests.map((request: any) => (
                 <Card key={request.id} className="opacity-60">
@@ -341,10 +341,10 @@ export default function RequestsPage() {
                             <User className="w-5 h-5 text-purple-600" />
                           </div>
                           <div>
-                            <p className="font-semibold text-lg">{request?.user?.name ?? 'Utilisateur'}</p>
+                            <p className="font-semibold text-lg">{request?.user?.name ?? t('user')}</p>
                             <p className="text-sm text-gray-600">{request?.user?.email}</p>
                           </div>
-                          <Badge className="bg-red-500">Refusée</Badge>
+                          <Badge className="bg-red-500">{t('rejected')}</Badge>
                         </div>
                         <div className="space-y-1 text-sm text-gray-600 ml-14">
                           <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ export default function RequestsPage() {
           <Card>
             <CardContent className="py-12 text-center">
               <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Aucune demande d'appel reçue</p>
+              <p className="text-gray-500">{t('noRequests')}</p>
             </CardContent>
           </Card>
         )}
@@ -382,16 +382,16 @@ export default function RequestsPage() {
           <DialogHeader>
             <DialogTitle>{t('confirmAccept')}</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir accepter cette demande ? Une offre sera créée automatiquement.
+              {t('confirmAcceptDesc')}
             </DialogDescription>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-2 py-4">
-              <p><strong>Utilisateur:</strong> {selectedRequest.user?.name}</p>
-              <p><strong>Date/Heure:</strong> {new Date(selectedRequest.proposedDateTime).toLocaleString(locale)}</p>
-              <p><strong>Prix proposé:</strong> {Number(selectedRequest.proposedPrice).toFixed(2)} {creatorCurrency}</p>
+              <p><strong>{t('user')}:</strong> {selectedRequest.user?.name}</p>
+              <p><strong>{t('dateTime')}:</strong> {new Date(selectedRequest.proposedDateTime).toLocaleString(locale)}</p>
+              <p><strong>{t('proposedPrice')}:</strong> {Number(selectedRequest.proposedPrice).toFixed(2)} {creatorCurrency}</p>
               {selectedRequest.message && (
-                <p><strong>Message:</strong> {selectedRequest.message}</p>
+                <p><strong>{t('message')}:</strong> {selectedRequest.message}</p>
               )}
             </div>
           )}
@@ -401,7 +401,7 @@ export default function RequestsPage() {
               onClick={() => setConfirmDialogOpen(false)}
               disabled={confirming}
             >
-              Annuler
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleConfirmRequest}
@@ -411,12 +411,12 @@ export default function RequestsPage() {
               {confirming ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Confirmation...
+                  {t('confirming')}
                 </>
               ) : (
                 <>
                   <Check className="w-4 h-4 mr-2" />
-                  Confirmer
+                  {t('confirm')}
                 </>
               )}
             </Button>
@@ -430,12 +430,12 @@ export default function RequestsPage() {
           <DialogHeader>
             <DialogTitle>{t('reject')} la demande</DialogTitle>
             <DialogDescription>
-              Veuillez indiquer la raison du refus. L'utilisateur sera notifié.
+              {t('rejectDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="reason">Raison du refus</Label>
+              <Label htmlFor="reason">{t('rejectReason')}</Label>
               <Select value={rejectReason} onValueChange={setRejectReason}>
                 <SelectTrigger>
                   <SelectValue />
@@ -451,13 +451,13 @@ export default function RequestsPage() {
             </div>
             {rejectReason === 'OTHER' && (
               <div>
-                <Label htmlFor="customMessage">Précisez la raison</Label>
+                <Label htmlFor="customMessage">{t('specifyReason')}</Label>
                 <Textarea
                   id="customMessage"
                   value={rejectCustomMessage}
                   onChange={(e) => setRejectCustomMessage(e.target.value)}
                   rows={3}
-                  placeholder="Expliquez pourquoi vous refusez cette demande..."
+                  placeholder="{t('explainRejection')}"
                   required
                 />
               </div>
@@ -469,7 +469,7 @@ export default function RequestsPage() {
               onClick={() => setRejectDialogOpen(false)}
               disabled={rejecting}
             >
-              Annuler
+              {t('cancel')}
             </Button>
             <Button
               onClick={handleRejectRequest}
@@ -479,7 +479,7 @@ export default function RequestsPage() {
               {rejecting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Refus...
+                  {t('rejecting')}
                 </>
               ) : (
                 <>
