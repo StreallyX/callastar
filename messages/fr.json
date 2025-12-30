@@ -1011,6 +1011,7 @@
           "scheduleManualDesc": "Vous devez demander manuellement chaque virement (sujet à approbation admin)",
           "minimumAmount": "Montant minimum ({currency})",
           "minimumAmountDesc": "Montant minimum requis pour déclencher un virement (entre 10 {currency} et 1 000 000 {currency})",
+          "important":"Important :",
           "importantNote": "Les virements automatiques (quotidiens/hebdomadaires) sont traités automatiquement par le système. Les virements manuels nécessitent une approbation de l'administrateur.",
           "syncedWithStripe": "Synchronisé avec Stripe - Vos paramètres sont à jour sur Stripe",
           "outOfSync": "Désynchronisé - Les paramètres diffèrent entre la base de données et Stripe",

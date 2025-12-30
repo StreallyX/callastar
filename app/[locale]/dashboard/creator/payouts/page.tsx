@@ -183,15 +183,15 @@ export default function PayoutsPage() {
   };
 
   const scheduleLabel = (schedule: PayoutSettings['schedule']) => {
-    if (schedule === 'DAILY') return t('settings.schedule.daily');
-    if (schedule === 'WEEKLY') return t('settings.schedule.weekly');
-    return t('settings.schedule.manual');
+    if (schedule === 'DAILY') return t('settings.scheduleDaily');
+    if (schedule === 'WEEKLY') return t('settings.scheduleWeekly');
+    return t('settings.scheduleManual');
   };
 
   const scheduleHint = (schedule: PayoutSettings['schedule']) => {
-    if (schedule === 'DAILY') return t('settings.scheduleHint.daily');
-    if (schedule === 'WEEKLY') return t('settings.scheduleHint.weekly');
-    return t('settings.scheduleHint.manual');
+    if (schedule === 'DAILY') return t('settings.scheduleDailyDesc');
+    if (schedule === 'WEEKLY') return t('settings.scheduleWeeklyDesc');
+    return t('settings.scheduleManualDesc');
   };
 
   const historyStatusToBadge = (status: string) => {
