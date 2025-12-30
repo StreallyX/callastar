@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,15 @@ import { MultiCurrencyDisplay } from '@/components/admin';
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.admin');
+  const tStats = useTranslations('dashboard.admin.stats');
+  const tActions = useTranslations('dashboard.admin.quickActions');
+  const tUsers = useTranslations('dashboard.admin.users');
+  const tPayouts = useTranslations('dashboard.admin.payouts');
+  const tTestCalls = useTranslations('dashboard.admin.testCalls');
+  const tSettings = useTranslations('dashboard.admin.settings');
+  const tTabs = useTranslations('dashboard.admin.tabs');
   const [user, setUser] = useState<any>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
@@ -195,7 +205,7 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-            <p className="text-gray-600">Bienvenue, {user?.name}</p>
+            <p className="text-gray-600">{t('welcome', { name: user?.name })}</p>
           </div>
           <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
             <DialogTrigger asChild>
@@ -207,14 +217,14 @@ export default function AdminDashboard() {
             <DialogContent>
               <form onSubmit={handleUpdateSettings}>
                 <DialogHeader>
-                  <DialogTitle>Paramètres de la plateforme</DialogTitle>
+                  <DialogTitle>{tSettings('title')}</DialogTitle>
                   <DialogDescription>
-                    Configurer les paramètres globaux
+                    {tSettings('description')}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="commission">Commission plateforme (%)</Label>
+                    <Label htmlFor="commission">{tSettings('commission')}</Label>
                     <Input
                       id="commission"
                       type="number"
@@ -229,10 +239,10 @@ export default function AdminDashboard() {
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setSettingsDialogOpen(false)}>
-                    Annuler
+                    {tSettings('cancel')}
                   </Button>
                   <Button type="submit" disabled={updatingSettings}>
-                    {updatingSettings ? 'Enregistrement...' : 'Enregistrer'}
+                    {updatingSettings ? '{tSettings('saving')}' : '{tSettings('save')}'}
                   </Button>
                 </DialogFooter>
               </form>
@@ -246,7 +256,7 @@ export default function AdminDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Revenus totaux
+                {tStats('totalRevenue')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -267,14 +277,14 @@ export default function AdminDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
-                Commissions
+                {tStats('commissions')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
                 <MultiCurrencyDisplay 
                   amounts={Object.entries(revenueByCurrency).reduce((acc, [currency, data]) => {
-                    acc[currency] = (data as any).totalCommissions;
+                    acc[currency] = (data as any).total{tStats('commissions')};
                     return acc;
                   }, {} as Record<string, number>)}
                   emptyMessage="0.00"
@@ -288,7 +298,7 @@ export default function AdminDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Réservations
+                {tStats('bookings')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -300,7 +310,7 @@ export default function AdminDashboard() {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                Utilisateurs
+                {tUsers('title')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -312,8 +322,8 @@ export default function AdminDashboard() {
         {/* Quick Actions */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Gestion Administrative</CardTitle>
-            <CardDescription>Accès rapide aux fonctionnalités d'administration</CardDescription>
+            <CardTitle>{tActions('title')}</CardTitle>
+            <CardDescription>{tActions('description')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -324,7 +334,7 @@ export default function AdminDashboard() {
               >
                 <SettingsIcon className="w-6 h-6 mb-2" />
                 <span className="font-semibold">Paramètres</span>
-                <span className="text-xs text-gray-500 mt-1">Configuration plateforme</span>
+                <span className="text-xs text-gray-500 mt-1">{tActions('settings.description')}</span>
               </Button>
               
               <Button
@@ -334,7 +344,7 @@ export default function AdminDashboard() {
               >
                 <DollarSign className="w-6 h-6 mb-2" />
                 <span className="font-semibold">Paiements</span>
-                <span className="text-xs text-gray-500 mt-1">Historique des transactions</span>
+                <span className="text-xs text-gray-500 mt-1">{tActions('payments.description')}</span>
               </Button>
               
               <Button
@@ -344,7 +354,7 @@ export default function AdminDashboard() {
               >
                 <Send className="w-6 h-6 mb-2" />
                 <span className="font-semibold">Paiements créateurs</span>
-                <span className="text-xs text-gray-500 mt-1">Gestion des payouts</span>
+                <span className="text-xs text-gray-500 mt-1">{tActions('payouts.description')}</span>
               </Button>
               
               <Button
@@ -354,7 +364,7 @@ export default function AdminDashboard() {
               >
                 <TrendingUp className="w-6 h-6 mb-2" />
                 <span className="font-semibold">Tableau de bord</span>
-                <span className="text-xs text-gray-500 mt-1">Vue d'ensemble payouts</span>
+                <span className="text-xs text-gray-500 mt-1">{tActions('dashboard.description')}</span>
               </Button>
               
               <Button
@@ -364,7 +374,7 @@ export default function AdminDashboard() {
               >
                 <DollarSign className="w-6 h-6 mb-2" />
                 <span className="font-semibold">Remboursements</span>
-                <span className="text-xs text-gray-500 mt-1">Gestion des refunds</span>
+                <span className="text-xs text-gray-500 mt-1">{tActions('refunds.description')}</span>
               </Button>
               
               <Button
@@ -374,7 +384,7 @@ export default function AdminDashboard() {
               >
                 <Users className="w-6 h-6 mb-2" />
                 <span className="font-semibold">Logs</span>
-                <span className="text-xs text-gray-500 mt-1">Journal transactions</span>
+                <span className="text-xs text-gray-500 mt-1">{tActions('logs.description')}</span>
               </Button>
             </div>
           </CardContent>
@@ -384,7 +394,7 @@ export default function AdminDashboard() {
         {revenueData.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Revenus (30 derniers jours)</CardTitle>
+              <CardTitle>{t('revenueChart.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -394,7 +404,7 @@ export default function AdminDashboard() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#8b5cf6" name="Revenus (€)" />
+                  <Line type="monotone" dataKey="revenue" stroke="#8b5cf6" name="{t('revenueChart.revenue')}" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -404,17 +414,17 @@ export default function AdminDashboard() {
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="users">{tUsers('title')}</TabsTrigger>
             <TabsTrigger value="payouts">Paiements</TabsTrigger>
-            <TabsTrigger value="test-calls">Appels de test</TabsTrigger>
+            <TabsTrigger value="test-calls">{tTestCalls('title')}</TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
           <TabsContent value="users">
             <Card>
               <CardHeader>
-                <CardTitle>Gestion des utilisateurs</CardTitle>
-                <CardDescription>Liste de tous les utilisateurs de la plateforme</CardDescription>
+                <CardTitle>{tUsers('title')}</CardTitle>
+                <CardDescription>{tUsers('description')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {users.length > 0 ? (
@@ -422,10 +432,10 @@ export default function AdminDashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Nom</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Rôle</TableHead>
-                          <TableHead>Inscription</TableHead>
+                          <TableHead>{tUsers('name')}</TableHead>
+                          <TableHead>{tUsers('email')}</TableHead>
+                          <TableHead>{tUsers('role')}</TableHead>
+                          <TableHead>{tUsers('registered')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -447,7 +457,7 @@ export default function AdminDashboard() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {new Date(u.createdAt).toLocaleDateString('fr-FR')}
+                              {new Date(u.createdAt).toLocaleDateString(locale)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -456,7 +466,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="py-12 text-center text-gray-500">
-                    Aucun utilisateur trouvé
+                    {tUsers('noUsers')}
                   </div>
                 )}
               </CardContent>
@@ -469,30 +479,30 @@ export default function AdminDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Gestion des paiements</CardTitle>
-                    <CardDescription>Paiements aux créateurs</CardDescription>
+                    <CardTitle>{tPayouts('title')}</CardTitle>
+                    <CardDescription>{tPayouts('description')}</CardDescription>
                   </div>
                   <Dialog open={payoutDialogOpen} onOpenChange={setPayoutDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
                         <Send className="w-4 h-4 mr-2" />
-                        Nouveau paiement
+                        {tPayouts('new')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <form onSubmit={handleCreatePayout}>
                         <DialogHeader>
-                          <DialogTitle>Créer un paiement</DialogTitle>
+                          <DialogTitle>{tPayouts('create')}</DialogTitle>
                           <DialogDescription>
-                            Envoyer un paiement à un créateur
+                            {tPayouts('createDescription')}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                           <div className="grid gap-2">
-                            <Label htmlFor="creator">Créateur</Label>
+                            <Label htmlFor="creator">{tPayouts('creator')}</Label>
                             <Select value={selectedCreator} onValueChange={setSelectedCreator}>
                               <SelectTrigger>
-                                <SelectValue placeholder="Sélectionnez un créateur" />
+                                <SelectValue placeholder="{tPayouts('selectCreator')}" />
                               </SelectTrigger>
                               <SelectContent>
                                 {creators.map((c: any) => (
@@ -504,7 +514,7 @@ export default function AdminDashboard() {
                             </Select>
                           </div>
                           <div className="grid gap-2">
-                            <Label htmlFor="amount">Montant (€)</Label>
+                            <Label htmlFor="amount">{tPayouts('amount')}</Label>
                             <Input
                               id="amount"
                               type="number"
@@ -523,10 +533,10 @@ export default function AdminDashboard() {
                             variant="outline"
                             onClick={() => setPayoutDialogOpen(false)}
                           >
-                            Annuler
+                            {tSettings('cancel')}
                           </Button>
                           <Button type="submit" disabled={submittingPayout}>
-                            {submittingPayout ? 'Création...' : 'Créer'}
+                            {submittingPayout ? '{tPayouts('creating')}' : tPayouts('createButton')}
                           </Button>
                         </DialogFooter>
                       </form>
@@ -540,7 +550,7 @@ export default function AdminDashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Créateur</TableHead>
+                          <TableHead>{tPayouts('creator')}</TableHead>
                           <TableHead>Montant</TableHead>
                           <TableHead>Statut</TableHead>
                           <TableHead>Date</TableHead>
@@ -566,16 +576,16 @@ export default function AdminDashboard() {
                                 }
                               >
                                 {p.status === 'PAID'
-                                  ? 'Payé'
+                                  ? '{tPayouts('status.paid')}'
                                   : p.status === 'PROCESSING'
-                                  ? 'En cours'
+                                  ? '{tPayouts('status.processing')}'
                                   : p.status === 'FAILED'
-                                  ? 'Échoué'
-                                  : 'En attente'}
+                                  ? '{tPayouts('status.failed')}'
+                                  : '{tPayouts('status.pending')}'}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {new Date(p.createdAt).toLocaleDateString('fr-FR')}
+                              {new Date(p.createdAt).toLocaleDateString(locale)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -584,7 +594,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="py-12 text-center text-gray-500">
-                    Aucun paiement trouvé
+                    {tPayouts('noPayouts')}
                   </div>
                 )}
               </CardContent>
@@ -595,8 +605,8 @@ export default function AdminDashboard() {
           <TabsContent value="test-calls">
             <Card>
               <CardHeader>
-                <CardTitle>Appels de test</CardTitle>
-                <CardDescription>Tester les appels vidéo en tant qu'administrateur</CardDescription>
+                <CardTitle>{tTestCalls('title')}</CardTitle>
+                <CardDescription>{tTestCalls('description')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {bookings.length > 0 ? (
@@ -617,15 +627,15 @@ export default function AdminDashboard() {
                                   <Badge variant={booking.status === 'CONFIRMED' ? 'default' : 'secondary'}>
                                     {booking.status}
                                   </Badge>
-                                  {isPast && <Badge variant="outline">Passé</Badge>}
+                                  {isPast && <Badge variant="outline">{tTestCalls('past')}</Badge>}
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                   <div>
-                                    <p className="text-gray-500">Créateur:</p>
+                                    <p className="text-gray-500">{tTestCalls('creator')}</p>
                                     <p className="font-medium">{booking?.callOffer?.creator?.user?.name}</p>
                                   </div>
                                   <div>
-                                    <p className="text-gray-500">Participant:</p>
+                                    <p className="text-gray-500">{tTestCalls('participant')}</p>
                                     <p className="font-medium">{booking?.user?.name}</p>
                                   </div>
                                 </div>
@@ -641,7 +651,7 @@ export default function AdminDashboard() {
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <Clock className="w-4 h-4" />
-                                    <span>{callDate.toLocaleTimeString('fr-FR', {
+                                    <span>{callDate.toLocaleTimeString(locale, {
                                       hour: '2-digit',
                                       minute: '2-digit'
                                     })}</span>
@@ -658,7 +668,7 @@ export default function AdminDashboard() {
                                   className={!isPast ? 'bg-gradient-to-r from-purple-600 to-pink-600' : ''}
                                 >
                                   <Video className="w-4 h-4 mr-2" />
-                                  {isPast ? 'Rejoindre (test)' : 'Rejoindre l\'appel'}
+                                  {isPast ? '{tTestCalls('joinTest')}' : tTestCalls('join')}
                                 </Button>
                               )}
                             </div>
@@ -670,9 +680,9 @@ export default function AdminDashboard() {
                 ) : (
                   <div className="py-12 text-center">
                     <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Aucun appel confirmé disponible pour le test</p>
+                    <p className="text-gray-500">{tTestCalls('noCalls')}</p>
                     <p className="text-sm text-gray-400 mt-2">
-                      Les appels confirmés avec des salles Daily.co créées apparaîtront ici
+                      {tTestCalls('callsInfo')}
                     </p>
                   </div>
                 )}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,9 +24,9 @@ import {
   Package
 } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 
-interface NavigationCard {
+interface {t('navigation')}Card {
   title: string;
   description: string;
   icon: React.ReactNode;
@@ -39,6 +40,10 @@ interface NavigationCard {
 
 export default function CreatorDashboard() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.creator');
+  const tCards = useTranslations('dashboard.creator.cards');
+  const tPayment = useTranslations('dashboard.creator.paymentSetup');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
@@ -211,18 +216,18 @@ export default function CreatorDashboard() {
     );
   }
 
-  // Navigation cards configuration
-  const navigationCards: NavigationCard[] = [
+  // {t('navigation')} cards configuration
+  const navigationCards: {t('navigation')}Card[] = [
     {
-      title: 'Offres',
-      description: 'Gérez vos offres d\'appels disponibles',
+      title: tCards('offers.title'),
+      description: '{tCards('offers.description')}',
       icon: <Calendar className="w-6 h-6" />,
       href: '/dashboard/creator/offers',
       count: stats.activeOffers,
     },
     {
-      title: 'Demandes',
-      description: 'Répondez aux demandes de rendez-vous',
+      title: tCards('requests.title'),
+      description: '{tCards('requests.description')}',
       icon: <FileText className="w-6 h-6" />,
       href: '/dashboard/creator/requests',
       count: stats.pendingRequests,
@@ -232,33 +237,33 @@ export default function CreatorDashboard() {
       } : undefined,
     },
     {
-      title: 'Appels',
-      description: 'Consultez vos appels passés et à venir',
+      title: tCards('calls.title'),
+      description: '{tCards('calls.description')}',
       icon: <Phone className="w-6 h-6" />,
       href: '/dashboard/creator/calls',
       count: stats.upcomingCalls,
     },
     {
-      title: 'Avis',
-      description: 'Consultez les avis de vos fans',
+      title: tCards('reviews.title'),
+      description: '{tCards('reviews.description')}',
       icon: <Star className="w-6 h-6" />,
       href: '/dashboard/creator/reviews',
     },
     {
-      title: 'Paiements',
-      description: 'Historique de vos paiements reçus',
+      title: tCards('payments.title'),
+      description: '{tCards('payments.description')}',
       icon: <CreditCard className="w-6 h-6" />,
       href: '/dashboard/creator/payments',
     },
     {
-      title: 'Revenus',
-      description: 'Consultez vos revenus et statistiques',
+      title: tCards('earnings.title'),
+      description: '{tCards('earnings.description')}',
       icon: <TrendingUp className="w-6 h-6" />,
       href: '/dashboard/creator/earnings',
     },
     {
-      title: 'Notifications',
-      description: 'Gérez vos notifications',
+      title: tCards('notifications.title'),
+      description: '{tCards('notifications.description')}',
       icon: <Bell className="w-6 h-6" />,
       href: '/dashboard/creator/notifications',
       count: stats.unreadNotifications,
@@ -276,7 +281,7 @@ export default function CreatorDashboard() {
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Dashboard Créateur</h1>
-          <p className="text-gray-600">Bienvenue, {user?.name}</p>
+          <p className="text-gray-600">{t('welcome', { name: user?.name })}</p>
         </div>
 
         {/* Stripe Connect Onboarding Alert */}
@@ -285,19 +290,18 @@ export default function CreatorDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-yellow-800">
                 <DollarSign className="w-5 h-5" />
-                Configuration des paiements requise
+                {tPayment('required')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-yellow-700 mb-4">
-                Pour recevoir vos paiements automatiquement via Stripe Connect, vous devez compléter votre configuration.
-                Cela ne prend que quelques minutes.
+                {tPayment('completeSetup')}
               </p>
               <Button 
                 onClick={handleStartStripeOnboarding}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white"
               >
-                Configurer Stripe Connect
+                {tPayment('configureStripe')}
               </Button>
             </CardContent>
           </Card>
@@ -308,10 +312,10 @@ export default function CreatorDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
-              Configuration des paiements
+              {tPayment('title')}
             </CardTitle>
             <CardDescription>
-              Gérez votre compte Stripe et vos paiements
+              {tPayment('description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -330,14 +334,14 @@ export default function CreatorDashboard() {
                 )}
                 <span className="text-sm text-gray-600">
                   {stripeOnboarding.onboarded 
-                    ? 'Votre compte est configuré et prêt à recevoir des paiements'
-                    : 'Complétez votre configuration pour recevoir des paiements'
+                    ? '{tPayment('accountReady')}'
+                    : '{tPayment('completeConfig')}'
                   }
                 </span>
               </div>
               <Link href="/dashboard/creator/payment-setup">
                 <Button variant="outline" size="sm">
-                  {stripeOnboarding.onboarded ? 'Voir les détails' : 'Configurer'}
+                  {stripeOnboarding.onboarded ? tPayment('viewDetails') : tPayment('configure')}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
@@ -345,9 +349,9 @@ export default function CreatorDashboard() {
           </CardContent>
         </Card>
 
-        {/* Navigation Hub */}
+        {/* {t('navigation')} Hub */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-6">Navigation</h2>
+          <h2 className="text-2xl font-semibold mb-6">{t('navigation')}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {navigationCards.map((card) => (
               <Link key={card.href} href={card.href}>
@@ -373,7 +377,7 @@ export default function CreatorDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center text-purple-600 font-medium">
-                      Accéder
+                      {t('navigation')}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </div>
                   </CardContent>
@@ -389,9 +393,9 @@ export default function CreatorDashboard() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-lg mb-1">Gérer vos payouts</h3>
+                  <h3 className="font-semibold text-lg mb-1">{tCards('payouts.title')}</h3>
                   <p className="text-sm text-gray-600">
-                    Demandez le transfert de vos revenus vers votre compte bancaire
+                    {tCards('payouts.description')}
                   </p>
                 </div>
                 <Link href="/dashboard/creator/payouts">
@@ -410,7 +414,7 @@ export default function CreatorDashboard() {
                 <div>
                   <h3 className="font-semibold text-lg mb-1">Paramètres</h3>
                   <p className="text-sm text-gray-600">
-                    Personnalisez votre profil et vos préférences
+                    {tCards('settings.description')}
                   </p>
                 </div>
                 <Link href="/dashboard/creator/settings">
