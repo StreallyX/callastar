@@ -2,8 +2,13 @@ import { getTranslations } from 'next-intl/server';
 import { Navbar } from '@/components/navbar';
 import { Loader2 } from 'lucide-react';
 
-export default async function Loading() {
-  const t = await getTranslations('errors.loading');
+export default async function Loading({
+  params,
+}: {
+  params: { locale: string };
+}) {
+  const { locale } = params;
+  const t = await getTranslations({ locale, namespace: 'errors.loading' });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">

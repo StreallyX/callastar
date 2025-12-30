@@ -12,7 +12,7 @@ import {
   Loader2, CheckCircle2, Clock, Calendar, User, AlertCircle, 
   Info, TrendingUp, Activity, Video 
 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { logCallEvent, formatDuration } from '@/lib/call-types';
 
 interface CallSession {
@@ -64,7 +64,7 @@ interface CallSummary {
 export default function CallSummaryPage({ 
   params 
 }: { 
-  params: Promise<{ bookingId: string }> | { bookingId: string } 
+  params: Promise<{ bookingId: string; locale: string }> | { bookingId: string; locale: string } 
 }) {
   const router = useRouter();
   const t = useTranslations('call.summary');

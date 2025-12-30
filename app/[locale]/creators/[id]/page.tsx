@@ -89,10 +89,10 @@ async function getCreatorReviews(id: string) {
 export default async function CreatorProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
 }) {
-  const { id } = await params;
-  const t = await getTranslations('creators.profile');
+  const { id, locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'creators.profile' });
   const creator = await getCreator(id);
   const reviewsData = await getCreatorReviews(id);
 
@@ -256,13 +256,13 @@ export default async function CreatorProfilePage({
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {availableOffers.map((offer) => {
                 const offerDate = new Date(offer?.dateTime ?? new Date());
-                const formattedDate = offerDate.toLocaleDateString('fr-FR', {
+                const formattedDate = offerDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
                 });
-                const formattedTime = offerDate.toLocaleTimeString('fr-FR', {
+                const formattedTime = offerDate.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                   hour: '2-digit',
                   minute: '2-digit',
                 });
@@ -329,7 +329,7 @@ export default async function CreatorProfilePage({
                       <div>
                         <p className="font-semibold">{review?.user?.name ?? t('anonymous')}</p>
                         <p className="text-xs text-gray-500">
-                          {new Date(review.createdAt).toLocaleDateString('fr-FR', {
+                          {new Date(review.createdAt).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',

@@ -10,7 +10,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useToast } from '@/hooks/use-toast';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -85,10 +85,11 @@ function CheckoutForm({ bookingId, onSuccess }: { bookingId: string; onSuccess: 
   );
 }
 
-export default function BookOfferPage({ params }: { params: { offerId: string } }) {
+export default function BookOfferPage({ params }: { params: { offerId: string; locale: string } }) {
   const router = useRouter();
   const { toast } = useToast();
   const t = useTranslations('booking');
+  const locale = useLocale();
   const [offer, setOffer] = useState<any>(null);
   const [booking, setBooking] = useState<any>(null);
   const [existingBooking, setExistingBooking] = useState<any>(null);
@@ -193,13 +194,13 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
   if (offer && existingBooking) {
     const isUserBooking = user && existingBooking.userId === user.id;
     const offerDate = new Date(offer?.dateTime ?? new Date());
-    const formattedDate = offerDate.toLocaleDateString('fr-FR', {
+    const formattedDate = offerDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-    const formattedTime = offerDate.toLocaleTimeString('fr-FR', {
+    const formattedTime = offerDate.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -320,13 +321,13 @@ export default function BookOfferPage({ params }: { params: { offerId: string } 
   }
 
   const offerDate = new Date(offer?.dateTime ?? new Date());
-  const formattedDate = offerDate.toLocaleDateString('fr-FR', {
+  const formattedDate = offerDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
-  const formattedTime = offerDate.toLocaleTimeString('fr-FR', {
+  const formattedTime = offerDate.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });

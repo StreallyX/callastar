@@ -1,8 +1,13 @@
 import { getTranslations } from 'next-intl/server';
 import { Navbar } from '@/components/navbar';
 
-export default async function TermsPage() {
-  const t = await getTranslations('legal.terms');
+export default async function TermsPage({
+  params,
+}: {
+  params: { locale: string };
+}) {
+  const { locale } = params;
+  const t = await getTranslations({ locale, namespace: 'legal.terms' });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">

@@ -35,7 +35,7 @@ interface CallState {
 export default function CallPage({ 
   params 
 }: { 
-  params: Promise<{ bookingId: string }> | { bookingId: string } 
+  params: Promise<{ bookingId: string; locale: string }> | { bookingId: string; locale: string } 
 }) {
   const router = useRouter();
   const { toast } = useToast();

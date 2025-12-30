@@ -4,8 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/navbar';
 import { FileQuestion } from 'lucide-react';
 
-export default async function NotFound() {
-  const t = await getTranslations('errors.notFound');
+export default async function NotFound({
+  params,
+}: {
+  params: { locale: string };
+}) {
+  const { locale } = params;
+  const t = await getTranslations({ locale, namespace: 'errors.notFound' });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">

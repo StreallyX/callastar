@@ -1,8 +1,13 @@
 import { getTranslations } from 'next-intl/server';
 import { Navbar } from '@/components/navbar';
 
-export default async function PrivacyPage() {
-  const t = await getTranslations('legal.privacy');
+export default async function PrivacyPage({
+  params,
+}: {
+  params: { locale: string };
+}) {
+  const { locale } = params;
+  const t = await getTranslations({ locale, namespace: 'legal.privacy' });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
