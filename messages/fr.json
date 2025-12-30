@@ -535,23 +535,19 @@
           "title": "Statut Stripe",
           "description": "État réel de votre compte Stripe Connect"
         },
-
         "badges": {
           "complete": "Paiements activés",
           "inProgress": "Action requise",
           "incomplete": "Non configuré"
         },
-
         "steps": {
           "accountCreated": "Compte Stripe créé",
           "detailsSubmitted": "Informations soumises",
           "operational": "Compte opérationnel"
         },
-
         "issues": {
           "title": "Problèmes détectés"
         },
-
         "actionRequired": "Action requise",
         "success": "Votre compte Stripe est correctement configuré.",
         "cta": "Configurer Stripe",
@@ -561,63 +557,55 @@
         "title": "Revenus",
         "subtitle": "Suivez vos gains, paiements et transferts Stripe",
         "backToDashboard": "Retour au dashboard",
-
         "loadError": "Impossible de charger les revenus. Veuillez réessayer.",
-
         "totalTransferred": "Total gagné",
         "onStripeAccount": "Présent sur votre compte Stripe",
-
         "pending": "En attente",
         "securityPeriod": "Période de sécurité",
-
         "available": "Disponible",
         "readyForTransfer": "Prêt à être transféré",
-
         "requestPayout": "Demander un paiement",
         "requestPayoutDesc": "Accédez à la page des paiements pour demander un virement vers votre compte bancaire.",
         "requestPayoutInfo": "Vous pouvez demander un virement manuel dès que les fonds sont disponibles.",
-
         "payouts": "Paiements",
-
         "paymentHistory": "Historique des paiements",
         "paymentHistoryDesc": "Consultez tous vos paiements et transactions passées.",
         "view": "Voir",
-
         "recentPayments": "Paiements récents",
         "recentPaymentsDesc": "Les derniers paiements générés par vos appels.",
         "viewAllPayments": "Voir tous les paiements",
-
         "availability": "Disponibilité",
         "availabilityDesc": "Une fois la période de sécurité terminée, les fonds deviennent disponibles pour le paiement.",
-
         "automaticTransfer": "Transfert automatique",
         "automaticTransferDesc": "Stripe peut effectuer des virements automatiques selon la configuration de votre compte.",
-
         "bankSetup": "Configuration bancaire",
         "bankSetupDesc": "Assurez-vous que votre compte bancaire est correctement configuré dans votre",
         "stripeDashboard": "dashboard Stripe",
-
-        "howItWorks": "Comment ça fonctionne"
+        "howItWorks": "Comment ça fonctionne",
+        "alreadyInStripe": "[À TRADUIRE] Already in your Stripe account",
+        "availableForPayout": "[À TRADUIRE] Available for payout",
+        "noEarnings": "[À TRADUIRE] No earnings yet",
+        "pendingPayments": "[À TRADUIRE] Pending payments",
+        "recentPaymentsSubtitle": "[À TRADUIRE] Your latest received payments",
+        "totalEarnings": "[À TRADUIRE] Total Earnings",
+        "totalPayouts": "[À TRADUIRE] Total Payouts",
+        "viewPayouts": "[À TRADUIRE] Payouts"
       },
       "calls": {
         "title": "Mes appels",
         "subtitle": "Gérez et suivez tous vos appels planifiés avec vos clients",
         "backToDashboard": "Retour au dashboard",
-
         "loadError": "Impossible de charger les appels. Veuillez réessayer.",
-
         "total": "Total",
         "upcoming": "À venir",
         "past": "Passés",
         "cancelled": "Annulés",
-
         "filters": {
           "all": "Tous",
           "upcoming": "À venir",
           "past": "Passés",
           "cancelled": "Annulés"
         },
-
         "status": {
           "confirmed": "Confirmé",
           "pending": "En attente",
@@ -627,38 +615,35 @@
           "testMode": "Mode test",
           "with": "avec"
         },
-
         "actions": {
           "join": "Rejoindre l’appel",
           "startingSoon": "Bientôt disponible"
         },
-
         "noCallsFor": {
           "all": "Vous n’avez encore aucun appel.",
           "upcoming": "Aucun appel à venir.",
           "past": "Aucun appel passé.",
           "cancelled": "Aucun appel annulé."
-        }
+        },
+        "noCalls": "[À TRADUIRE] No scheduled calls",
+        "youHave": "[À TRADUIRE] You have {count} upcoming call(s)"
       },
       "fees": {
         "backToDashboard": "Retour au dashboard",
         "title": "Frais et commissions",
         "subtitle": "Comprendre comment fonctionne la rémunération sur Call a Star",
-
         "platformFee": {
           "title": "Commission de la plateforme",
           "description": "Call a Star prélève une commission de {fee}% sur chaque paiement reçu",
           "details": "Cette commission couvre les coûts de fonctionnement de la plateforme : hébergement, maintenance, support client, vidéo et développement.",
           "current": "Commission actuelle"
         },
-
         "stripe": {
           "title": "Frais de paiement (Stripe)",
           "subtitle": "Frais de traitement des paiements par carte bancaire",
           "details": "Les paiements sont traités par Stripe, notre prestataire de paiement sécurisé.",
           "standardFees": "Par transaction (frais standard Stripe Europe)"
         },
-
         "example": {
           "title": "Exemple de calcul",
           "subtitle": "Pour un appel de {amount} EUR",
@@ -668,26 +653,35 @@
           "net": "Vous recevez",
           "percent": "Soit environ {percent}% du montant total"
         },
-
         "notes": {
           "title": "Notes importantes",
           "amounts": "Les montants affichés sont des montants bruts. Les frais sont automatiquement déduits lors du transfert.",
           "security": "Les paiements sont transférés après une période de sécurité de 7 jours pour gérer litiges et remboursements.",
           "payouts": "Pour transférer les fonds vers votre compte bancaire, consultez la page",
           "payoutLink": "Payouts"
-        }
+        },
+        "calculationExample": "[À TRADUIRE] Calculation example",
+        "description": "[À TRADUIRE] Callastar takes a commission on each call",
+        "forACallOf": "[À TRADUIRE] For a call of",
+        "initialAmount": "[À TRADUIRE] Initial amount",
+        "netAmount": "[À TRADUIRE] Net amount received",
+        "paymentFees": "[À TRADUIRE] Payment fees (Stripe)",
+        "paymentFeesDesc": "[À TRADUIRE] Credit card payment processing fees",
+        "percentOf": "[À TRADUIRE] % of total amount",
+        "percentageNote": "[À TRADUIRE] Approximately",
+        "platformCommission": "[À TRADUIRE] Platform commission",
+        "platformCommissionDesc": "[À TRADUIRE] Call a Star takes a commission of",
+        "stripeFee": "[À TRADUIRE] Stripe fees (2.9% + 0.30)"
       },
       "notifications": {
         "backToDashboard": "Retour au dashboard",
         "title": "Notifications",
         "subtitle": "Gérez vos notifications système et financières",
-
         "stats": {
           "total": "Total",
           "unread": "Non lues",
           "read": "Lues"
         },
-
         "categories": {
           "all": "Toutes",
           "payments": "Paiements",
@@ -696,7 +690,6 @@
           "disputes": "Litiges & remboursements",
           "system": "Système"
         },
-
         "filters": {
           "advanced": "Filtres avancés",
           "readStatus": "Statut de lecture",
@@ -705,28 +698,25 @@
           "unread": "Non lues",
           "read": "Lues"
         },
-
         "actions": {
           "markAllRead": "Tout marquer comme lu",
           "markRead": "Marquer comme lu",
           "delete": "Supprimer",
           "viewDetails": "Voir les détails"
         },
-
         "loading": "Chargement...",
-
         "empty": {
           "title": "Aucune notification",
           "subtitle": "Vous n'avez aucune notification pour le moment"
         },
-
         "pagination": {
           "page": "Page {current} sur {total}",
           "previous": "Précédent",
           "next": "Suivant"
         },
-
-        "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette notification ?"
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette notification ?",
+        "markAllRead": "[À TRADUIRE] Mark all as read",
+        "noNotifications": "[À TRADUIRE] No notifications"
       },
       "cards": {
         "offers": {
@@ -781,7 +771,7 @@
         "duration": "Durée",
         "dateTime": "Date et heure",
         "creating": "Création...",
-        "durationMinutes":"Minutes",
+        "durationMinutes": "Minutes",
         "createButton": "Créer",
         "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette offre ?",
         "deleteSuccess": "Offre supprimée avec succès",
@@ -889,25 +879,22 @@
         "backToDashboard": "Retour au dashboard",
         "subtitle": "Suivez l’ensemble de vos paiements et leur statut",
         "back": "Retour au dashboard",
-
         "transferred": "Paiements transférés",
         "pending": "En attente",
         "available": "Disponibles",
-
         "allPayments": "Tous les paiements",
         "allPaymentsDesc": "Historique complet des paiements reçus",
-
         "noPayments": "Aucun paiement pour le moment",
         "loadError": "Impossible de charger les paiements",
-
         "status": {
           "paid": "✓ Transféré",
           "ready": "✓ Disponible",
           "held": "⏳ En attente",
           "pending": "⏳ En attente",
-          "processing": "⏳ En cours"
+          "processing": "⏳ En cours",
+          "available": "[À TRADUIRE] ✓ Available",
+          "transferred": "[À TRADUIRE] ✓ Transferred"
         },
-
         "info": {
           "title": "📋 Information",
           "amounts": "Les montants affichés correspondent au montant total payé par l'utilisateur. Les frais et commissions sont détaillés dans la page Frais et commissions.",
@@ -942,23 +929,19 @@
           "refresh": "Actualiser",
           "edit": "Modifier"
         },
-
         "toasts": {
           "refreshed": "Données actualisées"
         },
-
         "errors": {
           "generic": "Une erreur est survenue",
           "balanceFetch": "Impossible de récupérer le solde",
           "noCreatorId": "Impossible de récupérer votre profil créateur"
         },
-
         "setup": {
           "incomplete": "Votre configuration de paiement est incomplète.",
           "completeLink": "Complétez votre configuration",
           "requiredInfoCount": "Informations requises : {count}"
         },
-
         "balance": {
           "available": {
             "title": "Disponible",
@@ -977,29 +960,24 @@
             "help": "Volume total (lifetime)"
           }
         },
-
         "currencyAlert": {
           "title": "Devise du compte Stripe :",
           "body": "Votre compte Stripe est configuré en {stripeCurrency}. Les montants sont affichés dans votre devise Stripe. Les virements seront effectués dans cette devise. (Base de calcul : EUR)"
         },
-
         "statusCard": {
           "title": "Statut des virements",
           "subtitle": "État actuel de votre compte de paiement",
-
           "badge": {
             "operational": "Compte opérationnel",
             "verifying": "Vérification en cours",
             "setupRequired": "Configuration requise"
           },
-
           "alert": {
             "operational": "✅ Compte opérationnel - Les virements seront envoyés selon votre calendrier configuré",
             "verifying": "🔄 Vérification en cours - Certaines informations sont en attente de validation",
             "requiredItems": "Informations requises : {items}",
             "incomplete": "⚠️ Configuration incomplète - Complétez votre configuration pour recevoir des virements"
           },
-
           "details": {
             "submitted": {
               "title": "Informations soumises",
@@ -1018,94 +996,137 @@
             }
           }
         },
-        
-  "settings": {
-    "schedule": {
-      "daily": "Quotidien",
-      "weekly": "Hebdomadaire",
-      "manual": "Manuel"
-    },
-    "scheduleHint": {
-      "daily": "(Chaque jour si solde ≥ minimum)",
-      "weekly": "(Chaque lundi si solde ≥ minimum)",
-      "manual": "(Demande manuelle uniquement)"
-    }
-  },
-
-  "settingsCard": {
-    "title": "Paramètres de virement",
-    "subtitle": "Configurez la fréquence et le montant minimum de vos virements",
-    "scheduleTitle": "Calendrier de virement",
-    "minimumTitle": "Montant minimum",
-    "minimumHint": "(Minimum requis pour un virement)"
-  },
-
-  "manual": {
-    "title": "Demander un virement manuel",
-    "body": "Vous avez {amount} {currency} disponibles pour un virement.",
-    "baseNote": "(≈ même montant en EUR base)",
-    "action": "Demander un virement"
-  },
-
-  "historyCard": {
-    "title": "Historique des virements",
-    "subtitle": "Liste de tous vos virements et leur statut",
-    "emptyTitle": "Aucun historique de virement pour le moment",
-    "emptySubtitle": "Les virements apparaîtront ici une fois traités",
-
-    "table": {
-      "date": "Date",
-      "amount": "Montant",
-      "status": "Statut",
-      "type": "Type",
-      "stripeId": "ID Stripe"
-    }
-  },
-
-  "history": {
-    "status": {
-      "paid": "Payé",
-      "failed": "Échoué",
-      "processing": "En cours",
-      "unknown": "Inconnu"
-    }
-  },
-
-  "info": {
-    "title": "Comment fonctionnent les virements ?",
-
-    "auto": {
-      "title": "Virements automatiques :",
-      "daily": {
-        "title": "Quotidien :",
-        "body": "Virement automatique chaque jour si le solde disponible atteint le minimum configuré"
-      },
-      "weekly": {
-        "title": "Hebdomadaire :",
-        "body": "Virement automatique chaque lundi si le solde disponible atteint le minimum configuré"
-      },
-      "manual": {
-        "title": "Manuel :",
-        "body": "Vous devez demander manuellement chaque virement (sujet à approbation admin)"
-      }
-    },
-
-    "processing": {
-      "title": "Délais de traitement :",
-      "body": "Les virements Stripe sont généralement traités en 2-3 jours ouvrables. Une fois le virement traité par Stripe, les fonds sont envoyés vers votre compte bancaire selon vos paramètres Stripe (généralement 1-2 jours supplémentaires)."
-    },
-
-    "bank": {
-      "title": "Configuration bancaire :",
-      "bodyStart": "Pour configurer ou modifier votre compte bancaire, connectez-vous à votre",
-      "stripeDashboard": "tableau de bord Stripe"
-    }
-  },
-
-  "common": {
-    "dash": "-"
-  }
-
+        "settings": {
+          "backToPayouts": "Retour aux paiements",
+          "title": "Paramètres de virement",
+          "subtitle": "Configurez la fréquence et le montant minimum de vos virements",
+          "configuration": "Configuration",
+          "configurationDesc": "Modifiez vos préférences de virement",
+          "payoutSchedule": "Calendrier de virement",
+          "scheduleDaily": "Quotidien",
+          "scheduleWeekly": "Hebdomadaire",
+          "scheduleManual": "Manuel",
+          "scheduleDailyDesc": "Virement automatique chaque jour si le solde disponible atteint le minimum",
+          "scheduleWeeklyDesc": "Virement automatique chaque lundi si le solde disponible atteint le minimum",
+          "scheduleManualDesc": "Vous devez demander manuellement chaque virement (sujet à approbation admin)",
+          "minimumAmount": "Montant minimum ({currency})",
+          "minimumAmountDesc": "Montant minimum requis pour déclencher un virement (entre 10 {currency} et 1 000 000 {currency})",
+          "importantNote": "Les virements automatiques (quotidiens/hebdomadaires) sont traités automatiquement par le système. Les virements manuels nécessitent une approbation de l'administrateur.",
+          "syncedWithStripe": "Synchronisé avec Stripe - Vos paramètres sont à jour sur Stripe",
+          "outOfSync": "Désynchronisé - Les paramètres diffèrent entre la base de données et Stripe",
+          "database": "Base de données",
+          "stripe": "Stripe",
+          "saveToSync": "Enregistrez vos paramètres pour synchroniser avec Stripe.",
+          "noStripeAccount": "Aucun compte Stripe connecté",
+          "saveChanges": "Enregistrer les modifications",
+          "saving": "Enregistrement...",
+          "cancel": "Annuler",
+          "noChanges": "Aucune modification à enregistrer",
+          "schedulesExplanation": "Explications des calendriers",
+          "dailyTitle": "Quotidien",
+          "dailyDesc": "Le système vérifie chaque jour si votre solde disponible atteint le montant minimum. Si oui, un virement automatique est créé vers votre compte Stripe.",
+          "weeklyTitle": "Hebdomadaire",
+          "weeklyDesc": "Le système vérifie chaque lundi si votre solde disponible atteint le montant minimum. Si oui, un virement automatique est créé vers votre compte Stripe.",
+          "manualTitle": "Manuel",
+          "manualDesc": "Vous devez manuellement demander un virement depuis la page des paiements. Chaque demande doit être approuvée par un administrateur avant d'être traitée. Cela vous donne un contrôle total sur le calendrier de vos virements.",
+          "tip": "Conseil",
+          "tipDesc": "Si vous préférez avoir un flux de trésorerie régulier, choisissez \"Quotidien\" ou \"Hebdomadaire\". Si vous préférez contrôler manuellement vos virements, choisissez \"Manuel\"."
+        },
+        "settingsCard": {
+          "title": "Paramètres de virement",
+          "subtitle": "Configurez la fréquence et le montant minimum de vos virements",
+          "scheduleTitle": "Calendrier de virement",
+          "minimumTitle": "Montant minimum",
+          "minimumHint": "(Minimum requis pour un virement)"
+        },
+        "manual": {
+          "title": "Demander un virement manuel",
+          "body": "Vous avez {amount} {currency} disponibles pour un virement.",
+          "baseNote": "(≈ même montant en EUR base)",
+          "action": "Demander un virement"
+        },
+        "historyCard": {
+          "title": "Historique des virements",
+          "subtitle": "Liste de tous vos virements et leur statut",
+          "emptyTitle": "Aucun historique de virement pour le moment",
+          "emptySubtitle": "Les virements apparaîtront ici une fois traités",
+          "table": {
+            "date": "Date",
+            "amount": "Montant",
+            "status": "Statut",
+            "type": "Type",
+            "stripeId": "ID Stripe"
+          }
+        },
+        "history": {
+          "status": {
+            "paid": "Payé",
+            "failed": "Échoué",
+            "processing": "En cours",
+            "unknown": "Inconnu"
+          }
+        },
+        "info": {
+          "title": "Comment fonctionnent les virements ?",
+          "auto": {
+            "title": "Virements automatiques :",
+            "daily": {
+              "title": "Quotidien :",
+              "body": "Virement automatique chaque jour si le solde disponible atteint le minimum configuré"
+            },
+            "weekly": {
+              "title": "Hebdomadaire :",
+              "body": "Virement automatique chaque lundi si le solde disponible atteint le minimum configuré"
+            },
+            "manual": {
+              "title": "Manuel :",
+              "body": "Vous devez demander manuellement chaque virement (sujet à approbation admin)"
+            }
+          },
+          "processing": {
+            "title": "Délais de traitement :",
+            "body": "Les virements Stripe sont généralement traités en 2-3 jours ouvrables. Une fois le virement traité par Stripe, les fonds sont envoyés vers votre compte bancaire selon vos paramètres Stripe (généralement 1-2 jours supplémentaires)."
+          },
+          "bank": {
+            "title": "Configuration bancaire :",
+            "bodyStart": "Pour configurer ou modifier votre compte bancaire, connectez-vous à votre",
+            "stripeDashboard": "tableau de bord Stripe"
+          }
+        },
+        "common": {
+          "dash": "-"
+        },
+        "request": {
+          "backToPayouts": "Retour aux paiements",
+          "title": "Demander un virement manuel",
+          "subtitle": "Soumettez une demande de virement pour approbation",
+          "availableBalance": "Solde disponible",
+          "maxAmount": "Montant maximum que vous pouvez demander",
+          "currencyConversion": "Conversion de devise",
+          "currencyConversionDesc": "Votre compte Stripe est en {currency}. Le montant sera converti automatiquement de EUR (base) vers {currency} lors du virement. Le taux de conversion actuel sera appliqué au moment du traitement.",
+          "conversionApprox": "≈ {amount} EUR (base)",
+          "payoutsNotEnabled": "Les virements ne sont pas activés sur votre compte. Veuillez compléter votre configuration de paiement.",
+          "balanceTooLow": "Votre solde disponible est inférieur au minimum requis ({minimum} {currency}). Vous ne pouvez pas demander de virement pour le moment.",
+          "payoutAmount": "Montant du virement",
+          "payoutAmountDesc": "Indiquez le montant que vous souhaitez recevoir",
+          "amount": "Montant ({currency})",
+          "minMaxInfo": "Minimum: {min} {currency} • Maximum: {max} {currency}",
+          "quickAmounts": "Montants rapides",
+          "important": "Important",
+          "importantNote": "Cette demande sera examinée par un administrateur avant d'être traitée. Vous serez notifié une fois la demande approuvée ou rejetée.",
+          "submitRequest": "Soumettre la demande",
+          "submitting": "Soumission en cours...",
+          "cannotRequest": "Vous ne pouvez pas effectuer de demande de virement pour le moment",
+          "requestProcess": "Processus de demande",
+          "step1Title": "Soumission",
+          "step1Desc": "Vous soumettez votre demande avec le montant souhaité",
+          "step2Title": "Examen",
+          "step2Desc": "Un administrateur examine votre demande (généralement sous 24-48h)",
+          "step3Title": "Approbation",
+          "step3Desc": "Si approuvée, le virement est créé vers votre compte Stripe",
+          "step4Title": "Traitement",
+          "step4Desc": "Stripe traite le virement vers votre compte bancaire (2-5 jours ouvrables)"
+        }
       },
       "settings": {
         "title": "Paramètres",
@@ -1337,7 +1358,7 @@
       "dataRefreshed": "Données actualisées",
       "reviewSent": "Avis envoyé avec succès!",
       "allNotificationsRead": "Toutes les notifications ont été marquées comme lues",
-      "settingsSaved": "Paramètres sauvegardés avec succès !",
+      "settingsSaved": "Paramètres enregistrés avec succès",
       "profileUpdated": "Profil mis à jour avec succès",
       "imageUploaded": "Image uploadée et profil mis à jour avec succès !",
       "imageDeleted": "Image supprimée avec succès !",
@@ -1364,7 +1385,11 @@
       "creatorsPageOpened": "Page créateurs ouverte",
       "adminDashboardOpened": "Dashboard admin ouvert",
       "twoLoginWindowsOpened": "Deux fenêtres de connexion ouvertes",
-      "copiedToClipboard": "Copié dans le presse-papier"
+      "copiedToClipboard": "Copié dans le presse-papier",
+      "enterValidAmount": "Veuillez entrer un montant valide",
+      "minimumAmountRequired": "Le montant doit être au moins {minimum} {currency}",
+      "amountExceedsBalance": "Le montant demandé dépasse votre solde disponible",
+      "payoutRequestSuccess": "Demande de virement soumise avec succès !"
     },
     "error": {
       "loadingFailed": "Erreur lors du chargement",
@@ -1398,7 +1423,15 @@
       "minAmountStripe": "Le montant minimum doit être au moins 10 {currency}",
       "maxAmountStripe": "Le montant minimum ne peut pas dépasser 1 000 000 {currency}",
       "enterReason": "Veuillez entrer une raison",
-      "rejectReasonRequired": "Veuillez fournir une raison de refus"
+      "rejectReasonRequired": "Veuillez fournir une raison de refus",
+      "errorOccurred": "Une erreur est survenue",
+      "payoutsNotEnabledToast": "Les virements ne sont pas activés sur votre compte",
+      "payoutRequestError": "Erreur lors de la demande",
+      "settingsNotSynced": "Les paramètres ne sont pas synchronisés avec Stripe",
+      "errorFetchingSettings": "Erreur lors de la récupération des paramètres",
+      "minAmountError": "Le montant minimum doit être au moins 10 {currency}",
+      "maxAmountError": "Le montant minimum ne peut pas dépasser 1 000 000 {currency}",
+      "savingError": "Erreur lors de la sauvegarde"
     },
     "info": {
       "verifyingStripe": "Vérification de votre configuration Stripe en cours...",
@@ -1539,5 +1572,3 @@
     }
   }
 }
-
-

@@ -32,6 +32,7 @@ export default function RequestPayoutPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard.creator.payouts.request');
+  const tToast = useTranslations('toast');
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
   const [balance, setBalance] = useState<BalanceData | null>(null);
@@ -75,7 +76,7 @@ export default function RequestPayoutPage() {
         // Set default request amount to available balance
         setRequestAmount(balanceData.available?.toFixed(2) || '0.00');
       } else {
-        toast.error('Impossible de récupérer le solde');
+        toast.error(tToast('error.cannotFetchBalance'));
         router.push('/dashboard/creator/payouts');
         return;
       }
@@ -91,14 +92,14 @@ export default function RequestPayoutPage() {
 
         // Check if schedule is MANUAL
         if (settingsData.payoutSchedule !== 'MANUAL') {
-          toast.error('Les demandes manuelles ne sont pas activées');
+          toast.error(tToast('error.manualPayoutsNotEnabled'));
           router.push('/dashboard/creator/payouts');
           return;
         }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Une erreur est survenue');
+      toast.error(tToast('error.errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -111,23 +112,23 @@ export default function RequestPayoutPage() {
 
     // Validation
     if (isNaN(amount) || amount <= 0) {
-      toast.error('Veuillez entrer un montant valide');
+      toast.error(tToast('error.enterValidAmount'));
       return;
     }
 
     if (amount < (settings?.minimum || 10)) {
       const currency = balance?.stripeCurrency || 'EUR';
-      toast.error(`Le montant doit être au moins ${settings?.minimum || 10} ${currency}`);
+      toast.error(tToast('error.minimumAmountRequired', { minimum: settings?.minimum || 10, currency }));
       return;
     }
 
     if (balance && amount > balance.available) {
-      toast.error('Le montant demandé dépasse votre solde disponible');
+      toast.error(tToast('error.amountExceedsBalance'));
       return;
     }
 
     if (!balance?.payoutsEnabled) {
-      toast.error('Les virements ne sont pas activés sur votre compte');
+      toast.error(tToast('error.payoutsNotEnabledToast'));
       return;
     }
 
@@ -141,17 +142,17 @@ export default function RequestPayoutPage() {
 
       if (response.ok) {
         const data = await response.json();
-        toast.success('Demande de virement soumise avec succès !');
+        toast.success(tToast('success.payoutRequestSuccess'));
         setTimeout(() => {
           router.push('/dashboard/creator/payouts');
         }, 1500);
       } else {
         const error = await response.json();
-        toast.error(error?.error || 'Erreur lors de la demande');
+        toast.error(error?.error || tToast('error.payoutRequestError'));
       }
     } catch (error) {
       console.error('Error requesting payout:', error);
-      toast.error('Une erreur est survenue');
+      toast.error(tToast('error.errorOccurred'));
     } finally {
       setRequesting(false);
     }
@@ -179,15 +180,15 @@ export default function RequestPayoutPage() {
         <Link href="/dashboard/creator/payouts">
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux paiements
+            {t('backToPayouts')}
           </Button>
         </Link>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Demander un virement manuel</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
           <p className="text-gray-600">
-            Soumettez une demande de virement pour approbation
+            {t('subtitle')}
           </p>
         </div>
 
@@ -196,7 +197,7 @@ export default function RequestPayoutPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Wallet className="w-5 h-5" />
-              Solde disponible
+              {t('availableBalance')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -205,11 +206,11 @@ export default function RequestPayoutPage() {
             </div>
             {balance?.stripeCurrency && balance.stripeCurrency !== 'EUR' && (
               <p className="text-sm text-gray-500 mb-2">
-                ≈ {balance.available.toFixed(2)} EUR (base)
+                {t('conversionApprox', { amount: balance.available.toFixed(2) })}
               </p>
             )}
             <p className="text-sm text-gray-600">
-              Montant maximum que vous pouvez demander
+              {t('maxAmount')}
             </p>
           </CardContent>
         </Card>
@@ -219,9 +220,7 @@ export default function RequestPayoutPage() {
           <Alert className="mb-6 bg-blue-50 border-blue-200">
             <AlertCircle className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-700">
-              <strong>Conversion de devise :</strong> Votre compte Stripe est en {balance.stripeCurrency}.
-              Le montant sera converti automatiquement de EUR (base) vers {balance.stripeCurrency} lors du virement.
-              Le taux de conversion actuel sera appliqué au moment du traitement.
+              <strong>{t('currencyConversion')}:</strong> {t('currencyConversionDesc', { currency: balance.stripeCurrency })}
             </AlertDescription>
           </Alert>
         )}
@@ -231,8 +230,7 @@ export default function RequestPayoutPage() {
           <Alert className="mb-6 bg-red-50 border-red-200">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-700">
-              Les virements ne sont pas activés sur votre compte. Veuillez compléter votre 
-              configuration de paiement.
+              {t('payoutsNotEnabled')}
             </AlertDescription>
           </Alert>
         )}
@@ -241,8 +239,7 @@ export default function RequestPayoutPage() {
           <Alert className="mb-6 bg-yellow-50 border-yellow-200">
             <AlertCircle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-yellow-700">
-              Votre solde disponible est inférieur au minimum requis ({settings?.minimum || 10} {balance?.stripeCurrency || 'EUR'}). 
-              Vous ne pouvez pas demander de virement pour le moment.
+              {t('balanceTooLow', { minimum: settings?.minimum || 10, currency: balance?.stripeCurrency || 'EUR' })}
             </AlertDescription>
           </Alert>
         )}
@@ -253,17 +250,17 @@ export default function RequestPayoutPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
-                Montant du virement
+                {t('payoutAmount')}
               </CardTitle>
               <CardDescription>
-                Indiquez le montant que vous souhaitez recevoir
+                {t('payoutAmountDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Amount Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="amount">Montant ({balance?.stripeCurrency || 'EUR'})</Label>
+                  <Label htmlFor="amount">{t('amount', { currency: balance?.stripeCurrency || 'EUR' })}</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -275,13 +272,13 @@ export default function RequestPayoutPage() {
                     required
                   />
                   <p className="text-sm text-gray-500">
-                    Minimum: {settings?.minimum || 10} {balance?.stripeCurrency || 'EUR'} • Maximum: {balance?.available.toFixed(2) || 0} {balance?.stripeCurrency || 'EUR'}
+                    {t('minMaxInfo', { min: settings?.minimum || 10, max: balance?.available.toFixed(2) || 0, currency: balance?.stripeCurrency || 'EUR' })}
                   </p>
                 </div>
 
                 {/* Quick Amount Buttons */}
                 <div className="space-y-2">
-                  <Label>Montants rapides</Label>
+                  <Label>{t('quickAmounts')}</Label>
                   <div className="grid grid-cols-3 gap-2">
                     <Button
                       type="button"
@@ -314,8 +311,7 @@ export default function RequestPayoutPage() {
                 <Alert className="bg-blue-50 border-blue-200">
                   <AlertCircle className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-700 text-sm">
-                    <strong>Important :</strong> Cette demande sera examinée par un administrateur 
-                    avant d'être traitée. Vous serez notifié une fois la demande approuvée ou rejetée.
+                    <strong>{t('important')}:</strong> {t('importantNote')}
                   </AlertDescription>
                 </Alert>
 
@@ -329,12 +325,12 @@ export default function RequestPayoutPage() {
                   {requesting ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Soumission en cours...
+                      {t('submitting')}
                     </>
                   ) : (
                     <>
                       <DollarSign className="w-5 h-5 mr-2" />
-                      Soumettre la demande
+                      {t('submitRequest')}
                     </>
                   )}
                 </Button>
@@ -346,11 +342,11 @@ export default function RequestPayoutPage() {
             <CardContent className="py-12 text-center">
               <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">
-                Vous ne pouvez pas effectuer de demande de virement pour le moment
+                {t('cannotRequest')}
               </p>
               <Link href="/dashboard/creator/payouts" className="mt-4 inline-block">
                 <Button variant="outline">
-                  Retour aux paiements
+                  {t('backToPayouts')}
                 </Button>
               </Link>
             </CardContent>
@@ -360,7 +356,7 @@ export default function RequestPayoutPage() {
         {/* Process Info */}
         <Card className="mt-6 bg-gray-50 border-gray-200">
           <CardHeader>
-            <CardTitle className="text-base">Processus de demande</CardTitle>
+            <CardTitle className="text-base">{t('requestProcess')}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-gray-700 space-y-2">
             <div className="flex items-start gap-3">
@@ -368,7 +364,7 @@ export default function RequestPayoutPage() {
                 1
               </div>
               <div>
-                <strong>Soumission :</strong> Vous soumettez votre demande avec le montant souhaité
+                <strong>{t('step1Title')}:</strong> {t('step1Desc')}
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -376,7 +372,7 @@ export default function RequestPayoutPage() {
                 2
               </div>
               <div>
-                <strong>Examen :</strong> Un administrateur examine votre demande (généralement sous 24-48h)
+                <strong>{t('step2Title')}:</strong> {t('step2Desc')}
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -384,7 +380,7 @@ export default function RequestPayoutPage() {
                 3
               </div>
               <div>
-                <strong>Approbation :</strong> Si approuvée, le virement est créé vers votre compte Stripe
+                <strong>{t('step3Title')}:</strong> {t('step3Desc')}
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -392,7 +388,7 @@ export default function RequestPayoutPage() {
                 4
               </div>
               <div>
-                <strong>Traitement :</strong> Stripe traite le virement vers votre compte bancaire (2-5 jours ouvrables)
+                <strong>{t('step4Title')}:</strong> {t('step4Desc')}
               </div>
             </div>
           </CardContent>

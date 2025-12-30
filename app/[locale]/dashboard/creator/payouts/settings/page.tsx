@@ -31,6 +31,7 @@ export default function PayoutSettingsPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard.creator.payouts.settings');
+  const tToast = useTranslations('toast');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<PayoutSettings>({
@@ -62,16 +63,16 @@ export default function PayoutSettingsPage() {
 
         // Show warning if out of sync
         if (data.syncStatus === 'out_of_sync') {
-          toast.warning('Les paramètres ne sont pas synchronisés avec Stripe');
+          toast.warning(tToast('warning.settingsNotSynced'));
         }
       } else if (response.status === 401) {
         router.push('/auth/login');
       } else {
-        toast.error('Erreur lors de la récupération des paramètres');
+        toast.error(tToast('error.errorFetchingSettings'));
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
-      toast.error('Une erreur est survenue');
+      toast.error(tToast('error.errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -84,12 +85,12 @@ export default function PayoutSettingsPage() {
     
     // Validation
     if (settings.payoutMinimum < 10) {
-      toast.error(`Le montant minimum doit être au moins 10 ${currency}`);
+      toast.error(tToast('error.minAmountError', { currency }));
       return;
     }
 
     if (settings.payoutMinimum > 1000000) {
-      toast.error(`Le montant minimum ne peut pas dépasser 1 000 000 ${currency}`);
+      toast.error(tToast('error.maxAmountError', { currency }));
       return;
     }
 
@@ -106,7 +107,7 @@ export default function PayoutSettingsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        toast.success('Paramètres enregistrés avec succès');
+        toast.success(tToast('success.settingsSaved'));
         setOriginalSettings(settings);
         
         // Optionally redirect back to payouts page after a short delay
@@ -115,11 +116,11 @@ export default function PayoutSettingsPage() {
         }, 1500);
       } else {
         const error = await response.json();
-        toast.error(error?.error || 'Erreur lors de la sauvegarde');
+        toast.error(error?.error || tToast('error.savingError'));
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast.error('Une erreur est survenue');
+      toast.error(tToast('error.errorOccurred'));
     } finally {
       setSaving(false);
     }
@@ -150,15 +151,15 @@ export default function PayoutSettingsPage() {
         <Link href="/dashboard/creator/payouts">
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux paiements
+            {t('backToPayouts')}
           </Button>
         </Link>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Paramètres de virement</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
           <p className="text-gray-600">
-            Configurez la fréquence et le montant minimum de vos virements
+            {t('subtitle')}
           </p>
         </div>
 
@@ -167,17 +168,17 @@ export default function PayoutSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5" />
-              Configuration
+              {t('configuration')}
             </CardTitle>
             <CardDescription>
-              Modifiez vos préférences de virement
+              {t('configurationDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSave} className="space-y-6">
               {/* Schedule Selection */}
               <div className="space-y-2">
-                <Label htmlFor="schedule">Calendrier de virement</Label>
+                <Label htmlFor="schedule">{t('payoutSchedule')}</Label>
                 <Select
                   value={settings.payoutSchedule}
                   onValueChange={(value) => setSettings({ ...settings, payoutSchedule: value as any })}
@@ -186,24 +187,21 @@ export default function PayoutSettingsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DAILY">Quotidien</SelectItem>
-                    <SelectItem value="WEEKLY">Hebdomadaire</SelectItem>
-                    <SelectItem value="MANUAL">Manuel</SelectItem>
+                    <SelectItem value="DAILY">{t('scheduleDaily')}</SelectItem>
+                    <SelectItem value="WEEKLY">{t('scheduleWeekly')}</SelectItem>
+                    <SelectItem value="MANUAL">{t('scheduleManual')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-gray-500">
-                  {settings.payoutSchedule === 'DAILY' && 
-                    'Virement automatique chaque jour si le solde disponible atteint le minimum'}
-                  {settings.payoutSchedule === 'WEEKLY' && 
-                    'Virement automatique chaque lundi si le solde disponible atteint le minimum'}
-                  {settings.payoutSchedule === 'MANUAL' && 
-                    'Vous devez demander manuellement chaque virement (sujet à approbation admin)'}
+                  {settings.payoutSchedule === 'DAILY' && t('scheduleDailyDesc')}
+                  {settings.payoutSchedule === 'WEEKLY' && t('scheduleWeeklyDesc')}
+                  {settings.payoutSchedule === 'MANUAL' && t('scheduleManualDesc')}
                 </p>
               </div>
 
               {/* Minimum Amount */}
               <div className="space-y-2">
-                <Label htmlFor="minimum">Montant minimum ({settings.currency || 'EUR'})</Label>
+                <Label htmlFor="minimum">{t('minimumAmount', { currency: settings.currency || 'EUR' })}</Label>
                 <Input
                   id="minimum"
                   type="number"
@@ -215,7 +213,7 @@ export default function PayoutSettingsPage() {
                   required
                 />
                 <p className="text-sm text-gray-500">
-                  Montant minimum requis pour déclencher un virement (entre 10 {settings.currency || 'EUR'} et 1 000 000 {settings.currency || 'EUR'})
+                  {t('minimumAmountDesc', { currency: settings.currency || 'EUR' })}
                 </p>
               </div>
 
@@ -223,9 +221,7 @@ export default function PayoutSettingsPage() {
               <Alert className="bg-blue-50 border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-700 text-sm">
-                  <strong>Important :</strong> Les virements automatiques (quotidiens/hebdomadaires) 
-                  sont traités automatiquement par le système. Les virements manuels nécessitent 
-                  une approbation de l'administrateur.
+                  <strong>{t('important')}:</strong> {t('importantNote')}
                 </AlertDescription>
               </Alert>
 
@@ -245,22 +241,22 @@ export default function PayoutSettingsPage() {
                     settings.syncStatus === 'synced' ? 'text-green-700' : 'text-yellow-700'
                   }>
                     {settings.syncStatus === 'synced' ? (
-                      <span>✅ <strong>Synchronisé avec Stripe</strong> - Vos paramètres sont à jour sur Stripe</span>
+                      <span>✅ <strong>{t('syncedWithStripe')}</strong></span>
                     ) : settings.syncStatus === 'out_of_sync' ? (
                       <div>
-                        <span>⚠️ <strong>Désynchronisé</strong> - Les paramètres diffèrent entre la base de données et Stripe</span>
+                        <span>⚠️ <strong>{t('outOfSync')}</strong></span>
                         {settings.stripeSettings && (
                           <div className="mt-2 text-sm">
-                            <strong>Base de données:</strong> {settings.payoutSchedule}<br />
-                            <strong>Stripe:</strong> {settings.stripeSettings.schedule}
+                            <strong>{t('database')}:</strong> {settings.payoutSchedule}<br />
+                            <strong>{t('stripe')}:</strong> {settings.stripeSettings.schedule}
                           </div>
                         )}
                         <p className="mt-2 text-sm">
-                          Enregistrez vos paramètres pour synchroniser avec Stripe.
+                          {t('saveToSync')}
                         </p>
                       </div>
                     ) : (
-                      <span>ℹ️ Aucun compte Stripe connecté</span>
+                      <span>ℹ️ {t('noStripeAccount')}</span>
                     )}
                   </AlertDescription>
                 </Alert>
@@ -276,25 +272,25 @@ export default function PayoutSettingsPage() {
                   {saving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Enregistrement...
+                      {t('saving')}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Enregistrer les modifications
+                      {t('saveChanges')}
                     </>
                   )}
                 </Button>
                 <Link href="/dashboard/creator/payouts">
                   <Button type="button" variant="outline">
-                    Annuler
+                    {t('cancel')}
                   </Button>
                 </Link>
               </div>
 
               {!hasChanges && originalSettings && (
                 <p className="text-sm text-gray-500 text-center">
-                  Aucune modification à enregistrer
+                  {t('noChanges')}
                 </p>
               )}
             </form>
@@ -304,36 +300,30 @@ export default function PayoutSettingsPage() {
         {/* Information Card */}
         <Card className="mt-6 bg-gray-50 border-gray-200">
           <CardHeader>
-            <CardTitle className="text-base">Explications des calendriers</CardTitle>
+            <CardTitle className="text-base">{t('schedulesExplanation')}</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-gray-700 space-y-3">
             <div>
-              <strong className="text-gray-900">Quotidien :</strong>
+              <strong className="text-gray-900">{t('dailyTitle')}:</strong>
               <p className="mt-1">
-                Le système vérifie chaque jour si votre solde disponible atteint le montant minimum. 
-                Si oui, un virement automatique est créé vers votre compte Stripe.
+                {t('dailyDesc')}
               </p>
             </div>
             <div>
-              <strong className="text-gray-900">Hebdomadaire :</strong>
+              <strong className="text-gray-900">{t('weeklyTitle')}:</strong>
               <p className="mt-1">
-                Le système vérifie chaque lundi si votre solde disponible atteint le montant minimum. 
-                Si oui, un virement automatique est créé vers votre compte Stripe.
+                {t('weeklyDesc')}
               </p>
             </div>
             <div>
-              <strong className="text-gray-900">Manuel :</strong>
+              <strong className="text-gray-900">{t('manualTitle')}:</strong>
               <p className="mt-1">
-                Vous devez manuellement demander un virement depuis la page des paiements. 
-                Chaque demande doit être approuvée par un administrateur avant d'être traitée.
-                Cela vous donne un contrôle total sur le calendrier de vos virements.
+                {t('manualDesc')}
               </p>
             </div>
             <div className="pt-2 border-t border-gray-300 mt-2">
               <p>
-                <strong className="text-gray-900">Conseil :</strong> Si vous préférez avoir un flux de trésorerie 
-                régulier, choisissez "Quotidien" ou "Hebdomadaire". Si vous préférez contrôler 
-                manuellement vos virements, choisissez "Manuel".
+                <strong className="text-gray-900">{t('tip')}:</strong> {t('tipDesc')}
               </p>
             </div>
           </CardContent>
