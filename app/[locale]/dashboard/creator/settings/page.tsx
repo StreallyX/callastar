@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import Image from 'next/image';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -214,6 +214,7 @@ function ImageUpload({ label, description, imageUrl, onUploadSuccess, onDelete, 
 
 export default function CreatorSettings() {
   const router = useRouter();
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [stripeOnboarding, setStripeOnboarding] = useState({
@@ -655,7 +656,7 @@ export default function CreatorSettings() {
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                   <p className="text-sm text-purple-900">
                     <strong>Aperçu :</strong> Il est actuellement{' '}
-                    {new Date().toLocaleTimeString('fr-FR', {
+                    {new Date().toLocaleTimeString(locale, {
                       timeZone: timezone,
                       hour: '2-digit',
                       minute: '2-digit',

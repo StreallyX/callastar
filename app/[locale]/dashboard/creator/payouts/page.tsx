@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 interface BalanceData {
@@ -63,6 +63,7 @@ interface PayoutHistoryItem {
 
 export default function PayoutsPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [balance, setBalance] = useState<BalanceData | null>(null);
@@ -534,7 +535,7 @@ export default function PayoutsPage() {
                     {history.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
-                          {new Date(item.createdAt).toLocaleDateString('fr-FR', {
+                          {new Date(item.createdAt).toLocaleDateString(locale, {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',

@@ -1,17 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, TrendingUp, DollarSign, Calendar, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 export default function EarningsPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [user, setUser] = useState<any>(null);
   const [payoutData, setPayoutData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -197,7 +198,7 @@ export default function EarningsPage() {
                     <div className="flex-1">
                       <div className="font-medium">{payment.booking?.callOffer?.title}</div>
                       <div className="text-sm text-gray-500">
-                        {payment.booking?.user?.name} • {new Date(payment.booking?.callOffer?.dateTime).toLocaleDateString('fr-FR')}
+                        {payment.booking?.user?.name} • {new Date(payment.booking?.callOffer?.dateTime).toLocaleDateString(locale)}
                       </div>
                     </div>
                     <div className="text-right ml-4">

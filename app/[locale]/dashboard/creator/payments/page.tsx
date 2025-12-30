@@ -1,18 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowLeft, CreditCard, Calendar, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 export default function PaymentsPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [user, setUser] = useState<any>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,16 +169,16 @@ export default function PaymentsPage() {
                           <div>
                             <div className="font-medium">{payment.booking?.callOffer?.title}</div>
                             <div className="text-sm text-gray-500">
-                              {payment.booking?.user?.name} • {new Date(payment.booking?.callOffer?.dateTime).toLocaleDateString('fr-FR')}
+                              {payment.booking?.user?.name} • {new Date(payment.booking?.callOffer?.dateTime).toLocaleDateString(locale)}
                             </div>
                           </div>
                         </div>
                         <div className="text-xs text-gray-400 ml-11">
                           {payment.payoutReleaseDate && payment.payoutStatus === 'HELD' && (
-                            <>Disponible le {new Date(payment.payoutReleaseDate).toLocaleDateString('fr-FR')}</>
+                            <>Disponible le {new Date(payment.payoutReleaseDate).toLocaleDateString(locale)}</>
                           )}
                           {payment.payoutDate && payment.payoutStatus === 'PAID' && (
-                            <>Transféré le {new Date(payment.payoutDate).toLocaleDateString('fr-FR')}</>
+                            <>Transféré le {new Date(payment.payoutDate).toLocaleDateString(locale)}</>
                           )}
                         </div>
                       </div>

@@ -167,7 +167,7 @@ export default function RefundsDisputesPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Loader2, ArrowLeft, Video, User, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 import { DateTimeDisplay, LiveCountdown } from '@/components/ui/datetime-display';
 

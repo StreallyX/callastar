@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, ArrowLeft, Save, Globe, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { getCommonTimezones, detectUserTimezone, getTimezoneAbbreviation } from '@/lib/timezone';
 
 export default function UserSettingsPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -218,7 +219,7 @@ export default function UserSettingsPage() {
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                 <p className="text-sm text-purple-900">
                   <strong>Aperçu :</strong> Il est actuellement{' '}
-                  {new Date().toLocaleTimeString('fr-FR', {
+                  {new Date().toLocaleTimeString(locale, {
                     timeZone: timezone,
                     hour: '2-digit',
                     minute: '2-digit',

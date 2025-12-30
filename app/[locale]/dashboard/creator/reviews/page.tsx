@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, Star, User } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 
 export default function ReviewsPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [user, setUser] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [averageRating, setAverageRating] = useState(0);
@@ -169,7 +170,7 @@ export default function ReviewsPage() {
                         <div>
                           <p className="font-semibold text-lg">{review?.user?.name ?? 'Anonyme'}</p>
                           <p className="text-xs text-gray-500">
-                            {new Date(review.createdAt).toLocaleDateString('fr-FR', {
+                            {new Date(review.createdAt).toLocaleDateString(locale, {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric',

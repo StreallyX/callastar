@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, Loader2, Star, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 export default function HistoryPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [user, setUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +152,7 @@ export default function HistoryPage() {
               <div className="space-y-4">
                 {pastBookings.map((booking: any) => {
                   const callDate = new Date(booking?.callOffer?.dateTime ?? new Date());
-                  const formattedDate = callDate.toLocaleDateString('fr-FR', {
+                  const formattedDate = callDate.toLocaleDateString(locale, {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',

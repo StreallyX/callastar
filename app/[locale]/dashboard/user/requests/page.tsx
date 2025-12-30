@@ -1,17 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Clock, Loader2, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 
 export default function RequestsPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [user, setUser] = useState<any>(null);
   const [callRequests, setCallRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +86,7 @@ export default function RequestsPage() {
             <div className="flex items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
-                <span>{new Date(request.proposedDateTime).toLocaleString('fr-FR')}</span>
+                <span>{new Date(request.proposedDateTime).toLocaleString(locale)}</span>
               </div>
               <span>•</span>
               <CurrencyDisplay 
@@ -100,7 +101,7 @@ export default function RequestsPage() {
               </div>
             )}
             <p className="text-xs text-gray-400">
-              Envoyé le {new Date(request.createdAt).toLocaleDateString('fr-FR')}
+              Envoyé le {new Date(request.createdAt).toLocaleDateString(locale)}
             </p>
           </div>
         </div>

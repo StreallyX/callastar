@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, DollarSign, Loader2, ArrowLeft, MessageSquare, Check, X, User } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 
 export default function RequestsPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [user, setUser] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -238,7 +239,7 @@ export default function RequestsPage() {
                         <div className="space-y-1 text-sm text-gray-700 ml-14">
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            <span>{new Date(request.proposedDateTime).toLocaleString('fr-FR')}</span>
+                            <span>{new Date(request.proposedDateTime).toLocaleString(locale)}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4" />
@@ -300,7 +301,7 @@ export default function RequestsPage() {
                         <div className="space-y-1 text-sm text-gray-600 ml-14">
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            <span>{new Date(request.proposedDateTime).toLocaleString('fr-FR')}</span>
+                            <span>{new Date(request.proposedDateTime).toLocaleString(locale)}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4" />
@@ -345,7 +346,7 @@ export default function RequestsPage() {
                         <div className="space-y-1 text-sm text-gray-600 ml-14">
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            <span>{new Date(request.proposedDateTime).toLocaleString('fr-FR')}</span>
+                            <span>{new Date(request.proposedDateTime).toLocaleString(locale)}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4" />
@@ -384,7 +385,7 @@ export default function RequestsPage() {
           {selectedRequest && (
             <div className="space-y-2 py-4">
               <p><strong>Utilisateur:</strong> {selectedRequest.user?.name}</p>
-              <p><strong>Date/Heure:</strong> {new Date(selectedRequest.proposedDateTime).toLocaleString('fr-FR')}</p>
+              <p><strong>Date/Heure:</strong> {new Date(selectedRequest.proposedDateTime).toLocaleString(locale)}</p>
               <p><strong>Prix proposé:</strong> {Number(selectedRequest.proposedPrice).toFixed(2)} {creatorCurrency}</p>
               {selectedRequest.message && (
                 <p><strong>Message:</strong> {selectedRequest.message}</p>

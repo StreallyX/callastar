@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, DollarSign, Loader2, Plus, Trash2, ArrowLeft, List, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 import dynamic from 'next/dynamic';
 
@@ -26,6 +26,7 @@ type ViewMode = 'list' | 'calendar';
 
 export default function OffersPage() {
   const router = useRouter();
+  const locale = useLocale();
   const [user, setUser] = useState<any>(null);
   const [offers, setOffers] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -532,10 +533,10 @@ export default function OffersPage() {
                                     <Calendar className="w-4 h-4 text-gray-500" />
                                     <div>
                                       <div className="text-sm font-medium">
-                                        {offerDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        {offerDate.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
                                       </div>
                                       <div className="text-sm text-gray-600">
-                                        {offerDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                        {offerDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                                       </div>
                                     </div>
                                   </div>
