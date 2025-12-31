@@ -47,13 +47,10 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <head>
-        <script src="https://apps.abacus.ai/chatllm/appllm-lib.js"></script>
-      </head>
-      <body className={inter.className}>
+      <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <Providers>
-            <div className="flex flex-col min-h-screen">
+            <div className={`${inter.className} flex flex-col min-h-screen`}>
               <main className="flex-1">
                 {children}
               </main>
@@ -62,7 +59,6 @@ export default async function LocaleLayout({
             <Toaster />
           </Providers>
         </NextIntlClientProvider>
-        {gaId && <GoogleAnalytics gaId={gaId} />}
       </body>
     </html>
   );

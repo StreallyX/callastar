@@ -122,44 +122,60 @@ export default function CreatorDashboard() {
       setAuthChecked(true);
 
       // Get offers count
-      const offersResponse = await fetch(`/api/call-offers?creatorId=${userData?.user?.creator?.id}`);
+      const creatorId = userData.user.creator.id;
+
+      const [
+        offersResponse,
+        requestsResponse,
+        bookingsResponse,
+        notificationsResponse,
+        onboardingResponse,
+      ] = await Promise.all([
+        fetch(`/api/call-offers?creatorId=${creatorId}`),
+        fetch('/api/call-requests?type=received'),
+        fetch('/api/bookings/creator'),
+        fetch('/api/notifications?read=false'),
+        fetch('/api/stripe/connect-onboard'),
+      ]);
+
+      // OFFERS
       if (offersResponse.ok) {
         const offersData = await offersResponse.json();
-        const activeOffers = offersData?.callOffers?.filter((o: any) => o?.status === 'AVAILABLE').length ?? 0;
+        const activeOffers =
+          offersData?.callOffers?.filter((o: any) => o?.status === 'AVAILABLE').length ?? 0;
+
         setStats((prev) => ({ ...prev, activeOffers }));
       }
 
-      // Get pending requests count
-      const requestsResponse = await fetch('/api/call-requests?type=received');
+      // REQUESTS
       if (requestsResponse.ok) {
         const requestsData = await requestsResponse.json();
-        // L'API retourne directement le tableau, pas un objet avec une propriété callRequests
         const requests = Array.isArray(requestsData) ? requestsData : [];
         const pendingRequests = requests.filter((r: any) => r?.status === 'PENDING').length;
+
         setStats((prev) => ({ ...prev, pendingRequests }));
       }
 
-      // Get upcoming calls count
-      const bookingsResponse = await fetch('/api/bookings/creator');
+      // BOOKINGS
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
         const allBookings = bookingsData?.bookings ?? [];
-        const upcomingCalls = allBookings.filter((b: any) => 
-          b?.status === 'CONFIRMED' || b?.status === 'PENDING'
+        const upcomingCalls = allBookings.filter(
+          (b: any) => b?.status === 'CONFIRMED' || b?.status === 'PENDING'
         ).length;
+
         setStats((prev) => ({ ...prev, upcomingCalls }));
       }
 
-      // Get unread notifications count
-      const notificationsResponse = await fetch('/api/notifications?read=false');
+      // NOTIFICATIONS
       if (notificationsResponse.ok) {
         const notificationsData = await notificationsResponse.json();
         const unreadNotifications = notificationsData?.unreadCount ?? 0;
+
         setStats((prev) => ({ ...prev, unreadNotifications }));
       }
 
-      // Check Stripe Connect onboarding status
-      const onboardingResponse = await fetch('/api/stripe/connect-onboard');
+      // STRIPE
       if (onboardingResponse.ok) {
         const onboardingData = await onboardingResponse.json();
         setStripeOnboarding({
@@ -169,6 +185,7 @@ export default function CreatorDashboard() {
       } else {
         setStripeOnboarding({ onboarded: false, loading: false });
       }
+
 
     } catch (error) {
       console.error('Error fetching data:', error);
