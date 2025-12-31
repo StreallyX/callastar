@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Send Booking Reminders] Sending reminders for booking ${booking.id}...`);
 
-        // Send reminder to client
+        // Send reminder to client (with automatic logging)
         try {
           const clientEmailHtml = generateBookingReminderEmail({
             userName: clientName,
@@ -116,46 +116,28 @@ export async function POST(request: NextRequest) {
             bookingUrl,
           });
 
-          await sendEmail({
+          const emailResult = await sendEmail({
             to: clientEmail,
             subject: '⏰ Reminder: Your call is starting soon!',
             html: clientEmailHtml,
+            bookingId: booking.id,
+            userId: booking.user.id,
+            emailType: 'booking_reminder_client',
           });
 
-          console.log(`[Send Booking Reminders] Reminder sent to client ${clientEmail}`);
-          
-          // Log successful email send
-          await logEmailSent(
-            booking.id,
-            booking.user.id,
-            'booking_reminder_client',
-            {
-              recipientEmail: clientEmail,
-              recipientName: clientName,
-              creatorName,
-              callDateTime: callDateTime.toISOString(),
-            }
-          );
-          
-          emailsSent++;
+          if (emailResult.success) {
+            console.log(`[Send Booking Reminders] Reminder sent to client ${clientEmail}`);
+            emailsSent++;
+          } else {
+            console.error(`[Send Booking Reminders] Failed to send reminder to client ${clientEmail}: ${emailResult.error}`);
+            emailsFailed++;
+          }
         } catch (error) {
-          console.error(`[Send Booking Reminders] Failed to send reminder to client ${clientEmail}:`, error);
+          console.error(`[Send Booking Reminders] Unexpected error sending reminder to client ${clientEmail}:`, error);
           emailsFailed++;
-
-          // Log email error
-          await logEmailError(
-            booking.id,
-            booking.user.id,
-            'booking_reminder_client',
-            error,
-            {
-              recipientEmail: clientEmail,
-              recipientName: clientName,
-            }
-          );
         }
 
-        // Send reminder to creator
+        // Send reminder to creator (with automatic logging)
         try {
           const creatorEmailHtml = generateBookingReminderEmail({
             userName: creatorName,
@@ -164,43 +146,25 @@ export async function POST(request: NextRequest) {
             bookingUrl,
           });
 
-          await sendEmail({
+          const emailResult = await sendEmail({
             to: creatorEmail,
             subject: '⏰ Reminder: Your call is starting soon!',
             html: creatorEmailHtml,
+            bookingId: booking.id,
+            userId: booking.callOffer.creator.user.id,
+            emailType: 'booking_reminder_creator',
           });
 
-          console.log(`[Send Booking Reminders] Reminder sent to creator ${creatorEmail}`);
-          
-          // Log successful email send
-          await logEmailSent(
-            booking.id,
-            booking.callOffer.creator.user.id,
-            'booking_reminder_creator',
-            {
-              recipientEmail: creatorEmail,
-              recipientName: creatorName,
-              clientName,
-              callDateTime: callDateTime.toISOString(),
-            }
-          );
-          
-          emailsSent++;
+          if (emailResult.success) {
+            console.log(`[Send Booking Reminders] Reminder sent to creator ${creatorEmail}`);
+            emailsSent++;
+          } else {
+            console.error(`[Send Booking Reminders] Failed to send reminder to creator ${creatorEmail}: ${emailResult.error}`);
+            emailsFailed++;
+          }
         } catch (error) {
-          console.error(`[Send Booking Reminders] Failed to send reminder to creator ${creatorEmail}:`, error);
+          console.error(`[Send Booking Reminders] Unexpected error sending reminder to creator ${creatorEmail}:`, error);
           emailsFailed++;
-
-          // Log email error
-          await logEmailError(
-            booking.id,
-            booking.callOffer.creator.user.id,
-            'booking_reminder_creator',
-            error,
-            {
-              recipientEmail: creatorEmail,
-              recipientName: creatorName,
-            }
-          );
         }
 
         // Mark booking as reminderSent = true (even if one email failed, we don't want to spam)

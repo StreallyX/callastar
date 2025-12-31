@@ -4,7 +4,7 @@ import prisma from '@/lib/db';
 import { verifyWebhookSignature, calculatePayoutReleaseDate } from '@/lib/stripe';
 import { getStripeAccountStatus } from '@/lib/stripe-account-validator';
 import { createDailyRoom } from '@/lib/daily';
-import { sendEmail, generateBookingConfirmationEmail } from '@/lib/email';
+import { sendEmail, generatePaymentConfirmationEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
 import { logWebhook, logPayment, logPayout, logRefund, logDispute } from '@/lib/logger';
 import { logWebhookEvent, logBooking, logInfo, logError, logWarning } from '@/lib/system-logger';
@@ -729,36 +729,40 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     metadata: { paymentIntentId: paymentIntent.id },
   });
 
-  // Send confirmation emails
+  // Send payment confirmation email (English only, with logging)
+  // This email should be sent even if other operations fail
   try {
-    const callUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'}/call/${booking.id}`;
+    const bookingUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'}/call/${booking.id}`;
     
-    const emailHtml = generateBookingConfirmationEmail({
+    const emailHtml = generatePaymentConfirmationEmail({
       userName: booking.user.name,
       creatorName: booking.callOffer.creator.user.name,
       callTitle: booking.callOffer.title,
       callDateTime: booking.callOffer.dateTime,
       callDuration: booking.callOffer.duration,
       totalPrice: amount,
-      callUrl,
+      bookingUrl,
+      currency,
     });
 
-    await sendEmail({
+    // Send email with automatic logging
+    const emailResult = await sendEmail({
       to: booking.user.email,
-      subject: '✨ Confirmation de réservation - Call a Star',
+      subject: '✅ Payment Confirmed - Your Call is Booked!',
       html: emailHtml,
+      bookingId: booking.id,
+      userId: booking.userId,
+      emailType: 'payment_confirmation',
     });
 
-    // Send receipt
-    const currency = booking.callOffer.creator.currency || 'EUR';
-    const receiptHtml = generateReceiptEmail(booking, amount, currency);
-    await sendEmail({
-      to: booking.user.email,
-      subject: '💳 Reçu de paiement - Call a Star',
-      html: receiptHtml,
-    });
+    if (emailResult.success) {
+      console.log(`[Webhook] Payment confirmation email sent successfully to ${booking.user.email}`);
+    } else {
+      console.error(`[Webhook] Failed to send payment confirmation email: ${emailResult.error}`);
+    }
   } catch (error) {
-    console.error('[Webhook] Error sending emails to user:', error);
+    // Email errors should never block the webhook processing
+    console.error('[Webhook] Unexpected error sending payment confirmation email:', error);
   }
 
   // Send notification to creator
