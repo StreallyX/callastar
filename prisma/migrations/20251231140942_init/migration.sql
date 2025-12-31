@@ -35,6 +35,18 @@ CREATE TYPE "PayoutFrequency" AS ENUM ('DAILY', 'WEEKLY', 'MONTHLY');
 CREATE TYPE "TransactionEventType" AS ENUM ('PAYMENT_CREATED', 'PAYMENT_SUCCEEDED', 'PAYMENT_FAILED', 'REFUND_CREATED', 'REFUND_SUCCEEDED', 'REFUND_FAILED', 'PAYOUT_CREATED', 'PAYOUT_PAID', 'PAYOUT_FAILED', 'TRANSFER_CREATED', 'TRANSFER_SUCCEEDED', 'TRANSFER_FAILED', 'WEBHOOK_RECEIVED', 'DISPUTE_CREATED', 'DISPUTE_UPDATED', 'DISPUTE_CLOSED');
 
 -- CreateEnum
+CREATE TYPE "LogLevel" AS ENUM ('INFO', 'WARNING', 'ERROR', 'CRITICAL');
+
+-- CreateEnum
+CREATE TYPE "LogActor" AS ENUM ('USER', 'CREATOR', 'ADMIN', 'SYSTEM', 'GUEST');
+
+-- CreateEnum
+CREATE TYPE "LogType" AS ENUM ('EMAIL_SENT', 'EMAIL_ERROR', 'CRON_RUN', 'CRON_ERROR', 'DAILY_ROOM_DELETED', 'DAILY_ROOM_ERROR', 'BOOKING_CREATED', 'BOOKING_ERROR', 'PAYMENT_SUCCESS', 'PAYMENT_ERROR', 'PAYMENT_REFUND', 'PAYOUT_SUCCESS', 'PAYOUT_ERROR', 'STRIPE_WEBHOOK', 'STRIPE_WEBHOOK_ERROR', 'DAILY_ROOM_CREATED', 'NOTIFICATION_SENT', 'NOTIFICATION_ERROR', 'SYSTEM_ERROR', 'API_ERROR');
+
+-- CreateEnum
+CREATE TYPE "LogStatus" AS ENUM ('SUCCESS', 'ERROR');
+
+-- CreateEnum
 CREATE TYPE "EntityType" AS ENUM ('PAYMENT', 'PAYOUT', 'REFUND', 'DISPUTE', 'TRANSFER');
 
 -- CreateEnum
@@ -52,6 +64,7 @@ CREATE TABLE "User" (
     "emailVerified" TIMESTAMP(3),
     "image" TEXT,
     "role" "Role" NOT NULL DEFAULT 'USER',
+    "timezone" TEXT NOT NULL DEFAULT 'Europe/Paris',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -98,10 +111,14 @@ CREATE TABLE "Creator" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "bio" TEXT,
+    "expertise" TEXT,
     "profileImage" TEXT,
+    "bannerImage" TEXT,
     "stripeAccountId" TEXT,
     "isStripeOnboarded" BOOLEAN NOT NULL DEFAULT false,
     "currency" TEXT NOT NULL DEFAULT 'EUR',
+    "timezone" TEXT NOT NULL DEFAULT 'Europe/Paris',
+    "socialLinks" JSONB,
     "payoutSchedule" "PayoutSchedule" NOT NULL DEFAULT 'WEEKLY',
     "payoutMinimum" DECIMAL(10,2) NOT NULL DEFAULT 10,
     "isPayoutBlocked" BOOLEAN NOT NULL DEFAULT false,
@@ -142,6 +159,8 @@ CREATE TABLE "Booking" (
     "stripePaymentIntentId" TEXT,
     "dailyRoomUrl" TEXT,
     "dailyRoomName" TEXT,
+    "isTestBooking" BOOLEAN NOT NULL DEFAULT false,
+    "reminderSent" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -359,6 +378,19 @@ CREATE TABLE "PayoutScheduleNew" (
     CONSTRAINT "PayoutScheduleNew_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Log" (
+    "id" TEXT NOT NULL,
+    "type" "LogType" NOT NULL,
+    "status" "LogStatus" NOT NULL,
+    "message" TEXT NOT NULL,
+    "context" JSONB,
+    "error" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Log_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -415,6 +447,12 @@ CREATE INDEX "Booking_userId_idx" ON "Booking"("userId");
 
 -- CreateIndex
 CREATE INDEX "Booking_status_idx" ON "Booking"("status");
+
+-- CreateIndex
+CREATE INDEX "Booking_isTestBooking_idx" ON "Booking"("isTestBooking");
+
+-- CreateIndex
+CREATE INDEX "Booking_reminderSent_idx" ON "Booking"("reminderSent");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Payment_bookingId_key" ON "Payment"("bookingId");
@@ -550,6 +588,24 @@ CREATE INDEX "PayoutScheduleNew_nextPayoutDate_idx" ON "PayoutScheduleNew"("next
 
 -- CreateIndex
 CREATE INDEX "PayoutScheduleNew_isActive_idx" ON "PayoutScheduleNew"("isActive");
+
+-- CreateIndex
+CREATE INDEX "Log_type_idx" ON "Log"("type");
+
+-- CreateIndex
+CREATE INDEX "Log_status_idx" ON "Log"("status");
+
+-- CreateIndex
+CREATE INDEX "Log_createdAt_idx" ON "Log"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "Log_type_status_idx" ON "Log"("type", "status");
+
+-- CreateIndex
+CREATE INDEX "Log_type_createdAt_idx" ON "Log"("type", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "Log_status_createdAt_idx" ON "Log"("status", "createdAt");
 
 -- AddForeignKey
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
