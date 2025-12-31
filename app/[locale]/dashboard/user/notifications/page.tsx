@@ -18,6 +18,7 @@ export default function NotificationsPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard.user.notifications');
+
   const [user, setUser] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,10 +33,12 @@ export default function NotificationsPage() {
       const userResponse = await fetch('/api/auth/me', {
         credentials: 'include',
       });
+
       if (!userResponse.ok) {
         router.push('/auth/login');
         return;
       }
+
       const userData = await userResponse.json();
       setUser(userData?.user);
 
@@ -47,6 +50,7 @@ export default function NotificationsPage() {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error(t('errors.load'));
     } finally {
       setLoading(false);
     }
@@ -54,21 +58,25 @@ export default function NotificationsPage() {
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'POST',
-      });
+      const response = await fetch(
+        `/api/notifications/${notificationId}/read`,
+        { method: 'POST' }
+      );
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la mise à jour');
+        throw new Error();
       }
 
-      // Update local state
-      setNotifications(notifications.map(n => 
-        n.id === notificationId ? { ...n, read: true, readAt: new Date().toISOString() } : n
-      ));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId
+            ? { ...n, read: true, readAt: new Date().toISOString() }
+            : n
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error(t('errors.update'));
     }
   };
 
@@ -79,16 +87,17 @@ export default function NotificationsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la mise à jour');
+        throw new Error();
       }
 
-      // Update local state
       const now = new Date().toISOString();
-      setNotifications(notifications.map(n => ({ ...n, read: true, readAt: now })));
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, read: true, readAt: now }))
+      );
       setUnreadCount(0);
-      toast.success('Toutes les notifications ont été marquées comme lues');
+      toast.success(t('markAllSuccess'));
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error(t('errors.update'));
     }
   };
 
@@ -103,8 +112,8 @@ export default function NotificationsPage() {
     );
   }
 
-  const unreadNotifications = notifications.filter(n => !n.read);
-  const readNotifications = notifications.filter(n => n.read);
+  const unreadNotifications = notifications.filter((n) => !n.read);
+  const readNotifications = notifications.filter((n) => n.read);
 
   const getNotificationTypeColor = (type: string) => {
     switch (type) {
@@ -124,24 +133,14 @@ export default function NotificationsPage() {
   };
 
   const getNotificationTypeLabel = (type: string) => {
-    switch (type) {
-      case 'BOOKING_CONFIRMED':
-        return 'Réservation';
-      case 'BOOKING_CANCELLED':
-        return 'Annulation';
-      case 'CALL_REQUEST':
-        return 'Demande';
-      case 'REVIEW_RECEIVED':
-        return 'Avis';
-      case 'PAYMENT_RECEIVED':
-        return 'Paiement';
-      default:
-        return 'Notification';
-    }
+    return t(`types.${type}`, { default: t('types.DEFAULT') });
   };
 
   const renderNotificationCard = (notification: any) => (
-    <Card key={notification.id} className={!notification.read ? 'border-l-4 border-l-purple-600' : ''}>
+    <Card
+      key={notification.id}
+      className={!notification.read ? 'border-l-4 border-l-purple-600' : ''}
+    >
       <CardContent className="pt-6">
         <div className="flex items-start gap-4">
           <div className="mt-1">
@@ -151,6 +150,7 @@ export default function NotificationsPage() {
               <Circle className="w-5 h-5 text-purple-600 fill-purple-600" />
             )}
           </div>
+
           <div className="flex-1 space-y-2">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
@@ -159,29 +159,42 @@ export default function NotificationsPage() {
                     {getNotificationTypeLabel(notification.type)}
                   </Badge>
                   {!notification.read && (
-                    <Badge variant="secondary">Nouveau</Badge>
+                    <Badge variant="secondary">{t('new')}</Badge>
                   )}
                 </div>
-                <h3 className="font-semibold text-lg">{notification.title}</h3>
-                <p className="text-sm text-gray-600">{notification.message}</p>
+
+                <h3 className="font-semibold text-lg">
+                  {notification.title}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {notification.message}
+                </p>
                 <p className="text-xs text-gray-400">
-                  {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale: locale === 'fr' ? fr : enUS })}
+                  {formatDistanceToNow(
+                    new Date(notification.createdAt),
+                    {
+                      addSuffix: true,
+                      locale: locale === 'fr' ? fr : enUS,
+                    }
+                  )}
                 </p>
               </div>
+
               {!notification.read && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleMarkAsRead(notification.id)}
                 >
-                  Marquer comme lu
+                  {t('markAsRead')}
                 </Button>
               )}
             </div>
+
             {notification.link && (
               <Link href={notification.link}>
                 <Button variant="outline" size="sm" className="mt-2">
-                  Voir détails
+                  {t('viewDetails')}
                 </Button>
               </Link>
             )}
@@ -209,54 +222,60 @@ export default function NotificationsPage() {
           <div>
             <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
             <p className="text-gray-600">
-              {unreadCount > 0 ? `${unreadCount} unread notification(s)` : t('noNotifications')}
+              {unreadCount > 0
+                ? t('unreadCount', { count: unreadCount })
+                : t('noNotifications')}
             </p>
           </div>
+
           {unreadCount > 0 && (
             <Button onClick={handleMarkAllAsRead} variant="outline">
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              Mark all as read
+              {t('markAll')}
             </Button>
           )}
         </div>
 
-        {/* Unread Notifications */}
         {unreadNotifications.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Nouvelles notifications</CardTitle>
-              <CardDescription>{unreadNotifications.length} notification(s) non lue(s)</CardDescription>
+              <CardTitle>{t('sections.unread')}</CardTitle>
+              <CardDescription>
+                {t('sections.unreadCount', {
+                  count: unreadNotifications.length,
+                })}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {unreadNotifications.map(renderNotificationCard)}
-              </div>
+            <CardContent className="space-y-4">
+              {unreadNotifications.map(renderNotificationCard)}
             </CardContent>
           </Card>
         )}
 
-        {/* Read Notifications */}
         {readNotifications.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Notifications lues</CardTitle>
-              <CardDescription>{readNotifications.length} notification(s) lue(s)</CardDescription>
+              <CardTitle>{t('sections.read')}</CardTitle>
+              <CardDescription>
+                {t('sections.readCount', {
+                  count: readNotifications.length,
+                })}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {readNotifications.map(renderNotificationCard)}
-              </div>
+            <CardContent className="space-y-4">
+              {readNotifications.map(renderNotificationCard)}
             </CardContent>
           </Card>
         )}
 
-        {/* Empty State */}
         {notifications.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center">
               <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">{t('noNotifications')}</p>
-              <p className="text-sm text-gray-400 mt-2">{t('noNotificationsDesc')}</p>
+              <p className="text-sm text-gray-400 mt-2">
+                {t('noNotificationsDesc')}
+              </p>
             </CardContent>
           </Card>
         )}

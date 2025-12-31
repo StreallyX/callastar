@@ -18,6 +18,8 @@ export default function CallsPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard.user.calls');
+  const st = useTranslations('dashboard.user.status');
+
   const [user, setUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,10 +33,12 @@ export default function CallsPage() {
       const userResponse = await fetch('/api/auth/me', {
         credentials: 'include',
       });
+
       if (!userResponse.ok) {
         router.push('/auth/login');
         return;
       }
+
       const userData = await userResponse.json();
       setUser(userData?.user);
 
@@ -45,6 +49,7 @@ export default function CallsPage() {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error(t('errors.load'));
     } finally {
       setLoading(false);
     }
@@ -54,22 +59,22 @@ export default function CallsPage() {
     try {
       const response = await fetch(`/api/bookings/${bookingId}/calendar`);
       if (!response.ok) {
-        throw new Error('Impossible de télécharger le fichier calendrier');
+        throw new Error();
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `appel-${bookingId}.ics`;
+      a.download = `call-${bookingId}.ics`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
-      toast.success('Fichier calendrier téléchargé !');
+
+      toast.success(t('calendar.downloadSuccess'));
     } catch (error) {
-      toast.error('Erreur lors du téléchargement');
+      toast.error(t('calendar.downloadError'));
     }
   };
 
@@ -86,35 +91,37 @@ export default function CallsPage() {
 
   const upcomingBookings = bookings.filter((b: any) => {
     const callDate = new Date(b?.callOffer?.dateTime ?? new Date());
-    return (b?.status === 'CONFIRMED' || b?.status === 'PENDING') && callDate.getTime() > Date.now();
+    return (
+      (b?.status === 'CONFIRMED' || b?.status === 'PENDING') &&
+      callDate.getTime() > Date.now()
+    );
   });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'CONFIRMED':
-        return <Badge className="bg-green-500">Confirmé</Badge>;
+        return <Badge className="bg-green-500">{st('confirmed')}</Badge>;
       case 'PENDING':
-        return <Badge className="bg-yellow-500">En attente</Badge>;
+        return <Badge className="bg-yellow-500">{st('pending')}</Badge>;
       case 'COMPLETED':
-        return <Badge variant="outline">Terminé</Badge>;
+        return <Badge variant="outline">{st('completed')}</Badge>;
       case 'CANCELLED':
-        return <Badge variant="destructive">Annulé</Badge>;
+        return <Badge variant="destructive">{st('cancelled')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
   const canJoinCall = (booking: any) => {
-    // 🧪 Les bookings de test sont toujours accessibles
     if (booking?.isTestBooking) {
       return true;
     }
-    
+
     const callTime = new Date(booking?.callOffer?.dateTime ?? new Date()).getTime();
     const now = Date.now();
     const fifteenMinutesBefore = callTime - 15 * 60 * 1000;
     const twentyFourHoursAfter = callTime + 24 * 60 * 60 * 1000;
-    
+
     return now >= fifteenMinutesBefore && now <= twentyFourHoursAfter;
   };
 
@@ -142,80 +149,85 @@ export default function CallsPage() {
             <CardTitle>{t('title')}</CardTitle>
             <CardDescription>{t('subtitle')}</CardDescription>
           </CardHeader>
+
           <CardContent>
             {upcomingBookings.length > 0 ? (
               <div className="space-y-4">
-                {upcomingBookings.map((booking: any) => {
-                  return (
-                    <Card key={booking?.id}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-2 flex-1">
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <h3 className="font-semibold text-lg">{booking?.callOffer?.title}</h3>
-                              {getStatusBadge(booking?.status)}
-                              {booking?.isTestBooking && (
-                                <Badge className="bg-blue-500 text-white">
-                                  🧪 Mode Test
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-gray-600">{t('with')} {booking?.callOffer?.creator?.user?.name}</p>
-                            
-                            {/* Date with timezone */}
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                              <Calendar className="w-4 h-4" />
-                              <DateTimeDisplay 
-                                date={booking?.callOffer?.dateTime}
-                                timezone={user?.timezone}
-                                format="full"
-                              />
-                            </div>
-                            
-                            {/* Time countdown */}
-                            <div className="flex items-center gap-2 text-sm font-medium text-purple-600">
-                              <Clock className="w-4 h-4" />
-                              <LiveCountdown 
-                                date={booking?.callOffer?.dateTime}
-                                timezone={user?.timezone}
-                              />
-                            </div>
-                            
-                            <div className="text-sm text-gray-500">
-                              {t('duration')}: {booking?.callOffer?.duration} minutes
-                            </div>
-                            
-                            <div className="text-sm text-gray-500">
-                              <CurrencyDisplay 
-                                amount={Number(booking?.totalPrice)} 
-                                currency={booking?.callOffer?.currency || 'EUR'} 
-                              />
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            {canJoinCall(booking) && (
-                              <Button
-                                onClick={() => router.push(`/call/${booking?.id}`)}
-                                className="bg-gradient-to-r from-purple-600 to-pink-600"
-                              >
-                                <Video className="w-4 h-4 mr-2" />
-                                {t('join')}
-                              </Button>
+                {upcomingBookings.map((booking: any) => (
+                  <Card key={booking?.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <h3 className="font-semibold text-lg">
+                              {booking?.callOffer?.title}
+                            </h3>
+                            {getStatusBadge(booking?.status)}
+                            {booking?.isTestBooking && (
+                              <Badge className="bg-blue-500 text-white">
+                                {t('testMode')}
+                              </Badge>
                             )}
-                            <Button
-                              onClick={() => handleDownloadCalendar(booking?.id)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Calendar
-                            </Button>
+                          </div>
+
+                          <p className="text-sm text-gray-600">
+                            {t('with')} {booking?.callOffer?.creator?.user?.name}
+                          </p>
+
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Calendar className="w-4 h-4" />
+                            <DateTimeDisplay
+                              date={booking?.callOffer?.dateTime}
+                              timezone={user?.timezone}
+                              format="full"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-2 text-sm font-medium text-purple-600">
+                            <Clock className="w-4 h-4" />
+                            <LiveCountdown
+                              date={booking?.callOffer?.dateTime}
+                              timezone={user?.timezone}
+                            />
+                          </div>
+
+                          <div className="text-sm text-gray-500">
+                            {t('duration')} : {booking?.callOffer?.duration}{' '}
+                            {t('minutes')}
+                          </div>
+
+                          <div className="text-sm text-gray-500">
+                            <CurrencyDisplay
+                              amount={Number(booking?.totalPrice)}
+                              currency={booking?.callOffer?.currency || 'EUR'}
+                            />
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+
+                        <div className="flex flex-col gap-2">
+                          {canJoinCall(booking) && (
+                            <Button
+                              onClick={() => router.push(`/call/${booking?.id}`)}
+                              className="bg-gradient-to-r from-purple-600 to-pink-600"
+                            >
+                              <Video className="w-4 h-4 mr-2" />
+                              {t('join')}
+                            </Button>
+                          )}
+
+                          <Button
+                            onClick={() => handleDownloadCalendar(booking?.id)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            {t('calendar.download')}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : (
               <div className="py-12 text-center">
@@ -223,7 +235,7 @@ export default function CallsPage() {
                 <p className="text-gray-500">{t('noCalls')}</p>
                 <Link href="/creators">
                   <Button variant="outline" className="mt-4">
-                    Browse Creators
+                    {t('browseCreators')}
                   </Button>
                 </Link>
               </div>

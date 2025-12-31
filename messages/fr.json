@@ -409,70 +409,142 @@
         "reviewLeft": "Avis laissé"
       },
       "requests": {
-        "title": "Mes Demandes",
-        "description": "Demandes que vous avez envoyées aux créateurs",
-        "noRequests": "Aucune demande envoyée",
-        "noRequestsDescription": "Visitez un profil de créateur pour proposer un appel",
+        "title": "Demandes d’appel",
+        "subtitle": "Consultez les demandes d’appel que vous avez envoyées",
+        "backToDashboard": "Retour au tableau de bord",
+
         "requestTo": "Demande à",
-        "pending": "En attente",
-        "accepted": "Acceptée",
-        "rejected": "Refusée",
         "sentOn": "Envoyé le",
-        "subtitle": "Suivez vos demandes envoyées aux créateurs",
-        "visitCreatorProfile": "Visitez un profil de créateur pour proposer un appel",
-        "proposedDate": "Date proposée",
-        "backToDashboard": "Retour au dashboard"
+
+        "noRequests": "Vous n’avez envoyé aucune demande d’appel.",
+        "visitCreatorProfile": "Rendez-vous sur le profil d’un créateur pour lui envoyer une demande.",
+        "browseCreators": "Parcourir les créateurs",
+
+        "status": {
+          "pending": "En attente",
+          "accepted": "Acceptée",
+          "rejected": "Rejetée"
+        },
+
+        "stats": {
+          "pending": "En attente",
+          "accepted": "Acceptées",
+          "rejected": "Rejetées"
+        },
+
+        "sections": {
+          "pending": "Demandes en attente",
+          "pendingDesc": "En attente de réponse du créateur",
+          "accepted": "Demandes acceptées",
+          "acceptedDesc": "Ces demandes ont été acceptées par le créateur",
+          "rejected": "Demandes rejetées",
+          "rejectedDesc": "Ces demandes ont été rejetées"
+        }
       },
       "history": {
-        "title": "Historique des Appels",
-        "description": "Appels passés et terminés",
-        "noHistory": "Aucun appel terminé",
-        "noHistoryDescription": "Votre historique d'appels apparaîtra ici",
-        "viewSummary": "Voir le résumé",
-        "subtitle": "Tous vos appels passés",
-        "reviewLeft": "Avis laissé",
+        "title": "Historique des appels",
+        "subtitle": "Consultez vos appels passés et laissez un avis",
+        "backToDashboard": "Retour au tableau de bord",
+
+        "pastCalls": "Appels passés",
+        "count": "Vous avez {count} appel(s) dans l’historique",
+        "with": "Avec",
+        "noCalls": "Vous n’avez aucun appel dans votre historique.",
+        "reviewLeft": "Avis déjà laissé",
         "leaveReview": "Laisser un avis",
-        "noCalls": "Aucun appel passé",
-        "backToDashboard": "Retour au dashboard"
+        "errors": {
+          "load": "Impossible de charger l’historique des appels"
+        }
       },
       "calls": {
-        "title": "Mes Appels à Venir",
-        "subtitle": "Tous vos appels confirmés et à venir",
-        "youHave": "Vous avez {count} appel(s) à venir",
-        "noUpcoming": "Aucun appel à venir",
-        "exploreCreators": "Parcourir les créateurs",
-        "confirmBook": "Confirmé",
-        "pendingStatus": "En attente",
-        "duration": "Durée",
-        "join": "Rejoindre",
-        "noCalls": "Aucun appel à venir",
+        "title": "Mes appels",
+        "subtitle": "Retrouvez ici vos appels à venir",
+        "backToDashboard": "Retour au tableau de bord",
         "with": "Avec",
-        "price": "Prix",
-        "backToDashboard": "Retour au dashboard"
+        "duration": "Durée",
+        "minutes": "minutes",
+        "join": "Rejoindre l’appel",
+        "noCalls": "Vous n’avez aucun appel programmé pour le moment.",
+        "browseCreators": "Découvrir les créateurs",
+        "testMode": "🧪 Mode test",
+        "calendar": {
+          "download": "Ajouter au calendrier",
+          "downloadSuccess": "Fichier calendrier téléchargé avec succès",
+          "downloadError": "Erreur lors du téléchargement du calendrier"
+        },
+        "errors": {
+          "load": "Impossible de charger vos appels"
+        }
       },
-      "settings": {
+       "settings": {
         "title": "Paramètres du compte",
-        "profile": "Profil utilisateur",
-        "profileDesc": "Gérez vos informations personnelles",
-        "name": "Nom",
-        "email": "Email",
-        "role": "Rôle",
-        "save": "Enregistrer",
-        "saving": "Enregistrement...",
-        "subtitle": "Gérez vos préférences et informations personnelles",
+        "subtitle": "Gérez vos informations personnelles et vos préférences",
+        "backToDashboard": "Retour au tableau de bord",
+
         "yourName": "Votre nom",
-        "timezone": "Fuseau horaire",
-        "language": "Langue",
-        "saveChanges": "Enregistrer les modifications",
-        "backToDashboard": "Retour au dashboard"
+        "saveChanges": "Sauvegarder les modifications",
+        "saving": "Sauvegarde…",
+        "cancel": "Annuler",
+        "saveSuccess": "Paramètres sauvegardés avec succès",
+
+        "emailReadonly": "L’email ne peut pas être modifié. Contactez le support si nécessaire.",
+
+        "sections": {
+          "profile": "Informations de base",
+          "profileDesc": "Vos informations personnelles",
+          "timezone": "Fuseau horaire",
+          "timezoneDesc": "Configurez votre fuseau horaire pour afficher correctement les horaires des appels"
+        },
+
+        "fields": {
+          "name": "Nom",
+          "email": "Email"
+        },
+
+        "timezone": {
+          "detectedTitle": "Fuseau horaire détecté automatiquement",
+          "detectedToast": "Fuseau horaire détecté : {timezone}",
+          "current": "Fuseau horaire actuel",
+          "select": "Sélectionner un fuseau horaire",
+          "autoDetect": "Auto-détecter",
+          "hint": "Tous les horaires seront affichés dans ce fuseau horaire",
+          "preview": "Aperçu"
+        },
+
+        "errors": {
+          "load": "Erreur lors du chargement des données",
+          "save": "Erreur lors de la sauvegarde des paramètres"
+        }
       },
       "notifications": {
         "title": "Notifications",
-        "description": "Gérez vos notifications",
+        "backToDashboard": "Retour au tableau de bord",
+        "unreadCount": "{count} notification(s) non lue(s)",
         "noNotifications": "Aucune notification",
+        "noNotificationsDesc": "Vous serez informé ici des mises à jour importantes.",
+        "new": "Nouveau",
         "markAsRead": "Marquer comme lu",
-        "noNotificationsDesc": "Vous recevrez des notifications ici pour vos appels et demandes",
-        "backToDashboard": "Retour au dashboard"
+        "markAll": "Tout marquer comme lu",
+        "markAllSuccess": "Toutes les notifications ont été marquées comme lues",
+        "viewDetails": "Voir les détails",
+        "sections": {
+          "unread": "Nouvelles notifications",
+          "unreadCount": "{count} notification(s) non lue(s)",
+          "read": "Notifications lues",
+          "readCount": "{count} notification(s) lue(s)"
+        },
+        "types": {
+          "BOOKING_CONFIRMED": "Réservation",
+          "BOOKING_CANCELLED": "Annulation",
+          "CALL_REQUEST": "Demande",
+          "REVIEW_RECEIVED": "Avis",
+          "PAYMENT_RECEIVED": "Paiement",
+          "DEFAULT": "Notification"
+        },
+        "errors": {
+          "load": "Impossible de charger les notifications",
+          "update": "Erreur lors de la mise à jour des notifications"
+        }
       },
       "booking": {
         "with": "avec",

@@ -6,7 +6,14 @@ import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, Loader2, Star, ArrowLeft } from 'lucide-react';
@@ -20,9 +27,12 @@ export default function HistoryPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard.user.history');
+  const st = useTranslations('dashboard.user');
+
   const [user, setUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
@@ -37,10 +47,12 @@ export default function HistoryPage() {
       const userResponse = await fetch('/api/auth/me', {
         credentials: 'include',
       });
+
       if (!userResponse.ok) {
         router.push('/auth/login');
         return;
       }
+
       const userData = await userResponse.json();
       setUser(userData?.user);
 
@@ -51,6 +63,7 @@ export default function HistoryPage() {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error(t('errors.load'));
     } finally {
       setLoading(false);
     }
@@ -76,10 +89,10 @@ export default function HistoryPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Échec de l\'envoi de l\'avis');
+        throw new Error(data.error || st('review.submitError'));
       }
 
-      toast.success('Avis envoyé avec succès!');
+      toast.success(st('review.submitSuccess'));
       setReviewDialogOpen(false);
       setReviewData({ rating: 5, comment: '' });
       setSelectedBooking(null);
@@ -110,13 +123,13 @@ export default function HistoryPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'CONFIRMED':
-        return <Badge className="bg-green-500">Confirmé</Badge>;
+        return <Badge className="bg-green-500">{st('status.confirmed')}</Badge>;
       case 'PENDING':
-        return <Badge className="bg-yellow-500">En attente</Badge>;
+        return <Badge className="bg-yellow-500">{st('status.pending')}</Badge>;
       case 'COMPLETED':
-        return <Badge variant="outline">Terminé</Badge>;
+        return <Badge variant="outline">{st('status.completed')}</Badge>;
       case 'CANCELLED':
-        return <Badge variant="destructive">Annulé</Badge>;
+        return <Badge variant="destructive">{st('status.cancelled')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -135,7 +148,7 @@ export default function HistoryPage() {
           <Link href="/dashboard/user">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
         </div>
@@ -147,9 +160,12 @@ export default function HistoryPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Appels passés</CardTitle>
-            <CardDescription>Vous avez {pastBookings.length} appel(s) dans l'historique</CardDescription>
+            <CardTitle>{t('pastCalls')}</CardTitle>
+            <CardDescription>
+              {t('count', { count: pastBookings.length })}
+            </CardDescription>
           </CardHeader>
+
           <CardContent>
             {pastBookings.length > 0 ? (
               <div className="space-y-4">
@@ -167,24 +183,35 @@ export default function HistoryPage() {
                         <div className="flex items-start justify-between">
                           <div className="space-y-2 flex-1">
                             <div className="flex items-center gap-3">
-                              <h3 className="font-semibold text-lg">{booking?.callOffer?.title}</h3>
+                              <h3 className="font-semibold text-lg">
+                                {booking?.callOffer?.title}
+                              </h3>
                               {getStatusBadge(booking?.status)}
                             </div>
-                            <p className="text-sm text-gray-600">avec {booking?.callOffer?.creator?.user?.name}</p>
+
+                            <p className="text-sm text-gray-600">
+                              {t('with')} {booking?.callOffer?.creator?.user?.name}
+                            </p>
+
                             <p className="text-sm text-gray-500">{formattedDate}</p>
+
                             <div className="text-sm text-gray-500">
-                              <CurrencyDisplay 
-                                amount={Number(booking?.totalPrice)} 
-                                currency={booking?.callOffer?.currency || 'EUR'} 
+                              <CurrencyDisplay
+                                amount={Number(booking?.totalPrice)}
+                                currency={booking?.callOffer?.currency || 'EUR'}
                               />
                             </div>
+
                             {booking?.review && (
                               <div className="flex items-center gap-2 mt-2">
                                 <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span className="text-sm text-green-600">{t('reviewLeft')}</span>
+                                <span className="text-sm text-green-600">
+                                  {t('reviewLeft')}
+                                </span>
                               </div>
                             )}
                           </div>
+
                           {canLeaveReview(booking) && (
                             <Button
                               onClick={() => {
@@ -213,26 +240,30 @@ export default function HistoryPage() {
         </Card>
       </div>
 
-      {/* Review Dialog */}
+      {/* Review dialog */}
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <form onSubmit={handleSubmitReview}>
             <DialogHeader>
-              <DialogTitle>Laisser un avis</DialogTitle>
+              <DialogTitle>{st('review.title')}</DialogTitle>
               <DialogDescription>
-                Partagez votre expérience avec {selectedBooking?.callOffer?.creator?.user?.name}
+                {st('review.description', {
+                  name: selectedBooking?.callOffer?.creator?.user?.name,
+                })}
               </DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>Note</Label>
+                <Label>{st('review.rating')}</Label>
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
-                      onClick={() => setReviewData({ ...reviewData, rating: star })}
+                      onClick={() =>
+                        setReviewData({ ...reviewData, rating: star })
+                      }
                       className="transition-transform hover:scale-110"
                     >
                       <Star
@@ -248,13 +279,17 @@ export default function HistoryPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="comment">Commentaire (optionnel)</Label>
+                <Label htmlFor="comment">
+                  {st('review.comment')}
+                </Label>
                 <Textarea
                   id="comment"
-                  placeholder="Partagez votre expérience..."
+                  placeholder={st('review.commentPlaceholder')}
                   className="min-h-[100px]"
                   value={reviewData.comment}
-                  onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+                  onChange={(e) =>
+                    setReviewData({ ...reviewData, comment: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -269,14 +304,15 @@ export default function HistoryPage() {
                 }}
                 disabled={submittingReview}
               >
-                Annuler
+                {st('review.cancel')}
               </Button>
+
               <Button
                 type="submit"
                 disabled={submittingReview}
                 className="bg-gradient-to-r from-purple-600 to-pink-600"
               >
-                {submittingReview ? 'Envoi...' : 'Envoyer l\'avis'}
+                {submittingReview ? st('review.submitting') : st('review.submit')}
               </Button>
             </DialogFooter>
           </form>

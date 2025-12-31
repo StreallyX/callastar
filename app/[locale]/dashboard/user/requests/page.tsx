@@ -16,6 +16,7 @@ export default function RequestsPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('dashboard.user.requests');
+
   const [user, setUser] = useState<any>(null);
   const [callRequests, setCallRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,10 +30,12 @@ export default function RequestsPage() {
       const userResponse = await fetch('/api/auth/me', {
         credentials: 'include',
       });
+
       if (!userResponse.ok) {
         router.push('/auth/login');
         return;
       }
+
       const userData = await userResponse.json();
       setUser(userData?.user);
 
@@ -70,9 +73,9 @@ export default function RequestsPage() {
   };
 
   const statusLabels = {
-    PENDING: t('pending'),
-    ACCEPTED: t('accepted'),
-    REJECTED: t('rejected'),
+    PENDING: t('status.pending'),
+    ACCEPTED: t('status.accepted'),
+    REJECTED: t('status.rejected'),
   };
 
   const renderRequestCard = (request: any) => (
@@ -81,30 +84,52 @@ export default function RequestsPage() {
         <div className="flex items-start justify-between">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-3">
-              <h3 className="font-semibold text-lg">{t('requestTo')} {request?.creator?.user?.name}</h3>
-              <Badge className={statusColors[request.status as keyof typeof statusColors]}>
-                {statusLabels[request.status as keyof typeof statusLabels]}
+              <h3 className="font-semibold text-lg">
+                {t('requestTo')} {request?.creator?.user?.name}
+              </h3>
+              <Badge
+                className={
+                  statusColors[
+                    request.status as keyof typeof statusColors
+                  ]
+                }
+              >
+                {
+                  statusLabels[
+                    request.status as keyof typeof statusLabels
+                  ]
+                }
               </Badge>
             </div>
+
             <div className="flex items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
-                <span>{new Date(request.proposedDateTime).toLocaleString(locale)}</span>
+                <span>
+                  {new Date(
+                    request.proposedDateTime
+                  ).toLocaleString(locale)}
+                </span>
               </div>
               <span>•</span>
-              <CurrencyDisplay 
-                amount={Number(request.proposedPrice)} 
-                currency={request?.creator?.currency || 'EUR'} 
+              <CurrencyDisplay
+                amount={Number(request.proposedPrice)}
+                currency={request?.creator?.currency || 'EUR'}
               />
             </div>
+
             {request.message && (
               <div className="flex items-start gap-2 mt-2">
                 <MessageSquare className="w-4 h-4 mt-0.5 text-gray-400" />
-                <p className="text-sm text-gray-600">{request.message}</p>
+                <p className="text-sm text-gray-600">
+                  {request.message}
+                </p>
               </div>
             )}
+
             <p className="text-xs text-gray-400">
-              Envoyé le {new Date(request.createdAt).toLocaleDateString(locale)}
+              {t('sentOn')}{' '}
+              {new Date(request.createdAt).toLocaleDateString(locale)}
             </p>
           </div>
         </div>
@@ -121,101 +146,121 @@ export default function RequestsPage() {
           <Link href="/dashboard/user">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au dashboard
+              {t('backToDashboard')}
             </Button>
           </Link>
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
-          <p className="text-gray-600">{t('subtitle')}</p>
+          <h1 className="text-3xl font-bold mb-2">
+            {t('title')}
+          </h1>
+          <p className="text-gray-600">
+            {t('subtitle')}
+          </p>
         </div>
 
         {/* Statistics */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-3">
-              <CardDescription>En attente</CardDescription>
+              <CardDescription>
+                {t('stats.pending')}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{pendingRequests.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Acceptées</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">{acceptedRequests.length}</div>
+              <div className="text-3xl font-bold text-yellow-600">
+                {pendingRequests.length}
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
-              <CardDescription>Rejetées</CardDescription>
+              <CardDescription>
+                {t('stats.accepted')}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-600">{rejectedRequests.length}</div>
+              <div className="text-3xl font-bold text-green-600">
+                {acceptedRequests.length}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>
+                {t('stats.rejected')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-red-600">
+                {rejectedRequests.length}
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Pending Requests */}
+        {/* Pending */}
         {pendingRequests.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Demandes en attente</CardTitle>
-              <CardDescription>En attente de réponse du créateur</CardDescription>
+              <CardTitle>{t('sections.pending')}</CardTitle>
+              <CardDescription>
+                {t('sections.pendingDesc')}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {pendingRequests.map(renderRequestCard)}
-              </div>
+            <CardContent className="space-y-4">
+              {pendingRequests.map(renderRequestCard)}
             </CardContent>
           </Card>
         )}
 
-        {/* Accepted Requests */}
+        {/* Accepted */}
         {acceptedRequests.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Demandes acceptées</CardTitle>
-              <CardDescription>Ces demandes ont été acceptées par le créateur</CardDescription>
+              <CardTitle>{t('sections.accepted')}</CardTitle>
+              <CardDescription>
+                {t('sections.acceptedDesc')}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {acceptedRequests.map(renderRequestCard)}
-              </div>
+            <CardContent className="space-y-4">
+              {acceptedRequests.map(renderRequestCard)}
             </CardContent>
           </Card>
         )}
 
-        {/* Rejected Requests */}
+        {/* Rejected */}
         {rejectedRequests.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Demandes rejetées</CardTitle>
-              <CardDescription>Ces demandes ont été rejetées</CardDescription>
+              <CardTitle>{t('sections.rejected')}</CardTitle>
+              <CardDescription>
+                {t('sections.rejectedDesc')}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {rejectedRequests.map(renderRequestCard)}
-              </div>
+            <CardContent className="space-y-4">
+              {rejectedRequests.map(renderRequestCard)}
             </CardContent>
           </Card>
         )}
 
-        {/* Empty State */}
+        {/* Empty */}
         {callRequests.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center">
               <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">{t('noRequests')}</p>
-              <p className="text-sm text-gray-400 mt-2">{t('visitCreatorProfile')}</p>
+              <p className="text-gray-500">
+                {t('noRequests')}
+              </p>
+              <p className="text-sm text-gray-400 mt-2">
+                {t('visitCreatorProfile')}
+              </p>
               <Link href="/creators">
                 <Button variant="outline" className="mt-4">
-                  Parcourir les créateurs
+                  {t('browseCreators')}
                 </Button>
               </Link>
             </CardContent>
