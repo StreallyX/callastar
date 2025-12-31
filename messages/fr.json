@@ -1343,35 +1343,8 @@
       }
     },
     "admin": {
-      "admin": {
       "common": {
         "loading": "Chargement…"
-      },
-      "payments": {
-        "loading": "Chargement des paiements…",
-        "filters": {
-          "status": "Statut",
-          "statusSucceeded": "Réussi",
-          "statusFailed": "Échoué",
-          "statusPending": "En attente",
-          "statusRefunded": "Remboursé",
-          "search": "Rechercher",
-          "searchPlaceholder": "Rechercher par utilisateur, ID ou montant"
-        }
-        },
-        "payouts": {
-          "statusRequested": "Demandé",
-          "statusApproved": "Approuvé",
-          "statusProcessing": "En cours de traitement",
-          "statusPaid": "Payé",
-          "statusFailed": "Échec",
-          "statusRejected": "Rejeté",
-          "statusCanceled": "Annulé"
-        },
-
-        "settings": {
-          "loading": "Chargement des paramètres…"
-        }
       },
       "title": "Admin Dashboard",
       "welcome": "Bienvenue, {name}",
@@ -1428,6 +1401,13 @@
         "noUsers": "Aucun utilisateur trouvé"
       },
       "payouts": {
+        "statusRequested": "Demandé",
+        "statusApproved": "Approuvé",
+        "statusProcessing": "En cours de traitement",
+        "statusPaid": "Payé",
+        "statusFailed": "Échec",
+        "statusRejected": "Rejeté",
+        "statusCanceled": "Annulé",
         "title": "Gestion des paiements",
         "description": "Paiements aux créateurs",
         "new": "Nouveau paiement",
@@ -1474,7 +1454,9 @@
         "stripeMode": "Mode Stripe",
         "administrator": "Administrateur",
         "platformFee": "Frais de plateforme",
-        "backToDashboard": "Retour au dashboard"
+        "backToDashboard": "Retour au dashboard",
+        "loading": "Chargement des paramètres…"
+
       },
       "testing": {
         "title": "Tests & Outils",
@@ -1490,7 +1472,17 @@
         "amount": "Montant",
         "status": "Statut",
         "date": "Date",
-        "backToDashboard": "Retour au dashboard"
+        "backToDashboard": "Retour au dashboard",
+        "loading": "Chargement des paiements…",
+        "filters": {
+          "status": "Statut",
+          "statusSucceeded": "Réussi",
+          "statusFailed": "Échoué",
+          "statusPending": "En attente",
+          "statusRefunded": "Remboursé",
+          "search": "Rechercher",
+          "searchPlaceholder": "Rechercher par utilisateur, ID ou montant"
+        }
       },
       "logs": {
         "noLogFound": "Aucun log trouvé",
