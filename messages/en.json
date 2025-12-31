@@ -170,10 +170,10 @@
       "accountType": "Account Type",
       "accountTypePlaceholder": "Select a type",
       "userRole": "User (Fan)",
+      "creatorRole": "Creator (Influencer)",
       "termsAcceptance": "I accept the",
       "termsLink": "terms of service",
       "termsRequired": "You must accept the terms of service to continue",
-      "creatorRole": "Creator (Influencer)",
       "registerButton": "Sign up",
       "registering": "Signing up...",
       "orContinueWith": "Or continue with",
@@ -410,69 +410,129 @@
       },
       "requests": {
         "title": "My Requests",
-        "description": "Requests you sent to creators",
-        "noRequests": "No requests sent",
-        "noRequestsDescription": "Visit a creator's profile to propose a call",
-        "requestTo": "Request to",
-        "pending": "Pending",
-        "accepted": "Accepted",
-        "rejected": "Rejected",
-        "sentOn": "Sent on",
         "subtitle": "Track your requests sent to creators",
+        "backToDashboard": "Back to dashboard",
+        "requestTo": "Request to",
+        "sentOn": "Sent on",
+        "noRequests": "No requests sent",
         "visitCreatorProfile": "Visit a creator profile to propose a call",
-        "proposedDate": "Proposed date",
-        "backToDashboard": "Back to dashboard"
+        "browseCreators": "Browse creators",
+        "status": {
+          "pending": "On hold",
+          "accepted": "Accepted",
+          "rejected": "Rejected"
+        },
+        "stats": {
+          "pending": "On hold",
+          "accepted": "Accepted",
+          "rejected": "Rejected"
+        },
+        "sections": {
+          "pending": "Pending requests",
+          "pendingDesc": "Waiting for response from creator",
+          "accepted": "Requests accepted",
+          "acceptedDesc": "These requests were accepted by the creator",
+          "rejected": "Requests rejected",
+          "rejectedDesc": "These requests were rejected"
+        }
       },
       "history": {
         "title": "Call History",
-        "description": "Past and completed calls",
-        "noHistory": "No completed calls",
-        "noHistoryDescription": "Your call history will appear here",
-        "viewSummary": "View Summary",
         "subtitle": "All your past calls",
+        "backToDashboard": "Back to dashboard",
+        "pastCalls": "Calls made",
+        "count": "You have {count} call(s) in the history",
+        "with": "With",
+        "noCalls": "No past calls",
         "reviewLeft": "Review left",
         "leaveReview": "Leave a review",
-        "noCalls": "No past calls",
-        "backToDashboard": "Back to dashboard"
+        "errors": {
+          "load": "Unable to load call history"
+        }
       },
       "calls": {
         "title": "My Upcoming Calls",
         "subtitle": "All your confirmed and upcoming calls",
-        "youHave": "You have {count} upcoming call(s)",
-        "noUpcoming": "No upcoming calls",
-        "exploreCreators": "Browse Creators",
-        "confirmBook": "Confirmed",
-        "pendingStatus": "Pending",
+        "backToDashboard": "Back to dashboard",
+        "with": "With",
         "duration": "Duration",
+        "minutes": "minutes",
         "join": "Join",
         "noCalls": "No upcoming calls",
-        "with": "With",
-        "price": "Price",
-        "backToDashboard": "Back to dashboard"
+        "browseCreators": "Discover the creators",
+        "testMode": "🧪 Test mode",
+        "calendar": {
+          "download": "Add to calendar",
+          "downloadSuccess": "Calendar file downloaded successfully",
+          "downloadError": "Error downloading calendar"
+        },
+        "errors": {
+          "load": "Unable to load your calls"
+        }
       },
       "settings": {
         "title": "Account settings",
-        "profile": "User Profile",
-        "profileDesc": "Manage your personal information",
-        "name": "Name",
-        "email": "Email",
-        "role": "Role",
-        "save": "Save",
-        "saving": "Saving...",
         "subtitle": "Manage your preferences and personal information",
+        "backToDashboard": "Back to dashboard",
         "yourName": "Your name",
-        "timezone": "Timezone",
-        "language": "Language",
         "saveChanges": "Save changes",
-        "backToDashboard": "Back to dashboard"
+        "saving": "Saving...",
+        "cancel": "Cancel",
+        "saveSuccess": "Settings saved successfully",
+        "emailReadonly": "The email cannot be modified. Contact support if necessary.",
+        "sections": {
+          "profile": "Basic information",
+          "profileDesc": "Your personal information",
+          "timezone": "Time zone",
+          "timezoneDesc": "Configure your time zone to display call times correctly"
+        },
+        "fields": {
+          "name": "Name",
+          "email": "E-mail"
+        },
+        "timezone": {
+          "detectedTitle": "Time zone detected automatically",
+          "detectedToast": "Time zone detected: {timezone}",
+          "current": "Current time zone",
+          "select": "Select a time zone",
+          "autoDetect": "Auto-detect",
+          "hint": "All times will be displayed in that time zone",
+          "preview": "Preview"
+        },
+        "errors": {
+          "load": "Error loading data",
+          "save": "Error saving settings"
+        }
       },
       "notifications": {
         "title": "Notifications",
-        "description": "Manage your notifications",
+        "backToDashboard": "Back to dashboard",
+        "unreadCount": "{count} unread notification(s)",
         "noNotifications": "No notifications",
-        "markAsRead": "Mark as read",
         "noNotificationsDesc": "You will receive notifications here for your calls and requests",
-        "backToDashboard": "Back to dashboard"
+        "new": "New",
+        "markAsRead": "Mark as read",
+        "markAll": "Mark all as read",
+        "markAllSuccess": "All notifications have been marked as read",
+        "viewDetails": "See details",
+        "sections": {
+          "unread": "New notifications",
+          "unreadCount": "{count} unread notification(s)",
+          "read": "Notifications read",
+          "readCount": "{count} notification(s) read"
+        },
+        "types": {
+          "BOOKING_CONFIRMED": "Reservation",
+          "BOOKING_CANCELLED": "Cancelation",
+          "CALL_REQUEST": "Request",
+          "REVIEW_RECEIVED": "Notice",
+          "PAYMENT_RECEIVED": "Payment",
+          "DEFAULT": "Notification"
+        },
+        "errors": {
+          "load": "Unable to load notifications",
+          "update": "Error updating notifications"
+        }
       },
       "booking": {
         "with": "with",
@@ -498,7 +558,8 @@
         "submitting": "Submitting...",
         "cancel": "Cancel",
         "success": "Review sent successfully!",
-        "error": "Failed to send review"
+        "error": "Failed to send review",
+        "alreadyReviewed": "Already rated"
       },
       "main": {
         "reviewPlaceholder": "Share your experience..."
@@ -534,7 +595,6 @@
       "welcome": "Welcome, {name}",
       "navigation": "Navigation",
       "paymentSetup": {
-        "title": "Payment Setup",
         "required": "Payment setup required",
         "description": "Manage your Stripe account and payments",
         "completeSetup": "To receive your payments automatically via Stripe Connect, you must complete your setup. This only takes a few minutes.",
@@ -554,7 +614,190 @@
         "incompleteConfig": "Incomplete configuration",
         "stripeAccountCreated": "Stripe account created",
         "accountOperational": "Account operational",
-        "accountConfigured": "Your Stripe account is properly configured."
+        "accountConfigured": "Your Stripe account is properly configured.",
+        "title": "Payment Setup",
+        "subtitle": "Configure your Stripe Connect account to receive your payments",
+        "status": {
+          "title": "Stripe Status",
+          "description": "Actual status of your Stripe Connect account"
+        },
+        "badges": {
+          "complete": "Payments enabled",
+          "inProgress": "Action required",
+          "incomplete": "Not configured"
+        },
+        "steps": {
+          "accountCreated": "Stripe account created",
+          "detailsSubmitted": "Information submitted",
+          "operational": "Operational account"
+        },
+        "issues": {
+          "title": "Problems detected"
+        },
+        "actionRequired": "Action required",
+        "success": "Your Stripe account is correctly configured.",
+        "cta": "Configure Stripe",
+        "redirecting": "Redirect…"
+      },
+      "earnings": {
+        "title": "My Earnings",
+        "subtitle": "View your earnings and statistics",
+        "backToDashboard": "Back to dashboard",
+        "loadError": "Unable to load income. Please try again.",
+        "totalTransferred": "Total won",
+        "onStripeAccount": "Present on your Stripe account",
+        "pending": "Pending",
+        "securityPeriod": "Security period",
+        "available": "Available",
+        "readyForTransfer": "Ready to transfer",
+        "requestPayout": "Request payment",
+        "requestPayoutDesc": "Go to the payments page to request a transfer to your bank account.",
+        "requestPayoutInfo": "You can request a manual transfer as soon as funds are available.",
+        "payouts": "Payments",
+        "paymentHistory": "Payment history",
+        "paymentHistoryDesc": "View all your past payments and transactions.",
+        "view": "View",
+        "recentPayments": "Recent payments",
+        "recentPaymentsDesc": "The latest payments generated by your calls.",
+        "viewAllPayments": "View all payments",
+        "availability": "Availability",
+        "availabilityDesc": "Once the security period ends, the funds become available for payment.",
+        "automaticTransfer": "Automatic transfer",
+        "automaticTransferDesc": "Stripe can perform automatic transfers depending on your account configuration.",
+        "bankSetup": "Bank setup",
+        "bankSetupDesc": "Make sure your bank account is set up correctly in your",
+        "stripeDashboard": "Stripe dashboard",
+        "howItWorks": "How it works",
+        "alreadyInStripe": "Already in your Stripe account",
+        "availableForPayout": "Available for payout",
+        "noEarnings": "No earnings yet",
+        "pendingPayments": "Pending payments",
+        "recentPaymentsSubtitle": "Your latest received payments",
+        "totalEarnings": "Total Earnings",
+        "totalPayouts": "Total Payouts",
+        "viewPayouts": "Payouts"
+      },
+      "calls": {
+        "title": "My Calls",
+        "subtitle": "Manage your past and upcoming calls",
+        "backToDashboard": "Return to dashboard",
+        "loadError": "Unable to load calls. Please try again.",
+        "total": "Total",
+        "upcoming": "Upcoming Calls",
+        "past": "Past Calls",
+        "cancelled": "Canceled",
+        "filters": {
+          "all": "All",
+          "upcoming": "Upcoming",
+          "past": "Past",
+          "cancelled": "Cancelled"
+        },
+        "status": {
+          "confirmed": "Confirmed",
+          "pending": "On hold",
+          "completed": "Finished",
+          "cancelled": "Canceled",
+          "past": "Pass",
+          "testMode": "Test Mode",
+          "with": "With:"
+        },
+        "actions": {
+          "join": "Join",
+          "startingSoon": "Starting Soon"
+        },
+        "noCallsFor": {
+          "all": "No calls",
+          "upcoming": "No upcoming calls",
+          "past": "No past calls",
+          "cancelled": "No cancelled calls"
+        },
+        "noCalls": "No scheduled calls",
+        "youHave": "You have {count} upcoming call(s)"
+      },
+      "fees": {
+        "backToDashboard": "Back to dashboard",
+        "title": "Fees and commissions",
+        "subtitle": "Understand how remuneration works on Call a Star",
+        "platformFee": "Platform commission",
+        "stripe": {
+          "title": "Payment fees (Stripe)",
+          "subtitle": "Credit card payment processing fees",
+          "details": "Payments are processed by Stripe, our secure payment provider.",
+          "standardFees": "Per transaction (Standard Stripe Europe fees)"
+        },
+        "example": {
+          "title": "Calculation example",
+          "subtitle": "For a call from {amount} EUR",
+          "paidByUser": "Amount paid by user",
+          "platformFee": "Platform fee ({fee}%)",
+          "stripeFee": "Stripe fees (2.9% + 0.30)",
+          "net": "You receive",
+          "percent": "Or approximately {percent}% of the total amount"
+        },
+        "notes": {
+          "title": "Important notes",
+          "amounts": "The amounts displayed are gross amounts. Fees are automatically deducted upon transfer.",
+          "security": "Payments are transferred after a 7-day security period to handle disputes and refunds.",
+          "payouts": "To transfer funds to your bank account, visit",
+          "payoutLink": "Payouts"
+        },
+        "calculationExample": "Calculation example",
+        "description": "Callastar takes a commission on each call",
+        "forACallOf": "For a call of",
+        "initialAmount": "Initial amount",
+        "netAmount": "Net amount received",
+        "paymentFees": "Payment fees (Stripe)",
+        "paymentFeesDesc": "Credit card payment processing fees",
+        "percentOf": "% of total amount",
+        "percentageNote": "Approximately",
+        "platformCommission": "Platform commission",
+        "platformCommissionDesc": "Call a Star takes a commission of",
+        "stripeFee": "Stripe fees (2.9% + 0.30)"
+      },
+      "notifications": {
+        "backToDashboard": "Back to dashboard",
+        "title": "Notifications",
+        "subtitle": "Manage your system and financial notifications",
+        "stats": {
+          "total": "Total",
+          "unread": "Unread",
+          "read": "Read"
+        },
+        "categories": {
+          "all": "All",
+          "payments": "Payments",
+          "payouts": "Payouts",
+          "bookings": "Appointment",
+          "disputes": "Disputes & refunds",
+          "system": "System"
+        },
+        "filters": {
+          "advanced": "Advanced filters",
+          "readStatus": "Reading status",
+          "type": "Specific type",
+          "all": "All",
+          "unread": "Unread",
+          "read": "Read"
+        },
+        "actions": {
+          "markAllRead": "Mark all as read",
+          "markRead": "Mark as read",
+          "delete": "DELETE",
+          "viewDetails": "See details"
+        },
+        "loading": "Loading...",
+        "empty": {
+          "title": "No notifications",
+          "subtitle": "You have no notifications at the moment"
+        },
+        "pagination": {
+          "page": "{current} page on {total}",
+          "previous": "Previous",
+          "next": "Following"
+        },
+        "confirmDelete": "Are you sure you want to delete this notification?",
+        "markAllRead": "Mark all as read",
+        "noNotifications": "No notifications"
       },
       "cards": {
         "offers": {
@@ -613,8 +856,8 @@
         "duration": "Duration",
         "dateTime": "Date and time",
         "creating": "Creating...",
-        "createButton": "Create",
         "durationMinutes": "Minutes",
+        "createButton": "Create",
         "deleteConfirm": "Are you sure you want to delete this offer?",
         "deleteSuccess": "Offer deleted successfully",
         "deleteError": "Unable to delete offer",
@@ -664,53 +907,6 @@
         "calendar": {
           "call": "Call",
           "user": "User"
-        }
-      },
-      "earnings": {
-        "title": "My Earnings",
-        "subtitle": "View your earnings and statistics",
-        "totalEarnings": "Total Earnings",
-        "available": "Available",
-        "pending": "Pending",
-        "totalPayouts": "Total Payouts",
-        "noEarnings": "No earnings yet",
-        "alreadyInStripe": "Already in your Stripe account",
-        "availableForPayout": "Available for payout",
-        "pendingPayments": "Pending payments",
-        "recentPayments": "Recent payments",
-        "recentPaymentsSubtitle": "Your latest received payments",
-        "viewAllPayments": "View all payments",
-        "viewPayouts": "Payouts",
-        "view": "View",
-        "backToDashboard": "Back to dashboard"
-      },
-      "calls": {
-        "title": "My Calls",
-        "subtitle": "Manage your past and upcoming calls",
-        "upcoming": "Upcoming Calls",
-        "past": "Past Calls",
-        "youHave": "You have {count} upcoming call(s)",
-        "noCalls": "No scheduled calls",
-        "filters": {
-          "all": "All",
-          "upcoming": "Upcoming",
-          "past": "Past",
-          "cancelled": "Cancelled"
-        },
-        "status": {
-          "confirmed": "Confirmed",
-          "testMode": "Test Mode",
-          "with": "With:"
-        },
-        "actions": {
-          "join": "Join",
-          "startingSoon": "Starting Soon"
-        },
-        "noCallsFor": {
-          "all": "No calls",
-          "upcoming": "No upcoming calls",
-          "past": "No past calls",
-          "cancelled": "No cancelled calls"
         }
       },
       "requests": {
@@ -764,25 +960,216 @@
       },
       "payments": {
         "title": "Payment History",
-        "subtitle": "View all your received payments",
-        "noPayments": "No payments yet",
         "amount": "Amount",
         "date": "Date",
         "from": "From",
-        "status": {
-          "transferred": "✓ Transferred",
-          "available": "✓ Available",
-          "pending": "⏳ Pending",
-          "processing": "⏳ Processing"
-        },
         "total": "Total payments",
         "availableOn": "Available on",
         "transferredOn": "Transferred on",
-        "backToDashboard": "Back to dashboard"
+        "backToDashboard": "Back to dashboard",
+        "subtitle": "View all your received payments",
+        "back": "Return to dashboard",
+        "transferred": "Payments transferred",
+        "pending": "On hold",
+        "available": "Available",
+        "allPayments": "All payments",
+        "allPaymentsDesc": "Complete history of payments received",
+        "noPayments": "No payments yet",
+        "loadError": "Unable to load payments",
+        "status": {
+          "paid": "✓ Transferred",
+          "ready": "✓ Available",
+          "held": "⏳ Waiting",
+          "pending": "⏳ Pending",
+          "processing": "⏳ Processing",
+          "available": "✓ Available",
+          "transferred": "✓ Transferred"
+        },
+        "info": {
+          "title": "📋 Information",
+          "amounts": "The amounts displayed correspond to the total amount paid by the user. Fees and commissions are detailed on the Fees and commissions page.",
+          "security": "Payments remain pending for 7 days to protect against disputes.",
+          "transfer": "After the security period, funds are automatically transferred to your Stripe Connect account.",
+          "payouts": "You can manage your bank transfers from the Payouts page."
+        }
       },
       "payouts": {
         "title": "Payments and transfers",
         "subtitle": "Manage your transfers and history",
+        "noPayouts": "No payouts requested",
+        "minimum": "Minimum required",
+        "requestPayout": {
+          "title": "Request a payout",
+          "amount": "Amount",
+          "requesting": "Requesting...",
+          "submit": "Request"
+        },
+        "requestManualPayout": "Request manual transfer",
+        "noPayoutHistory": "No transfer history yet",
+        "availableBalance": "Available balance",
+        "pendingBalance": "Pending balance",
+        "status": {
+          "paid": "✓ Paid",
+          "pending": "⏳ Pending",
+          "processing": "⏳ Processing",
+          "failed": "✗ Failed"
+        },
+        "backToDashboard": "Back to dashboard",
+        "actions": {
+          "refresh": "Refresh",
+          "edit": "To modify"
+        },
+        "toasts": {
+          "refreshed": "Updated data"
+        },
+        "errors": {
+          "generic": "An error has occurred",
+          "balanceFetch": "Unable to recover balance",
+          "noCreatorId": "Unable to recover your creator profile"
+        },
+        "setup": {
+          "incomplete": "Your payment configuration is incomplete.",
+          "completeLink": "Complete your configuration",
+          "requiredInfoCount": "Information required: {count}"
+        },
+        "balance": "Available balance",
+        "currencyAlert": {
+          "title": "Stripe account currency:",
+          "body": "Your Stripe account is configured as {stripeCurrency}. Amounts are displayed in your Stripe currency. Transfers will be made in this currency. (Calculation basis: EUR)"
+        },
+        "statusCard": {
+          "title": "Transfer status",
+          "subtitle": "Current status of your payment account",
+          "badge": {
+            "operational": "Operational account",
+            "verifying": "Verification in progress",
+            "setupRequired": "System requirements"
+          },
+          "alert": {
+            "operational": "✅ Account operational - Transfers will be sent according to your configured schedule",
+            "verifying": "🔄 Verification in progress - Some information is awaiting validation",
+            "requiredItems": "Information required: {items}",
+            "incomplete": "⚠️ Incomplete configuration - Complete your configuration to receive transfers"
+          },
+          "details": {
+            "submitted": {
+              "title": "Information submitted",
+              "yes": "✓ Submitted",
+              "no": "✗ Required"
+            },
+            "verifications": {
+              "title": "Verifications",
+              "complete": "✓ Complete",
+              "pendingCount": "⏳ {count} waiting"
+            },
+            "payouts": {
+              "title": "Transfers",
+              "enabled": "✓ Enabled",
+              "disabled": "✗ Disabled"
+            }
+          }
+        },
+        "settings": {
+          "backToPayouts": "Back to payments",
+          "title": "Payout Settings",
+          "subtitle": "Configure the frequency and minimum amount for your payouts",
+          "configuration": "Configuration",
+          "configurationDesc": "Modify your payout preferences",
+          "payoutSchedule": "Payout Schedule",
+          "scheduleDaily": "Daily",
+          "scheduleWeekly": "Weekly",
+          "scheduleManual": "Manual",
+          "scheduleDailyDesc": "Automatic payout every day if available balance reaches minimum",
+          "scheduleWeeklyDesc": "Automatic payout every Monday if available balance reaches minimum",
+          "scheduleManualDesc": "You must manually request each payout (subject to admin approval)",
+          "minimumAmount": "Minimum amount ({currency})",
+          "minimumAmountDesc": "Minimum amount required to trigger a payout (between 10 {currency} and 1,000,000 {currency})",
+          "important": "Important :",
+          "importantNote": "Automatic payouts (daily/weekly) are processed automatically by the system. Manual payouts require administrator approval.",
+          "syncedWithStripe": "Synced with Stripe - Your settings are up to date on Stripe",
+          "outOfSync": "Out of sync - Settings differ between database and Stripe",
+          "database": "Database",
+          "stripe": "Stripe",
+          "saveToSync": "Save your settings to sync with Stripe.",
+          "noStripeAccount": "No Stripe account connected",
+          "saveChanges": "Save changes",
+          "saving": "Saving...",
+          "cancel": "Cancel",
+          "noChanges": "No changes to save",
+          "schedulesExplanation": "Schedule Explanations",
+          "dailyTitle": "Daily",
+          "dailyDesc": "The system checks daily if your available balance reaches the minimum amount. If yes, an automatic payout is created to your Stripe account.",
+          "weeklyTitle": "Weekly",
+          "weeklyDesc": "The system checks every Monday if your available balance reaches the minimum amount. If yes, an automatic payout is created to your Stripe account.",
+          "manualTitle": "Manual",
+          "manualDesc": "You must manually request a payout from the payments page. Each request must be approved by an administrator before being processed. This gives you complete control over the schedule of your payouts.",
+          "tip": "Tip",
+          "tipDesc": "If you prefer to have a regular cash flow, choose \"Daily\" or \"Weekly\". If you prefer to manually control your payouts, choose \"Manual\"."
+        },
+        "settingsCard": {
+          "title": "Transfer settings",
+          "subtitle": "Configure the frequency and minimum amount of your transfers",
+          "scheduleTitle": "Transfer schedule",
+          "minimumTitle": "Minimum amount",
+          "minimumHint": "(Minimum required for a transfer)"
+        },
+        "manual": {
+          "title": "Request a manual transfer",
+          "body": "You have {amount} {currency} available for a transfer.",
+          "baseNote": "(≈ same amount in EUR basis)",
+          "action": "Request a transfer"
+        },
+        "historyCard": {
+          "title": "Transfer history",
+          "subtitle": "List of all your transfers and their status",
+          "emptyTitle": "No transfer history yet",
+          "emptySubtitle": "Transfers will appear here once processed",
+          "table": {
+            "date": "Date",
+            "amount": "Amount",
+            "status": "Status",
+            "type": "Kind",
+            "stripeId": "ID Stripe"
+          }
+        },
+        "history": {
+          "status": {
+            "paid": "Paid",
+            "failed": "Failed",
+            "processing": "In progress",
+            "unknown": "Unknown"
+          }
+        },
+        "info": {
+          "title": "How do transfers work?",
+          "auto": {
+            "title": "Automatic transfers:",
+            "daily": {
+              "title": "Daily :",
+              "body": "Automatic transfer each day if the available balance reaches the configured minimum"
+            },
+            "weekly": {
+              "title": "Weekly :",
+              "body": "Automatic transfer every Monday if the available balance reaches the configured minimum"
+            },
+            "manual": {
+              "title": "Manual :",
+              "body": "You must manually request each transfer (subject to admin approval)"
+            }
+          },
+          "processing": {
+            "title": "Processing times:",
+            "body": "Stripe transfers are typically processed within 2-3 business days. Once the transfer is processed by Stripe, the funds are sent to your bank account according to your Stripe settings (usually another 1-2 days)."
+          },
+          "bank": {
+            "title": "Banking configuration:",
+            "bodyStart": "To set up or change your bank account, log in to your",
+            "stripeDashboard": "Stripe dashboard"
+          }
+        },
+        "common": {
+          "dash": null
+        },
         "request": {
           "backToPayouts": "Back to payments",
           "title": "Request Manual Payout",
@@ -813,62 +1200,6 @@
           "step3Desc": "If approved, the payout is created to your Stripe account",
           "step4Title": "Processing",
           "step4Desc": "Stripe processes the payout to your bank account (2-5 business days)"
-        },
-        "noPayouts": "No payouts requested",
-        "balance": "Available balance",
-        "minimum": "Minimum required",
-        "requestPayout": {
-          "title": "Request a payout",
-          "amount": "Amount",
-          "requesting": "Requesting...",
-          "submit": "Request"
-        },
-        "requestManualPayout": "Request manual transfer",
-        "noPayoutHistory": "No transfer history yet",
-        "availableBalance": "Available balance",
-        "pendingBalance": "Pending balance",
-        "status": {
-          "paid": "✓ Paid",
-          "pending": "⏳ Pending",
-          "processing": "⏳ Processing",
-          "failed": "✗ Failed"
-        },
-        "backToDashboard": "Back to dashboard",
-        "settings": {
-          "backToPayouts": "Back to payments",
-          "title": "Payout Settings",
-          "subtitle": "Configure the frequency and minimum amount for your payouts",
-          "configuration": "Configuration",
-          "configurationDesc": "Modify your payout preferences",
-          "payoutSchedule": "Payout Schedule",
-          "scheduleDaily": "Daily",
-          "scheduleWeekly": "Weekly",
-          "scheduleManual": "Manual",
-          "scheduleDailyDesc": "Automatic payout every day if available balance reaches minimum",
-          "scheduleWeeklyDesc": "Automatic payout every Monday if available balance reaches minimum",
-          "scheduleManualDesc": "You must manually request each payout (subject to admin approval)",
-          "minimumAmount": "Minimum amount ({currency})",
-          "minimumAmountDesc": "Minimum amount required to trigger a payout (between 10 {currency} and 1,000,000 {currency})",
-          "importantNote": "Automatic payouts (daily/weekly) are processed automatically by the system. Manual payouts require administrator approval.",
-          "syncedWithStripe": "Synced with Stripe - Your settings are up to date on Stripe",
-          "outOfSync": "Out of sync - Settings differ between database and Stripe",
-          "database": "Database",
-          "stripe": "Stripe",
-          "saveToSync": "Save your settings to sync with Stripe.",
-          "noStripeAccount": "No Stripe account connected",
-          "saveChanges": "Save changes",
-          "saving": "Saving...",
-          "cancel": "Cancel",
-          "noChanges": "No changes to save",
-          "schedulesExplanation": "Schedule Explanations",
-          "dailyTitle": "Daily",
-          "dailyDesc": "The system checks daily if your available balance reaches the minimum amount. If yes, an automatic payout is created to your Stripe account.",
-          "weeklyTitle": "Weekly",
-          "weeklyDesc": "The system checks every Monday if your available balance reaches the minimum amount. If yes, an automatic payout is created to your Stripe account.",
-          "manualTitle": "Manual",
-          "manualDesc": "You must manually request a payout from the payments page. Each request must be approved by an administrator before being processed. This gives you complete control over the schedule of your payouts.",
-          "tip": "Tip",
-          "tipDesc": "If you prefer to have a regular cash flow, choose \"Daily\" or \"Weekly\". If you prefer to manually control your payouts, choose \"Manual\"."
         }
       },
       "settings": {
@@ -901,7 +1232,10 @@
           "preview": "Preview",
           "previewTime": "It is currently {time} ({abbr}) in your time zone",
           "save": "Save",
-          "saving": "Saving..."
+          "saving": "Saving...",
+          "timezoneDetected": "Time zone detected automatically",
+          "timePreviewTitle": "Time overview:",
+          "timePreviewText": "It is currently {time} ({abbr}) in your time zone"
         },
         "publicProfile": {
           "title": "Profile Images",
@@ -991,32 +1325,6 @@
           "callReminderDesc": "Receive a reminder before your scheduled calls",
           "savePreferences": "Save preferences"
         }
-      },
-      "notifications": {
-        "title": "Notifications",
-        "noNotifications": "No notifications",
-        "subtitle": "Manage your system and financial notifications",
-        "loading": "Loading...",
-        "markAllRead": "Mark all as read",
-        "backToDashboard": "Back to dashboard"
-      },
-      "fees": {
-        "title": "Fees and commissions",
-        "platformFee": "Platform commission",
-        "description": "Callastar takes a commission on each call",
-        "subtitle": "Understand how remuneration works on Call a Star",
-        "platformCommission": "Platform commission",
-        "platformCommissionDesc": "Call a Star takes a commission of",
-        "paymentFees": "Payment fees (Stripe)",
-        "paymentFeesDesc": "Credit card payment processing fees",
-        "calculationExample": "Calculation example",
-        "forACallOf": "For a call of",
-        "initialAmount": "Initial amount",
-        "stripeFee": "Stripe fees (2.9% + 0.30)",
-        "netAmount": "Net amount received",
-        "percentageNote": "Approximately",
-        "percentOf": "% of total amount",
-        "backToDashboard": "Back to dashboard"
       },
       "payoutSettings": {
         "title": "Transfer settings",
