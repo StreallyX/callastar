@@ -1,1745 +1,1745 @@
 {
   "common": {
     "appName": "Call a Star",
-    "loading": "Loading...",
-    "error": "Error",
-    "success": "Success",
-    "cancel": "Cancel",
-    "confirm": "Confirm",
-    "save": "Save",
-    "delete": "Delete",
-    "edit": "Edit",
-    "back": "Back",
-    "next": "Next",
-    "previous": "Previous",
-    "close": "Close",
-    "search": "Search",
-    "filter": "Filter",
-    "all": "All",
-    "none": "None"
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "all": "Tous",
+    "none": "Aucun"
   },
   "navbar": {
-    "creators": "Creators",
-    "login": "Log in",
-    "register": "Sign up",
+    "creators": "Créateurs",
+    "login": "Connexion",
+    "register": "S'inscrire",
     "dashboard": "Dashboard",
-    "payments": "Payments",
-    "settings": "Settings",
-    "testsTools": "Tests & Tools",
-    "logout": "Log out"
+    "payments": "Paiements",
+    "settings": "Paramètres",
+    "testsTools": "Tests & Outils",
+    "logout": "Déconnexion"
   },
   "homepage": {
     "meta": {
-      "title": "Callastar - Connect with creators and experts for paid video calls",
-      "description": "Book video calls with creators, experts and influencers. Secure payments via Stripe, video calls via Daily.co. Monetize your time or get personalized advice."
+      "title": "Callastar - Connectez-vous avec des créateurs et experts pour des appels vidéo payants",
+      "description": "Réservez des appels vidéo avec des créateurs, experts et influenceurs. Paiements sécurisés via Stripe, appels vidéo via Daily.co. Monétisez votre temps ou obtenez des conseils personnalisés."
     },
     "hero": {
-      "title": "Connect with creators and experts",
-      "subtitle": "The platform that connects fans and creators for private video calls",
-      "description": "Callastar is a paid video call booking platform that allows users to connect directly with creators, experts and influencers for consultations, coaching or personalized advice.",
-      "becomeCreator": "Become a creator",
-      "exploreCreators": "Explore creators"
+      "title": "Connectez-vous avec des créateurs et experts",
+      "subtitle": "La plateforme qui connecte fans et créateurs pour des appels vidéo privés",
+      "description": "Callastar est une plateforme de réservation d'appels vidéo payants qui permet aux utilisateurs de se connecter directement avec des créateurs, experts et influenceurs pour des consultations, du coaching ou des conseils personnalisés.",
+      "becomeCreator": "Devenir créateur",
+      "exploreCreators": "Explorer les créateurs"
     },
     "about": {
-      "title": "What is Callastar?",
-      "description": "Callastar is an innovative platform that connects users with content creators, experts and influencers for private paid video calls.",
+      "title": "Qu'est-ce que Callastar ?",
+      "description": "Callastar est une plateforme innovante qui met en relation des utilisateurs avec des créateurs de contenu, experts et influenceurs pour des appels vidéo privés et payants.",
       "usedFor": {
-        "title": "What is Callastar used for?",
-        "consultations": "Personalized consultations with experts",
-        "coaching": "Coaching and mentoring sessions",
-        "advice": "Professional advice in various fields",
-        "meetGreet": "Virtual meet and greets with your favorite creators"
+        "title": "À quoi sert Callastar ?",
+        "consultations": "Consultations personnalisées avec des experts",
+        "coaching": "Séances de coaching et mentorat",
+        "advice": "Conseils professionnels dans divers domaines",
+        "meetGreet": "Rencontres virtuelles avec vos créateurs préférés"
       },
       "forWhom": {
-        "title": "Who is it for?",
+        "title": "Pour qui ?",
         "users": {
-          "title": "For users",
-          "description": "Get expert advice, personalized coaching or chat with your favorite creators"
+          "title": "Pour les utilisateurs",
+          "description": "Obtenez des conseils d'experts, du coaching personnalisé ou discutez avec vos créateurs favoris"
         },
         "creators": {
-          "title": "For creators",
-          "description": "Monetize your time and expertise by offering video calls to your community"
+          "title": "Pour les créateurs",
+          "description": "Monétisez votre temps et expertise en offrant des appels vidéo à votre communauté"
         }
       }
     },
     "features": {
-      "title": "Key Features",
-      "description": "Everything you need for professional video calls",
+      "title": "Fonctionnalités clés",
+      "description": "Tout ce dont vous avez besoin pour des appels vidéo professionnels",
       "booking": {
-        "title": "Easy Booking",
-        "description": "Simple and intuitive booking system. Choose your creator, select an offer and book in a few clicks."
+        "title": "Réservation facile",
+        "description": "Système de réservation simple et intuitif. Choisissez votre créateur, sélectionnez une offre et réservez en quelques clics."
       },
       "payments": {
-        "title": "Secure Payments",
-        "description": "Secure transactions via Stripe. Complete protection of banking data and instant payments."
+        "title": "Paiements sécurisés",
+        "description": "Transactions sécurisées via Stripe. Protection complète des données bancaires et paiements instantanés."
       },
       "videoCalls": {
-        "title": "HD Video Calls",
-        "description": "High-quality video calls via Daily.co. Stable and reliable connection for an optimal experience."
+        "title": "Appels vidéo HD",
+        "description": "Appels vidéo de haute qualité via Daily.co. Connexion stable et fiable pour une expérience optimale."
       },
       "reviews": {
-        "title": "Reviews & Ratings",
-        "description": "Transparent review system. Check other users' reviews before booking."
+        "title": "Avis et évaluations",
+        "description": "Système de reviews transparent. Consultez les avis des autres utilisateurs avant de réserver."
       },
       "profiles": {
-        "title": "Creator Profiles",
-        "description": "Detailed profiles with biography, rates and availability. Find the perfect creator for your needs."
+        "title": "Profils créateurs",
+        "description": "Profils détaillés avec biographie, tarifs et disponibilités. Trouvez le créateur parfait pour vos besoins."
       },
       "offers": {
-        "title": "Custom Offers",
-        "description": "Creators offer different durations and rates. Choose the offer that suits you best."
+        "title": "Offres personnalisées",
+        "description": "Les créateurs proposent différentes durées et tarifs. Choisissez l'offre qui vous convient le mieux."
       }
     },
     "journey": {
-      "title": "How does it work?",
-      "description": "Four simple steps to connect with creators",
+      "title": "Comment ça marche ?",
+      "description": "Quatre étapes simples pour connecter avec des créateurs",
       "step1": {
-        "title": "1. Discover",
-        "description": "Explore creator profiles and discover their video call offers"
+        "title": "1. Découvrez",
+        "description": "Explorez les profils des créateurs et découvrez leurs offres d'appels vidéo"
       },
       "step2": {
-        "title": "2. Sign up",
-        "description": "Create your account for free in seconds"
+        "title": "2. Inscrivez-vous",
+        "description": "Créez votre compte gratuitement en quelques secondes"
       },
       "step3": {
-        "title": "3. Book",
-        "description": "Choose an offer, make a secure payment and confirm your booking"
+        "title": "3. Réservez",
+        "description": "Choisissez une offre, effectuez le paiement sécurisé et confirmez votre réservation"
       },
       "step4": {
-        "title": "4. Connect",
-        "description": "Join your video call at the scheduled time and enjoy your conversation"
+        "title": "4. Connectez",
+        "description": "Rejoignez votre appel vidéo à l'heure prévue et profitez de votre échange"
       }
     },
     "cta": {
       "users": {
-        "title": "Looking for expert advice?",
-        "description": "Explore our creators and book your first call now",
-        "button": "Explore creators"
+        "title": "Vous cherchez des conseils d'expert ?",
+        "description": "Explorez nos créateurs et réservez votre premier appel dès maintenant",
+        "button": "Explorer les créateurs"
       },
       "creators": {
-        "title": "Are you a creator or expert?",
-        "description": "Join Callastar and start monetizing your time and expertise",
-        "button": "Become a creator"
+        "title": "Vous êtes créateur ou expert ?",
+        "description": "Rejoignez Callastar et commencez à monétiser votre temps et expertise",
+        "button": "Devenir créateur"
       }
     },
     "popularCreators": {
-      "title": "Popular Creators",
-      "description": "Discover our most sought-after creators",
-      "seeAll": "See all creators"
+      "title": "Créateurs populaires",
+      "description": "Découvrez nos créateurs les plus demandés",
+      "seeAll": "Voir tous les créateurs"
     },
     "footer": {
-      "copyright": "© 2024 Callastar. All rights reserved.",
-      "terms": "Terms of Service",
-      "privacy": "Privacy Policy",
-      "legal": "Legal Notice"
+      "copyright": "© 2024 Callastar. Tous droits réservés.",
+      "terms": "Conditions Générales",
+      "privacy": "Politique de confidentialité",
+      "legal": "Mentions légales"
     }
   },
   "auth": {
     "login": {
-      "title": "Log In",
-      "description": "Log in to access your account",
+      "title": "Connexion",
+      "description": "Connectez-vous pour accéder à votre compte",
       "email": "Email",
-      "emailPlaceholder": "your@email.com",
-      "password": "Password",
+      "emailPlaceholder": "votre@email.com",
+      "password": "Mot de passe",
       "passwordPlaceholder": "••••••••",
-      "loginButton": "Log in",
-      "loggingIn": "Logging in...",
-      "orContinueWith": "Or continue with",
-      "googleLogin": "Sign in with Google",
-      "testAccounts": "Test Accounts",
+      "loginButton": "Se connecter",
+      "loggingIn": "Connexion...",
+      "orContinueWith": "Ou continuer avec",
+      "googleLogin": "Se connecter avec Google",
+      "testAccounts": "Comptes de test",
       "admin": "Admin",
-      "creator": "Creator",
-      "user": "User",
-      "noAccount": "Don't have an account yet?",
-      "registerLink": "Sign up",
-      "backToHome": "Back to home",
-      "successMessage": "Login successful! Welcome",
-      "errorMessage": "Login error",
-      "genericError": "An error occurred during login",
-      "googleError": "Error signing in with Google"
+      "creator": "Créateur",
+      "user": "Utilisateur",
+      "noAccount": "Pas encore de compte ?",
+      "registerLink": "S'inscrire",
+      "backToHome": "Retour à l'accueil",
+      "successMessage": "Connexion réussie ! Bienvenue",
+      "errorMessage": "Erreur de connexion",
+      "genericError": "Une erreur est survenue lors de la connexion",
+      "googleError": "Erreur lors de la connexion avec Google"
     },
     "register": {
-      "title": "Sign Up",
-      "description": "Create your account to get started",
-      "fullName": "Full Name",
+      "title": "Inscription",
+      "description": "Créez votre compte pour commencer",
+      "fullName": "Nom complet",
       "fullNamePlaceholder": "John Doe",
       "email": "Email",
-      "emailPlaceholder": "your@email.com",
-      "password": "Password",
+      "emailPlaceholder": "votre@email.com",
+      "password": "Mot de passe",
       "passwordPlaceholder": "••••••••",
-      "accountType": "Account Type",
-      "accountTypePlaceholder": "Select a type",
-      "userRole": "User (Fan)",
-      "creatorRole": "Creator (Influencer)",
-      "termsAcceptance": "I accept the",
-      "termsLink": "terms of service",
-      "termsRequired": "You must accept the terms of service to continue",
-      "registerButton": "Sign up",
-      "registering": "Signing up...",
-      "orContinueWith": "Or continue with",
-      "googleRegister": "Sign up with Google",
-      "haveAccount": "Already have an account?",
-      "loginLink": "Log in",
-      "backToHome": "Back to home",
-      "successTitle": "Registration successful!",
-      "successDescription": "Your account has been created successfully",
-      "errorTitle": "Registration error",
-      "errorDescription": "An error occurred",
-      "genericError": "An error occurred during registration",
-      "googleError": "Error signing in with Google"
+      "accountType": "Type de compte",
+      "accountTypePlaceholder": "Sélectionnez un type",
+      "userRole": "Utilisateur (Fan)",
+      "creatorRole": "Créateur (Influenceur)",
+      "termsAcceptance": "J'accepte les",
+      "termsLink": "conditions générales d'utilisation",
+      "termsRequired": "Vous devez accepter les conditions générales pour continuer",
+      "registerButton": "S'inscrire",
+      "registering": "Inscription...",
+      "orContinueWith": "Ou continuer avec",
+      "googleRegister": "S'inscrire avec Google",
+      "haveAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter",
+      "backToHome": "Retour à l'accueil",
+      "successTitle": "Inscription réussie !",
+      "successDescription": "Votre compte a été créé avec succès",
+      "errorTitle": "Erreur d'inscription",
+      "errorDescription": "Une erreur est survenue",
+      "genericError": "Une erreur est survenue lors de l'inscription",
+      "googleError": "Erreur lors de la connexion avec Google"
     }
   },
   "creators": {
     "list": {
-      "title": "Our Creators",
-      "description": "Discover all our creators and book a private video call with your favorite star",
-      "noCreators": "No creators available at the moment"
+      "title": "Nos Créateurs",
+      "description": "Découvrez tous nos créateurs et réservez un appel vidéo privé avec votre star préférée",
+      "noCreators": "Aucun créateur disponible pour le moment"
     },
     "profile": {
-      "notFound": "Creator not found",
-      "backToCreators": "Back to creators",
-      "noBio": "No bio available",
-      "offersAvailable": "offer(s) available",
-      "availableOffers": "Available Calls",
-      "noOffers": "No calls available at the moment",
-      "noOffersDescription": "Use the \"Request a call\" button to send a custom request",
+      "notFound": "Créateur introuvable",
+      "backToCreators": "Retour aux créateurs",
+      "noBio": "Pas de bio disponible",
+      "offersAvailable": "offre(s) disponible(s)",
+      "availableOffers": "Appels disponibles",
+      "noOffers": "Aucun appel disponible pour le moment",
+      "noOffersDescription": "Utilisez le bouton \"Proposer un appel\" pour envoyer une demande personnalisée",
       "minutes": "minutes",
-      "reserve": "Book",
-      "reviews": "User Reviews",
-      "anonymous": "Anonymous",
-      "rating": "review",
-      "other": "Website"
+      "reserve": "Réserver",
+      "reviews": "Avis des utilisateurs",
+      "anonymous": "Anonyme",
+      "rating": "avis",
+      "other": "Site web"
     }
   },
   "booking": {
-    "title": "Booking and Payment",
-    "callDetails": "Call Details",
-    "verifyInfo": "Verify the information before paying",
-    "payment": "Payment",
-    "paymentInfo": "Enter your payment information",
+    "title": "Réservation et paiement",
+    "callDetails": "Détails de l'appel",
+    "verifyInfo": "Vérifiez les informations avant de payer",
+    "payment": "Paiement",
+    "paymentInfo": "Entrez vos informations de paiement",
     "total": "Total",
-    "creator": "Creator",
-    "loading": "Loading...",
-    "error": "Booking error",
-    "backToCreators": "Back to creators",
-    "offerNotFound": "Offer not found",
-    "bookingError": "Error during booking",
-    "paymentError": "Payment error",
-    "paymentSuccess": "Payment successful!",
-    "bookingConfirmed": "Your booking is confirmed",
-    "processing": "Processing...",
-    "payAndBook": "Pay and book",
-    "genericError": "An error occurred during payment",
-    "yourBooking": "✅ Your Booking",
-    "offerUnavailable": "❌ Offer Unavailable",
-    "yourBookingDesc": "This booking belongs to you",
-    "offerUnavailableDesc": "This offer has already been booked by another user",
-    "status": "Status",
-    "confirmed": "Confirmed ✓",
-    "pending": "Awaiting payment",
-    "viewBookings": "View my bookings",
-    "joinCall": "Join call",
-    "offerNotAvailable": "This offer is no longer available. Explore other opportunities!",
-    "viewCreatorProfile": "View creator profile",
-    "exploreCreators": "Explore other creators",
+    "creator": "Créateur",
+    "loading": "Chargement...",
+    "error": "Erreur de réservation",
+    "backToCreators": "Retour aux créateurs",
+    "offerNotFound": "Offre introuvable",
+    "bookingError": "Erreur lors de la réservation",
+    "paymentError": "Erreur de paiement",
+    "paymentSuccess": "Paiement réussi !",
+    "bookingConfirmed": "Votre réservation est confirmée",
+    "processing": "Traitement...",
+    "payAndBook": "Payer et réserver",
+    "genericError": "Une erreur est survenue lors du paiement",
+    "yourBooking": "✅ Votre réservation",
+    "offerUnavailable": "❌ Offre indisponible",
+    "yourBookingDesc": "Cette réservation vous appartient",
+    "offerUnavailableDesc": "Cette offre a déjà été réservée par un autre utilisateur",
+    "status": "Statut",
+    "confirmed": "Confirmé ✓",
+    "pending": "En attente de paiement",
+    "viewBookings": "Voir mes réservations",
+    "joinCall": "Rejoindre l'appel",
+    "offerNotAvailable": "Cette offre n'est plus disponible. Explorez d'autres opportunités !",
+    "viewCreatorProfile": "Voir le profil du créateur",
+    "exploreCreators": "Explorer d'autres créateurs",
     "minutes": "minutes"
   },
   "call": {
     "room": {
-      "title": "Video Call",
-      "waitingRoom": "Waiting Room - Ready to Join",
-      "testMode": "🧪 Test Mode",
+      "title": "Appel vidéo",
+      "waitingRoom": "Salle d'attente - Prêt à rejoindre",
+      "testMode": "🧪 Mode Test",
       "callastar": "Callastar",
-      "with": "with",
-      "scheduledDuration": "Scheduled duration",
+      "with": "avec",
+      "scheduledDuration": "Durée prévue",
       "minutes": "minutes",
-      "testCallInfo": "ℹ️ This is a test call for development",
-      "callStatusTitle": "Call Status",
-      "callEnded": "The call has ended",
-      "canStartNow": "The call can start now!",
-      "startsIn": "Starts in",
-      "scheduledFor": "Scheduled for",
-      "callRulesTitle": "Call Rules",
-      "ruleDuration": "Duration:",
-      "minutesAllocated": "minutes allocated",
-      "ruleBehavior": "Behavior:",
-      "ruleeBehaviorDesc": "Be respectful and courteous",
-      "ruleConfidentiality": "Confidentiality:",
-      "ruleConfidentialityDesc": "Don't share the call content",
-      "ruleDisconnection": "Disconnection:",
-      "ruleDisconnectionDesc": "If you get disconnected, you can rejoin",
-      "testEquipment": "Test your equipment",
-      "testCameraAndMic": "Test camera and microphone",
-      "testInProgress": "Testing...",
-      "checkCamera": "✓ Check that your camera works",
-      "checkMic": "✓ Test your microphone",
-      "findQuietPlace": "✓ Find a quiet place",
-      "freeAccessTitle": "✨ Free Access:",
-      "freeAccessDesc": "You can join the call anytime. Arrive early to test your equipment or join late - access is never blocked.",
-      "joinCall": "Join call",
-      "loading": "Loading call...",
-      "inCall": "Call in progress",
-      "ended": "Call ended",
-      "redirecting": "Redirecting to summary...",
-      "error": "Error",
-      "callError": "An error occurred during the call",
-      "retry": "Retry",
-      "timeRemaining": "Remaining",
-      "noTimeLimit": "Test Mode - No limit",
-      "joinedInProgress": "(joined in progress)",
-      "connectionLost": "Connection lost",
-      "reconnecting": "Reconnecting...",
-      "reconnected": "Reconnected",
-      "reconnectedDesc": "You are connected again",
-      "leaveCall": "Leave call",
-      "disableCamera": "Disable camera",
-      "enableCamera": "Enable camera",
-      "disableMic": "Disable microphone",
-      "enableMic": "Enable microphone",
-      "enterFullscreen": "Fullscreen",
-      "exitFullscreen": "Exit fullscreen",
-      "backToDashboard": "Back to dashboard",
-      "bookingNotFound": "Booking not found",
-      "testSuccess": "Test successful",
-      "testSuccessDesc": "Your camera and microphone work correctly",
-      "testError": "Error",
-      "testErrorDesc": "Unable to access camera or microphone",
-      "participantJoined": "Participant joined",
-      "participantJoinedDesc": "joined the call",
-      "participantLeft": "Participant left",
-      "participantLeftDesc": "left the call",
-      "callErrorDuring": "Error during call",
-      "weakConnection": "Weak connection",
-      "weakConnectionDesc": "Your internet connection is unstable",
-      "connectionLostDesc": "Attempting to reconnect...",
-      "aParticipant": "A participant",
-      "cannotAccessCall": "Cannot access the call",
-      "cannotJoinCall": "Cannot join the call"
+      "testCallInfo": "ℹ️ Ceci est un appel de test pour le développement",
+      "callStatusTitle": "Statut de l'appel",
+      "callEnded": "L'appel est terminé",
+      "canStartNow": "L'appel peut commencer maintenant !",
+      "startsIn": "Commence dans",
+      "scheduledFor": "Prévu le",
+      "callRulesTitle": "Règles de l'appel",
+      "ruleDuration": "Durée:",
+      "minutesAllocated": "minutes allouées",
+      "ruleBehavior": "Comportement:",
+      "ruleeBehaviorDesc": "Soyez respectueux et courtois",
+      "ruleConfidentiality": "Confidentialité:",
+      "ruleConfidentialityDesc": "Ne partagez pas le contenu de l'appel",
+      "ruleDisconnection": "Déconnexion:",
+      "ruleDisconnectionDesc": "Si vous êtes déconnecté, vous pouvez rejoindre à nouveau",
+      "testEquipment": "Testez vos équipements",
+      "testCameraAndMic": "Tester caméra et micro",
+      "testInProgress": "Test en cours...",
+      "checkCamera": "✓ Vérifiez que votre caméra fonctionne",
+      "checkMic": "✓ Testez votre microphone",
+      "findQuietPlace": "✓ Trouvez un endroit calme",
+      "freeAccessTitle": "✨ Accès libre :",
+      "freeAccessDesc": "Vous pouvez rejoindre l'appel à tout moment. Arrivez en avance pour tester votre équipement ou rejoignez si vous êtes en retard - l'accès n'est jamais bloqué.",
+      "joinCall": "Rejoindre l'appel",
+      "loading": "Chargement de l'appel...",
+      "inCall": "Appel en cours",
+      "ended": "Appel terminé",
+      "redirecting": "Redirection vers le résumé...",
+      "error": "Erreur",
+      "callError": "Une erreur est survenue lors de l'appel",
+      "retry": "Réessayer",
+      "timeRemaining": "Restant",
+      "noTimeLimit": "Mode Test - Pas de limite",
+      "joinedInProgress": "(rejoint en cours)",
+      "connectionLost": "Connexion perdue",
+      "reconnecting": "Reconnexion en cours...",
+      "reconnected": "Reconnecté",
+      "reconnectedDesc": "Vous êtes de nouveau connecté",
+      "leaveCall": "Quitter l'appel",
+      "disableCamera": "Désactiver la caméra",
+      "enableCamera": "Activer la caméra",
+      "disableMic": "Désactiver le micro",
+      "enableMic": "Activer le micro",
+      "enterFullscreen": "Plein écran",
+      "exitFullscreen": "Quitter le plein écran",
+      "backToDashboard": "Retour au dashboard",
+      "bookingNotFound": "Réservation introuvable",
+      "testSuccess": "Test réussi",
+      "testSuccessDesc": "Votre caméra et micro fonctionnent correctement",
+      "testError": "Erreur",
+      "testErrorDesc": "Impossible d'accéder à la caméra ou au micro",
+      "participantJoined": "Participant rejoint",
+      "participantJoinedDesc": "a rejoint l'appel",
+      "participantLeft": "Participant parti",
+      "participantLeftDesc": "a quitté l'appel",
+      "callErrorDuring": "Erreur durant l'appel",
+      "weakConnection": "Connexion faible",
+      "weakConnectionDesc": "Votre connexion internet est instable",
+      "connectionLostDesc": "Tentative de reconnexion...",
+      "aParticipant": "Un participant",
+      "cannotAccessCall": "Impossible d'accéder à l'appel",
+      "cannotJoinCall": "Impossible de rejoindre l'appel"
     },
     "summary": {
-      "title": "Call Summary",
-      "loading": "Loading summary...",
-      "error": "Error",
-      "notFound": "Summary not found",
-      "status": "Status",
-      "completedNormally": "✓ Completed normally",
-      "completedMultiple": "✓ Completed (multiple sessions)",
-      "interrupted": "⚠ Interrupted",
-      "inProgress": "⏳ In progress",
-      "noShow": "✗ No-show",
-      "unknown": "? Unknown",
-      "totalDuration": "Total Cumulative Duration",
-      "efficiency": "Efficiency",
-      "ofScheduled": "of scheduled duration",
+      "title": "Résumé de l'appel",
+      "loading": "Chargement du résumé...",
+      "error": "Erreur",
+      "notFound": "Résumé introuvable",
+      "status": "État",
+      "completedNormally": "✓ Terminé normalement",
+      "completedMultiple": "✓ Terminé (sessions multiples)",
+      "interrupted": "⚠ Interrompu",
+      "inProgress": "⏳ En cours",
+      "noShow": "✗ Absent",
+      "unknown": "? Inconnu",
+      "totalDuration": "Durée totale cumulée",
+      "efficiency": "Efficacité",
+      "ofScheduled": "de la durée prévue",
       "participants": "Participants",
-      "creator": "Creator",
+      "creator": "Créateur",
       "fan": "Fan",
-      "temporalDetails": "Temporal Details",
-      "scheduledDate": "Scheduled Date",
-      "actualStart": "Actual Start",
-      "actualEnd": "Actual End",
-      "sessions": "Call Sessions",
-      "sessionsDescription": "This call was interrupted and resumed multiple times. Here are the session details.",
+      "temporalDetails": "Détails temporels",
+      "scheduledDate": "Date prévue",
+      "actualStart": "Début réel",
+      "actualEnd": "Fin réelle",
+      "sessions": "Sessions d'appel",
+      "sessionsDescription": "Cet appel a été interrompu et repris plusieurs fois. Voici le détail des sessions.",
       "session": "Session",
-      "totalInfo": "The total duration displayed is the sum of all sessions.",
-      "timeline": "Call Timeline",
-      "timelineDescription": "All events recorded during the call",
-      "viewHistory": "View history",
-      "backToDashboard": "Back to dashboard",
-      "summaryInfo": "This summary is dynamically calculated from the call logs and reflects the actual cumulative duration of all sessions.",
-      "onSessions": "Over {count} session(s)",
+      "totalInfo": "La durée totale affichée est la somme de toutes les sessions.",
+      "timeline": "Chronologie de l'appel",
+      "timelineDescription": "Tous les événements enregistrés durant l'appel",
+      "viewHistory": "Voir l'historique",
+      "backToDashboard": "Retour au dashboard",
+      "summaryInfo": "Ce résumé est calculé dynamiquement à partir des logs de l'appel et reflète la durée réelle cumulée de toutes les sessions.",
+      "onSessions": "Sur {count} session(s)",
       "date": "Date",
-      "duration": "Duration",
-      "amount": "Amount",
-      "backToHome": "Back to home",
-      "cannotFetchSummary": "Cannot fetch summary",
-      "errorOccurred": "An error occurred"
+      "duration": "Durée",
+      "amount": "Montant",
+      "backToHome": "Retour à l'accueil",
+      "cannotFetchSummary": "Impossible de récupérer le résumé",
+      "errorOccurred": "Une erreur est survenue"
     }
   },
   "legal": {
     "terms": {
-      "title": "Terms of Service and Sale (ToS)",
-      "lastUpdated": "Last updated"
+      "title": "Conditions Générales d'Utilisation et de Vente (CGU/CGV)",
+      "lastUpdated": "Dernière mise à jour"
     },
     "privacy": {
-      "title": "Privacy Policy",
-      "lastUpdated": "Last updated"
+      "title": "Politique de Confidentialité",
+      "lastUpdated": "Dernière mise à jour"
     },
     "notice": {
-      "title": "Legal Notice",
-      "lastUpdated": "Last updated"
+      "title": "Mentions Légales",
+      "lastUpdated": "Dernière mise à jour"
     }
   },
   "dashboard": {
     "common": {
-      "loading": "Loading...",
-      "welcome": "Welcome",
-      "myDashboard": "My Dashboard",
-      "backToDashboard": "Back to dashboard",
-      "error": "Error",
-      "success": "Success",
-      "calendar": "Calendar",
-      "testMode": "Test Mode"
+      "loading": "Chargement...",
+      "welcome": "Bienvenue",
+      "myDashboard": "Mon Dashboard",
+      "backToDashboard": "Retour au dashboard",
+      "error": "Erreur",
+      "success": "Succès",
+      "calendar": "Calendrier",
+      "testMode": "Mode Test"
     },
     "user": {
-      "title": "User Dashboard",
-      "welcome": "Welcome, {name}",
+      "title": "Dashboard Utilisateur",
+      "welcome": "Bienvenue, {name}",
       "stats": {
-        "upcomingCalls": "Upcoming Calls",
-        "sentRequests": "Sent Requests",
-        "completedCalls": "Completed Calls",
+        "upcomingCalls": "Appels à venir",
+        "sentRequests": "Demandes envoyées",
+        "completedCalls": "Appels terminés",
         "notifications": "Notifications"
       },
       "tabs": {
-        "upcoming": "Upcoming",
-        "requests": "My Requests",
-        "history": "History"
+        "upcoming": "À venir",
+        "requests": "Mes demandes",
+        "history": "Historique"
       },
       "upcoming": {
-        "title": "My Upcoming Calls",
-        "description": "Confirmed and paid calls",
-        "noBookings": "No upcoming calls",
-        "noBookingsDescription": "Explore our creators to book your first call",
-        "exploreCreators": "Browse Creators",
-        "joinCall": "Join Call",
-        "downloadCalendar": "Calendar",
-        "leaveReview": "Leave a Review",
-        "calendarDownloadSuccess": "Calendar file downloaded!",
-        "calendarDownloadError": "Unable to download calendar file",
-        "reviewLeft": "Review left"
+        "title": "Mes appels à venir",
+        "description": "Appels confirmés et payés",
+        "noBookings": "Aucun appel à venir",
+        "noBookingsDescription": "Explorez nos créateurs pour réserver votre premier appel",
+        "exploreCreators": "Parcourir les créateurs",
+        "joinCall": "Rejoindre l'appel",
+        "downloadCalendar": "Calendrier",
+        "leaveReview": "Laisser un avis",
+        "calendarDownloadSuccess": "Fichier calendrier téléchargé !",
+        "calendarDownloadError": "Impossible de télécharger le fichier calendrier",
+        "reviewLeft": "Avis laissé"
       },
       "requests": {
-        "title": "My Requests",
-        "subtitle": "Track your requests sent to creators",
-        "backToDashboard": "Back to dashboard",
-        "requestTo": "Request to",
-        "sentOn": "Sent on",
-        "noRequests": "No requests sent",
-        "visitCreatorProfile": "Visit a creator profile to propose a call",
-        "browseCreators": "Browse creators",
+        "title": "Demandes d’appel",
+        "subtitle": "Consultez les demandes d’appel que vous avez envoyées",
+        "backToDashboard": "Retour au tableau de bord",
+        "requestTo": "Demande à",
+        "sentOn": "Envoyé le",
+        "noRequests": "Vous n’avez envoyé aucune demande d’appel.",
+        "visitCreatorProfile": "Rendez-vous sur le profil d’un créateur pour lui envoyer une demande.",
+        "browseCreators": "Parcourir les créateurs",
         "status": {
-          "pending": "On hold",
-          "accepted": "Accepted",
-          "rejected": "Rejected"
+          "pending": "En attente",
+          "accepted": "Acceptée",
+          "rejected": "Rejetée"
         },
         "stats": {
-          "pending": "On hold",
-          "accepted": "Accepted",
-          "rejected": "Rejected"
+          "pending": "En attente",
+          "accepted": "Acceptées",
+          "rejected": "Rejetées"
         },
         "sections": {
-          "pending": "Pending requests",
-          "pendingDesc": "Waiting for response from creator",
-          "accepted": "Requests accepted",
-          "acceptedDesc": "These requests were accepted by the creator",
-          "rejected": "Requests rejected",
-          "rejectedDesc": "These requests were rejected"
+          "pending": "Demandes en attente",
+          "pendingDesc": "En attente de réponse du créateur",
+          "accepted": "Demandes acceptées",
+          "acceptedDesc": "Ces demandes ont été acceptées par le créateur",
+          "rejected": "Demandes rejetées",
+          "rejectedDesc": "Ces demandes ont été rejetées"
         }
       },
       "history": {
-        "title": "Call History",
-        "subtitle": "All your past calls",
-        "backToDashboard": "Back to dashboard",
-        "pastCalls": "Calls made",
-        "count": "You have {count} call(s) in the history",
-        "with": "With",
-        "noCalls": "No past calls",
-        "reviewLeft": "Review left",
-        "leaveReview": "Leave a review",
+        "title": "Historique des appels",
+        "subtitle": "Consultez vos appels passés et laissez un avis",
+        "backToDashboard": "Retour au tableau de bord",
+        "pastCalls": "Appels passés",
+        "count": "Vous avez {count} appel(s) dans l’historique",
+        "with": "Avec",
+        "noCalls": "Vous n’avez aucun appel dans votre historique.",
+        "reviewLeft": "Avis déjà laissé",
+        "leaveReview": "Laisser un avis",
         "errors": {
-          "load": "Unable to load call history"
+          "load": "Impossible de charger l’historique des appels"
         }
       },
       "calls": {
-        "title": "My Upcoming Calls",
-        "subtitle": "All your confirmed and upcoming calls",
-        "backToDashboard": "Back to dashboard",
-        "with": "With",
-        "duration": "Duration",
+        "title": "Mes appels",
+        "subtitle": "Retrouvez ici vos appels à venir",
+        "backToDashboard": "Retour au tableau de bord",
+        "with": "Avec",
+        "duration": "Durée",
         "minutes": "minutes",
-        "join": "Join",
-        "noCalls": "No upcoming calls",
-        "browseCreators": "Discover the creators",
-        "testMode": "🧪 Test mode",
+        "join": "Rejoindre l’appel",
+        "noCalls": "Vous n’avez aucun appel programmé pour le moment.",
+        "browseCreators": "Découvrir les créateurs",
+        "testMode": "🧪 Mode test",
         "calendar": {
-          "download": "Add to calendar",
-          "downloadSuccess": "Calendar file downloaded successfully",
-          "downloadError": "Error downloading calendar"
+          "download": "Ajouter au calendrier",
+          "downloadSuccess": "Fichier calendrier téléchargé avec succès",
+          "downloadError": "Erreur lors du téléchargement du calendrier"
         },
         "errors": {
-          "load": "Unable to load your calls"
+          "load": "Impossible de charger vos appels"
         }
       },
       "settings": {
-        "title": "Account settings",
-        "subtitle": "Manage your preferences and personal information",
-        "backToDashboard": "Back to dashboard",
-        "yourName": "Your name",
-        "saveChanges": "Save changes",
-        "saving": "Saving...",
-        "cancel": "Cancel",
-        "saveSuccess": "Settings saved successfully",
-        "emailReadonly": "The email cannot be modified. Contact support if necessary.",
+        "title": "Paramètres du compte",
+        "subtitle": "Gérez vos informations personnelles et vos préférences",
+        "backToDashboard": "Retour au tableau de bord",
+        "yourName": "Votre nom",
+        "saveChanges": "Sauvegarder les modifications",
+        "saving": "Sauvegarde…",
+        "cancel": "Annuler",
+        "saveSuccess": "Paramètres sauvegardés avec succès",
+        "emailReadonly": "L’email ne peut pas être modifié. Contactez le support si nécessaire.",
         "sections": {
-          "profile": "Basic information",
-          "profileDesc": "Your personal information",
-          "timezone": "Time zone",
-          "timezoneDesc": "Configure your time zone to display call times correctly"
+          "profile": "Informations de base",
+          "profileDesc": "Vos informations personnelles",
+          "timezone": "Fuseau horaire",
+          "timezoneDesc": "Configurez votre fuseau horaire pour afficher correctement les horaires des appels"
         },
         "fields": {
-          "name": "Name",
-          "email": "E-mail"
+          "name": "Nom",
+          "email": "Email"
         },
         "timezone": {
-          "detectedTitle": "Time zone detected automatically",
-          "detectedToast": "Time zone detected: {timezone}",
-          "current": "Current time zone",
-          "select": "Select a time zone",
-          "autoDetect": "Auto-detect",
-          "hint": "All times will be displayed in that time zone",
-          "preview": "Preview"
+          "detectedTitle": "Fuseau horaire détecté automatiquement",
+          "detectedToast": "Fuseau horaire détecté : {timezone}",
+          "current": "Fuseau horaire actuel",
+          "select": "Sélectionner un fuseau horaire",
+          "autoDetect": "Auto-détecter",
+          "hint": "Tous les horaires seront affichés dans ce fuseau horaire",
+          "preview": "Aperçu"
         },
         "errors": {
-          "load": "Error loading data",
-          "save": "Error saving settings"
+          "load": "Erreur lors du chargement des données",
+          "save": "Erreur lors de la sauvegarde des paramètres"
         }
       },
       "notifications": {
         "title": "Notifications",
-        "backToDashboard": "Back to dashboard",
-        "unreadCount": "{count} unread notification(s)",
-        "noNotifications": "No notifications",
-        "noNotificationsDesc": "You will receive notifications here for your calls and requests",
-        "new": "New",
-        "markAsRead": "Mark as read",
-        "markAll": "Mark all as read",
-        "markAllSuccess": "All notifications have been marked as read",
-        "viewDetails": "See details",
+        "backToDashboard": "Retour au tableau de bord",
+        "unreadCount": "{count} notification(s) non lue(s)",
+        "noNotifications": "Aucune notification",
+        "noNotificationsDesc": "Vous serez informé ici des mises à jour importantes.",
+        "new": "Nouveau",
+        "markAsRead": "Marquer comme lu",
+        "markAll": "Tout marquer comme lu",
+        "markAllSuccess": "Toutes les notifications ont été marquées comme lues",
+        "viewDetails": "Voir les détails",
         "sections": {
-          "unread": "New notifications",
-          "unreadCount": "{count} unread notification(s)",
-          "read": "Notifications read",
-          "readCount": "{count} notification(s) read"
+          "unread": "Nouvelles notifications",
+          "unreadCount": "{count} notification(s) non lue(s)",
+          "read": "Notifications lues",
+          "readCount": "{count} notification(s) lue(s)"
         },
         "types": {
-          "BOOKING_CONFIRMED": "Reservation",
-          "BOOKING_CANCELLED": "Cancelation",
-          "CALL_REQUEST": "Request",
-          "REVIEW_RECEIVED": "Notice",
-          "PAYMENT_RECEIVED": "Payment",
+          "BOOKING_CONFIRMED": "Réservation",
+          "BOOKING_CANCELLED": "Annulation",
+          "CALL_REQUEST": "Demande",
+          "REVIEW_RECEIVED": "Avis",
+          "PAYMENT_RECEIVED": "Paiement",
           "DEFAULT": "Notification"
         },
         "errors": {
-          "load": "Unable to load notifications",
-          "update": "Error updating notifications"
+          "load": "Impossible de charger les notifications",
+          "update": "Erreur lors de la mise à jour des notifications"
         }
       },
       "booking": {
-        "with": "with",
-        "duration": "Duration",
+        "with": "avec",
+        "duration": "Durée",
         "minutes": "minutes",
-        "scheduledFor": "Scheduled for",
-        "price": "Price",
-        "status": "Status"
+        "scheduledFor": "Prévu le",
+        "price": "Prix",
+        "status": "Statut"
       },
       "status": {
-        "confirmed": "Confirmed",
-        "pending": "Pending",
-        "completed": "Completed",
-        "cancelled": "Cancelled"
+        "confirmed": "Confirmé",
+        "pending": "En attente",
+        "completed": "Terminé",
+        "cancelled": "Annulé"
       },
       "review": {
-        "title": "Leave a Review",
-        "description": "Share your experience with {name}",
-        "rating": "Rating",
-        "comment": "Comment (optional)",
-        "commentPlaceholder": "Share your experience...",
-        "submit": "Submit Review",
-        "submitting": "Submitting...",
-        "cancel": "Cancel",
-        "success": "Review sent successfully!",
-        "error": "Failed to send review",
-        "alreadyReviewed": "Already rated"
+        "title": "Laisser un avis",
+        "description": "Partagez votre expérience avec {name}",
+        "rating": "Note",
+        "comment": "Commentaire (optionnel)",
+        "commentPlaceholder": "Partagez votre expérience...",
+        "submit": "Envoyer l'avis",
+        "submitting": "Envoi...",
+        "cancel": "Annuler",
+        "success": "Avis envoyé avec succès!",
+        "error": "Échec de l'envoi de l'avis",
+        "alreadyReviewed": "Déjà évalué"
       },
       "main": {
-        "reviewPlaceholder": "Share your experience..."
+        "reviewPlaceholder": "Partagez votre expérience..."
       },
-      "navigation": "Go to",
+      "navigation": "Accéder",
       "cards": {
         "calls": {
-          "title": "My Calls",
-          "description": "View and join your upcoming calls"
+          "title": "Mes appels",
+          "description": "Consultez et rejoignez vos appels à venir"
         },
         "requests": {
-          "title": "Call Requests",
-          "description": "Track your requests sent to creators",
-          "pending": "{count} pending"
+          "title": "Demandes d'appel",
+          "description": "Suivez vos demandes envoyées aux créateurs",
+          "pending": "{count} en attente"
         },
         "history": {
-          "title": "History",
-          "description": "View your past calls and leave reviews"
+          "title": "Historique",
+          "description": "Consultez vos appels passés et laissez des avis"
         },
         "notifications": {
           "title": "Notifications",
-          "description": "Stay informed of all your activities",
-          "unread": "{count} unread"
+          "description": "Restez informé de toutes vos activités",
+          "unread": "{count} non lue(s)"
         },
         "settings": {
-          "title": "Settings",
-          "description": "Manage your account and preferences"
+          "title": "Paramètres",
+          "description": "Gérez votre compte et vos préférences"
         }
       }
     },
     "creator": {
-      "title": "Creator Dashboard",
-      "welcome": "Welcome, {name}",
+      "title": "Dashboard Créateur",
+      "welcome": "Bienvenue, {name}",
       "navigation": "Navigation",
       "paymentSetup": {
-        "required": "Payment setup required",
-        "description": "Manage your Stripe account and payments",
-        "completeSetup": "To receive your payments automatically via Stripe Connect, you must complete your setup. This only takes a few minutes.",
-        "configureStripe": "Configure Stripe",
-        "paymentsEnabled": "Payments enabled",
-        "incomplete": "Setup incomplete",
-        "accountReady": "Your account is set up and ready to receive payments",
-        "completeConfig": "Complete your setup to receive payments",
-        "viewDetails": "View details",
-        "configure": "Configure",
-        "verifying": "Verifying your Stripe configuration...",
-        "errorFetching": "Error fetching Stripe status",
-        "errorStripe": "Stripe error",
-        "cannotStart": "Cannot start Stripe",
-        "stripeStatus": "Stripe status",
-        "stripeStatusDesc": "Current state of your Stripe Connect account",
-        "incompleteConfig": "Incomplete configuration",
-        "stripeAccountCreated": "Stripe account created",
-        "accountOperational": "Account operational",
-        "accountConfigured": "Your Stripe account is properly configured.",
-        "title": "Payment Setup",
-        "subtitle": "Configure your Stripe Connect account to receive your payments",
+        "required": "Configuration des paiements requise",
+        "description": "Gérez votre compte Stripe et vos paiements",
+        "completeSetup": "Pour recevoir vos paiements automatiquement via Stripe Connect, vous devez compléter votre configuration. Cela ne prend que quelques minutes.",
+        "configureStripe": "Configurer Stripe",
+        "paymentsEnabled": "Paiements activés",
+        "incomplete": "Configuration incomplète",
+        "accountReady": "Votre compte est configuré et prêt à recevoir des paiements",
+        "completeConfig": "Complétez votre configuration pour recevoir des paiements",
+        "viewDetails": "Voir les détails",
+        "configure": "Configurer",
+        "verifying": "Vérification de votre configuration Stripe...",
+        "errorFetching": "Erreur lors de la récupération du statut Stripe",
+        "errorStripe": "Erreur Stripe",
+        "cannotStart": "Impossible de démarrer Stripe",
+        "stripeStatus": "Statut Stripe",
+        "stripeStatusDesc": "État réel de votre compte Stripe Connect",
+        "incompleteConfig": "Configuration incomplète",
+        "stripeAccountCreated": "Compte Stripe créé",
+        "accountOperational": "Compte opérationnel",
+        "accountConfigured": "Votre compte Stripe est correctement configuré.",
+        "title": "Configuration des paiements",
+        "subtitle": "Configurez votre compte Stripe Connect pour recevoir vos paiements",
         "status": {
-          "title": "Stripe Status",
-          "description": "Actual status of your Stripe Connect account"
+          "title": "Statut Stripe",
+          "description": "État réel de votre compte Stripe Connect"
         },
         "badges": {
-          "complete": "Payments enabled",
-          "inProgress": "Action required",
-          "incomplete": "Not configured"
+          "complete": "Paiements activés",
+          "inProgress": "Action requise",
+          "incomplete": "Non configuré"
         },
         "steps": {
-          "accountCreated": "Stripe account created",
-          "detailsSubmitted": "Information submitted",
-          "operational": "Operational account"
+          "accountCreated": "Compte Stripe créé",
+          "detailsSubmitted": "Informations soumises",
+          "operational": "Compte opérationnel"
         },
         "issues": {
-          "title": "Problems detected"
+          "title": "Problèmes détectés"
         },
-        "actionRequired": "Action required",
-        "success": "Your Stripe account is correctly configured.",
-        "cta": "Configure Stripe",
-        "redirecting": "Redirect…"
+        "actionRequired": "Action requise",
+        "success": "Votre compte Stripe est correctement configuré.",
+        "cta": "Configurer Stripe",
+        "redirecting": "Redirection…"
       },
       "earnings": {
-        "title": "My Earnings",
-        "subtitle": "View your earnings and statistics",
-        "backToDashboard": "Back to dashboard",
-        "loadError": "Unable to load income. Please try again.",
-        "totalTransferred": "Total won",
-        "onStripeAccount": "Present on your Stripe account",
-        "pending": "Pending",
-        "securityPeriod": "Security period",
-        "available": "Available",
-        "readyForTransfer": "Ready to transfer",
-        "requestPayout": "Request payment",
-        "requestPayoutDesc": "Go to the payments page to request a transfer to your bank account.",
-        "requestPayoutInfo": "You can request a manual transfer as soon as funds are available.",
-        "payouts": "Payments",
-        "paymentHistory": "Payment history",
-        "paymentHistoryDesc": "View all your past payments and transactions.",
-        "view": "View",
-        "recentPayments": "Recent payments",
-        "recentPaymentsDesc": "The latest payments generated by your calls.",
-        "viewAllPayments": "View all payments",
-        "availability": "Availability",
-        "availabilityDesc": "Once the security period ends, the funds become available for payment.",
-        "automaticTransfer": "Automatic transfer",
-        "automaticTransferDesc": "Stripe can perform automatic transfers depending on your account configuration.",
-        "bankSetup": "Bank setup",
-        "bankSetupDesc": "Make sure your bank account is set up correctly in your",
-        "stripeDashboard": "Stripe dashboard",
-        "howItWorks": "How it works",
-        "alreadyInStripe": "Already in your Stripe account",
-        "availableForPayout": "Available for payout",
-        "noEarnings": "No earnings yet",
-        "pendingPayments": "Pending payments",
-        "recentPaymentsSubtitle": "Your latest received payments",
-        "totalEarnings": "Total Earnings",
-        "totalPayouts": "Total Payouts",
-        "viewPayouts": "Payouts"
+        "title": "Revenus",
+        "subtitle": "Suivez vos gains, paiements et transferts Stripe",
+        "backToDashboard": "Retour au dashboard",
+        "loadError": "Impossible de charger les revenus. Veuillez réessayer.",
+        "totalTransferred": "Total gagné",
+        "onStripeAccount": "Présent sur votre compte Stripe",
+        "pending": "En attente",
+        "securityPeriod": "Période de sécurité",
+        "available": "Disponible",
+        "readyForTransfer": "Prêt à être transféré",
+        "requestPayout": "Demander un paiement",
+        "requestPayoutDesc": "Accédez à la page des paiements pour demander un virement vers votre compte bancaire.",
+        "requestPayoutInfo": "Vous pouvez demander un virement manuel dès que les fonds sont disponibles.",
+        "payouts": "Paiements",
+        "paymentHistory": "Historique des paiements",
+        "paymentHistoryDesc": "Consultez tous vos paiements et transactions passées.",
+        "view": "Voir",
+        "recentPayments": "Paiements récents",
+        "recentPaymentsDesc": "Les derniers paiements générés par vos appels.",
+        "viewAllPayments": "Voir tous les paiements",
+        "availability": "Disponibilité",
+        "availabilityDesc": "Une fois la période de sécurité terminée, les fonds deviennent disponibles pour le paiement.",
+        "automaticTransfer": "Transfert automatique",
+        "automaticTransferDesc": "Stripe peut effectuer des virements automatiques selon la configuration de votre compte.",
+        "bankSetup": "Configuration bancaire",
+        "bankSetupDesc": "Assurez-vous que votre compte bancaire est correctement configuré dans votre",
+        "stripeDashboard": "dashboard Stripe",
+        "howItWorks": "Comment ça fonctionne",
+        "alreadyInStripe": "Déjà présent sur votre compte Stripe",
+        "availableForPayout": "Disponible pour le paiement",
+        "noEarnings": "Aucun gain pour le moment",
+        "pendingPayments": "Paiements en attente",
+        "recentPaymentsSubtitle": "Vos derniers paiements reçus",
+        "totalEarnings": "Gains totaux",
+        "totalPayouts": "Paiements effectués",
+        "viewPayouts": "Paiements"
       },
       "calls": {
-        "title": "My Calls",
-        "subtitle": "Manage your past and upcoming calls",
-        "backToDashboard": "Return to dashboard",
-        "loadError": "Unable to load calls. Please try again.",
+        "title": "Mes appels",
+        "subtitle": "Gérez et suivez tous vos appels planifiés avec vos clients",
+        "backToDashboard": "Retour au dashboard",
+        "loadError": "Impossible de charger les appels. Veuillez réessayer.",
         "total": "Total",
-        "upcoming": "Upcoming Calls",
-        "past": "Past Calls",
-        "cancelled": "Canceled",
+        "upcoming": "À venir",
+        "past": "Passés",
+        "cancelled": "Annulés",
         "filters": {
-          "all": "All",
-          "upcoming": "Upcoming",
-          "past": "Past",
-          "cancelled": "Cancelled"
+          "all": "Tous",
+          "upcoming": "À venir",
+          "past": "Passés",
+          "cancelled": "Annulés"
         },
         "status": {
-          "confirmed": "Confirmed",
-          "pending": "On hold",
-          "completed": "Finished",
-          "cancelled": "Canceled",
-          "past": "Pass",
-          "testMode": "Test Mode",
-          "with": "With:"
+          "confirmed": "Confirmé",
+          "pending": "En attente",
+          "completed": "Terminé",
+          "cancelled": "Annulé",
+          "past": "Passé",
+          "testMode": "Mode test",
+          "with": "avec"
         },
         "actions": {
-          "join": "Join",
-          "startingSoon": "Starting Soon"
+          "join": "Rejoindre l’appel",
+          "startingSoon": "Bientôt disponible"
         },
         "noCallsFor": {
-          "all": "No calls",
-          "upcoming": "No upcoming calls",
-          "past": "No past calls",
-          "cancelled": "No cancelled calls"
+          "all": "Vous n’avez encore aucun appel.",
+          "upcoming": "Aucun appel à venir.",
+          "past": "Aucun appel passé.",
+          "cancelled": "Aucun appel annulé."
         },
-        "noCalls": "No scheduled calls",
-        "youHave": "You have {count} upcoming call(s)"
+        "noCalls": "Aucun appel planifié",
+        "youHave": "Vous avez {count} appel(s) à venir"
       },
       "fees": {
-        "backToDashboard": "Back to dashboard",
-        "title": "Fees and commissions",
-        "subtitle": "Understand how remuneration works on Call a Star",
-        "platformFee": "Platform commission",
+        "backToDashboard": "Retour au dashboard",
+        "title": "Frais et commissions",
+        "subtitle": "Comprendre comment fonctionne la rémunération sur Call a Star",
+        "platformFee": "Commission de la plateforme",
         "stripe": {
-          "title": "Payment fees (Stripe)",
-          "subtitle": "Credit card payment processing fees",
-          "details": "Payments are processed by Stripe, our secure payment provider.",
-          "standardFees": "Per transaction (Standard Stripe Europe fees)"
+          "title": "Frais de paiement (Stripe)",
+          "subtitle": "Frais de traitement des paiements par carte bancaire",
+          "details": "Les paiements sont traités par Stripe, notre prestataire de paiement sécurisé.",
+          "standardFees": "Par transaction (frais standard Stripe Europe)"
         },
         "example": {
-          "title": "Calculation example",
-          "subtitle": "For a call from {amount} EUR",
-          "paidByUser": "Amount paid by user",
-          "platformFee": "Platform fee ({fee}%)",
-          "stripeFee": "Stripe fees (2.9% + 0.30)",
-          "net": "You receive",
-          "percent": "Or approximately {percent}% of the total amount"
+          "title": "Exemple de calcul",
+          "subtitle": "Pour un appel de {amount} EUR",
+          "paidByUser": "Montant payé par l'utilisateur",
+          "platformFee": "Commission plateforme ({fee}%)",
+          "stripeFee": "Frais Stripe (2.9% + 0.30)",
+          "net": "Vous recevez",
+          "percent": "Soit environ {percent}% du montant total"
         },
         "notes": {
-          "title": "Important notes",
-          "amounts": "The amounts displayed are gross amounts. Fees are automatically deducted upon transfer.",
-          "security": "Payments are transferred after a 7-day security period to handle disputes and refunds.",
-          "payouts": "To transfer funds to your bank account, visit",
+          "title": "Notes importantes",
+          "amounts": "Les montants affichés sont des montants bruts. Les frais sont automatiquement déduits lors du transfert.",
+          "security": "Les paiements sont transférés après une période de sécurité de 7 jours pour gérer litiges et remboursements.",
+          "payouts": "Pour transférer les fonds vers votre compte bancaire, consultez la page",
           "payoutLink": "Payouts"
         },
-        "calculationExample": "Calculation example",
-        "description": "Callastar takes a commission on each call",
-        "forACallOf": "For a call of",
-        "initialAmount": "Initial amount",
-        "netAmount": "Net amount received",
-        "paymentFees": "Payment fees (Stripe)",
-        "paymentFeesDesc": "Credit card payment processing fees",
-        "percentOf": "% of total amount",
-        "percentageNote": "Approximately",
-        "platformCommission": "Platform commission",
-        "platformCommissionDesc": "Call a Star takes a commission of",
-        "stripeFee": "Stripe fees (2.9% + 0.30)"
+        "calculationExample": "Exemple de calcul",
+        "description": "Callastar prélève une commission sur chaque appel",
+        "forACallOf": "Pour un appel de",
+        "initialAmount": "Montant initial",
+        "netAmount": "Montant net reçu",
+        "paymentFees": "Frais de paiement (Stripe)",
+        "paymentFeesDesc": "Frais de traitement du paiement par carte bancaire",
+        "percentOf": "% du montant total",
+        "percentageNote": "Environ",
+        "platformCommission": "Commission de la plateforme",
+        "platformCommissionDesc": "Callastar prélève une commission de",
+        "stripeFee": "Frais Stripe (2,9 % + 0,30 €)"
       },
       "notifications": {
-        "backToDashboard": "Back to dashboard",
+        "backToDashboard": "Retour au dashboard",
         "title": "Notifications",
-        "subtitle": "Manage your system and financial notifications",
+        "subtitle": "Gérez vos notifications système et financières",
         "stats": {
           "total": "Total",
-          "unread": "Unread",
-          "read": "Read"
+          "unread": "Non lues",
+          "read": "Lues"
         },
         "categories": {
-          "all": "All",
-          "payments": "Payments",
+          "all": "Toutes",
+          "payments": "Paiements",
           "payouts": "Payouts",
-          "bookings": "Appointment",
-          "disputes": "Disputes & refunds",
-          "system": "System"
+          "bookings": "Rendez-vous",
+          "disputes": "Litiges & remboursements",
+          "system": "Système"
         },
         "filters": {
-          "advanced": "Advanced filters",
-          "readStatus": "Reading status",
-          "type": "Specific type",
-          "all": "All",
-          "unread": "Unread",
-          "read": "Read"
+          "advanced": "Filtres avancés",
+          "readStatus": "Statut de lecture",
+          "type": "Type spécifique",
+          "all": "Toutes",
+          "unread": "Non lues",
+          "read": "Lues"
         },
         "actions": {
-          "markAllRead": "Mark all as read",
-          "markRead": "Mark as read",
-          "delete": "DELETE",
-          "viewDetails": "See details"
+          "markAllRead": "Tout marquer comme lu",
+          "markRead": "Marquer comme lu",
+          "delete": "Supprimer",
+          "viewDetails": "Voir les détails"
         },
-        "loading": "Loading...",
+        "loading": "Chargement...",
         "empty": {
-          "title": "No notifications",
-          "subtitle": "You have no notifications at the moment"
+          "title": "Aucune notification",
+          "subtitle": "Vous n'avez aucune notification pour le moment"
         },
         "pagination": {
-          "page": "{current} page on {total}",
-          "previous": "Previous",
-          "next": "Following"
+          "page": "Page {current} sur {total}",
+          "previous": "Précédent",
+          "next": "Suivant"
         },
-        "confirmDelete": "Are you sure you want to delete this notification?",
-        "markAllRead": "Mark all as read",
-        "noNotifications": "No notifications"
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette notification ?",
+        "markAllRead": "Tout marquer comme lu",
+        "noNotifications": "Aucune notification"
       },
       "cards": {
         "offers": {
-          "title": "Offers",
-          "description": "Manage your available call offers"
+          "title": "Offres",
+          "description": "Gérez vos offres d'appels disponibles"
         },
         "requests": {
-          "title": "Requests",
-          "description": "Respond to appointment requests",
-          "pending": "{count} pending"
+          "title": "Demandes",
+          "description": "Répondez aux demandes de rendez-vous",
+          "pending": "{count} en attente"
         },
         "calls": {
-          "title": "Calls",
-          "description": "View your past and upcoming calls"
+          "title": "Appels",
+          "description": "Consultez vos appels passés et à venir"
         },
         "reviews": {
-          "title": "Reviews",
-          "description": "View reviews from your fans"
+          "title": "Avis",
+          "description": "Consultez les avis de vos fans"
         },
         "payments": {
-          "title": "Payments",
-          "description": "History of your received payments"
+          "title": "Paiements",
+          "description": "Historique de vos paiements reçus"
         },
         "earnings": {
-          "title": "Earnings",
-          "description": "View your earnings and statistics"
+          "title": "Revenus",
+          "description": "Consultez vos revenus et statistiques"
         },
         "notifications": {
           "title": "Notifications",
-          "description": "Manage your notifications",
-          "unread": "{count} unread"
+          "description": "Gérez vos notifications",
+          "unread": "{count} non lues"
         },
         "settings": {
-          "title": "Settings",
-          "description": "Customize your profile and preferences"
+          "title": "Paramètres",
+          "description": "Personnalisez votre profil et vos préférences"
         },
         "payouts": {
-          "title": "Manage your payouts",
-          "description": "Request the transfer of your earnings to your bank account",
+          "title": "Gérer vos payouts",
+          "description": "Demandez le transfert de vos revenus vers votre compte bancaire",
           "button": "Payouts"
         },
         "fees": {
-          "title": "Fees",
-          "description": "View fees and commissions"
+          "title": "Frais",
+          "description": "Consulter les frais et commissions"
         }
       },
       "offers": {
-        "title": "My Offers",
-        "subtitle": "Manage your call offers",
-        "create": "Create an offer",
-        "new": "New call offer",
-        "newDescription": "Create a new call offer for your fans",
-        "titleField": "Title",
+        "title": "Mes Offres",
+        "subtitle": "Gérez vos offres d'appels",
+        "create": "Créer une offre",
+        "new": "Nouvelle offre d'appel",
+        "newDescription": "Créez une nouvelle offre d'appel pour vos fans",
+        "titleField": "Titre",
         "description": "Description",
-        "price": "Price",
-        "duration": "Duration",
-        "dateTime": "Date and time",
-        "creating": "Creating...",
+        "price": "Prix",
+        "duration": "Durée",
+        "dateTime": "Date et heure",
+        "creating": "Création...",
         "durationMinutes": "Minutes",
-        "createButton": "Create",
-        "deleteConfirm": "Are you sure you want to delete this offer?",
-        "deleteSuccess": "Offer deleted successfully",
-        "deleteError": "Unable to delete offer",
-        "createSuccess": "Offer created successfully!",
-        "createError": "Error during creation",
+        "createButton": "Créer",
+        "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette offre ?",
+        "deleteSuccess": "Offre supprimée avec succès",
+        "deleteError": "Impossible de supprimer l'offre",
+        "createSuccess": "Offre créée avec succès!",
+        "createError": "Erreur lors de la création",
         "viewMode": {
-          "list": "List View",
-          "calendar": "Calendar View"
+          "list": "Vue Liste",
+          "calendar": "Vue Calendrier"
         },
         "filters": {
-          "all": "All ({count})",
-          "available": "Available",
-          "booked": "Booked",
-          "completed": "Completed ({count})",
-          "cancelled": "Cancelled ({count})",
-          "archived": "Archived"
+          "all": "Toutes ({count})",
+          "available": "Disponibles",
+          "booked": "Réservées",
+          "completed": "Terminées ({count})",
+          "cancelled": "Annulées ({count})",
+          "archived": "Archivées"
         },
         "status": {
-          "available": "Available",
-          "booked": "Booked",
-          "completed": "Completed",
-          "cancelled": "Cancelled"
+          "available": "Disponible",
+          "booked": "Réservée",
+          "completed": "Terminée",
+          "cancelled": "Annulée"
         },
         "table": {
-          "offer": "Offer",
-          "dateTime": "Date & Time",
-          "duration": "Duration",
-          "price": "Price",
-          "status": "Status",
+          "offer": "Offre",
+          "dateTime": "Date & Heure",
+          "duration": "Durée",
+          "price": "Prix",
+          "status": "Statut",
           "actions": "Actions"
         },
-        "bookedBy": "Booked by {name}",
-        "noOffers": "No offers",
-        "noOffersWithStatus": "No offers with status \"{status}\"",
+        "bookedBy": "Réservé par {name}",
+        "noOffers": "Aucune offre",
+        "noOffersWithStatus": "Aucune offre avec le statut \"{status}\"",
         "legend": {
-          "available": "Available",
-          "booked": "Booked",
-          "completed": "Completed",
-          "cancelled": "Cancelled",
-          "confirmedCall": "📞 Confirmed Call"
+          "available": "Disponible",
+          "booked": "Réservée",
+          "completed": "Terminée",
+          "cancelled": "Annulée",
+          "confirmedCall": "📞 Appel confirmé"
         },
-        "createOffer": "Create offer",
-        "editOffer": "Edit offer",
-        "deleteOffer": "Delete offer",
+        "createOffer": "Créer une offre",
+        "editOffer": "Modifier l'offre",
+        "deleteOffer": "Supprimer l'offre",
         "minutes": "min",
-        "backToDashboard": "Back to dashboard",
+        "backToDashboard": "Retour au dashboard",
         "calendar": {
-          "call": "Call",
-          "user": "User"
+          "call": "Appel",
+          "user": "Utilisateur"
         }
       },
       "requests": {
-        "title": "Call Requests",
-        "subtitle": "Manage call requests from your fans",
-        "pending": "Pending",
-        "accepted": "Accepted",
-        "rejected": "Rejected",
-        "pendingRequests": "Pending Requests",
-        "accept": "Accept",
-        "reject": "Reject",
-        "confirmAccept": "Confirm Acceptance",
-        "confirmAcceptDesc": "Are you sure you want to accept this request? An offer will be created automatically.",
-        "user": "User",
-        "dateTime": "Date/Time",
-        "proposedPrice": "Proposed Price",
+        "title": "Demandes d'appel",
+        "subtitle": "Gérez les demandes d'appel de vos fans",
+        "pending": "En attente",
+        "accepted": "Acceptées",
+        "rejected": "Refusées",
+        "pendingRequests": "Demandes en attente",
+        "accept": "Accepter",
+        "reject": "Refuser",
+        "confirmAccept": "Confirmer l'acceptation",
+        "confirmAcceptDesc": "Êtes-vous sûr de vouloir accepter cette demande ? Une offre sera créée automatiquement.",
+        "user": "Utilisateur",
+        "dateTime": "Date/Heure",
+        "proposedPrice": "Prix proposé",
         "message": "Message",
-        "cancel": "Cancel",
-        "confirm": "Confirm",
-        "confirming": "Confirming...",
-        "rejectReason": "Reason for Refusal",
-        "reasonNotAvailable": "Not available",
-        "reasonPriceTooLow": "Price too low",
-        "reasonOther": "Other",
-        "specifyReason": "Specify the reason",
-        "explainRejection": "Explain why you are rejecting this request...",
-        "rejecting": "Rejecting...",
-        "acceptedRequests": "Accepted Requests",
-        "rejectedRequests": "Rejected Requests",
-        "noRequests": "No call requests received",
-        "loadError": "Error loading requests",
-        "backToDashboard": "Back to dashboard",
-        "notifyUser": "The user will be notified.",
-        "rejectDesc": "Please indicate the reason for refusal. The user will be notified."
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "confirming": "Confirmation...",
+        "rejectReason": "Raison du refus",
+        "reasonNotAvailable": "Non disponible",
+        "reasonPriceTooLow": "Prix trop bas",
+        "reasonOther": "Autre",
+        "specifyReason": "Précisez la raison",
+        "explainRejection": "Expliquez pourquoi vous refusez cette demande...",
+        "rejecting": "Refus...",
+        "acceptedRequests": "Demandes acceptées",
+        "rejectedRequests": "Demandes refusées",
+        "noRequests": "Aucune demande d'appel reçue",
+        "loadError": "Erreur de chargement des demandes",
+        "backToDashboard": "Retour au dashboard",
+        "notifyUser": "L'utilisateur sera notifié.",
+        "rejectDesc": "Veuillez indiquer la raison du refus. L'utilisateur sera notifié."
       },
       "reviews": {
-        "title": "My Reviews",
-        "subtitle": "View reviews left by your fans",
-        "noReviews": "No reviews yet",
-        "averageRating": "Average rating",
-        "totalReviews": "reviews",
-        "allReviews": "All reviews",
-        "anonymousUser": "Anonymous user",
-        "backToDashboard": "Back to dashboard",
-        "summary": "Rating Summary",
-        "summaryDesc": "Overview of your reviews",
-        "noReviewsDesc": "Your future reviews will appear here",
-        "loadError": "Error loading reviews",
-        "callLabel": "Call",
-        "reviewsCount": "reviews"
+        "title": "Mes Avis",
+        "subtitle": "Consultez les avis laissés par vos fans",
+        "noReviews": "Aucun avis pour le moment",
+        "averageRating": "Note moyenne",
+        "totalReviews": "avis",
+        "allReviews": "Tous les avis",
+        "anonymousUser": "Utilisateur anonyme",
+        "backToDashboard": "Retour au dashboard",
+        "summary": "Résumé des notes",
+        "summaryDesc": "Aperçu de vos évaluations",
+        "noReviewsDesc": "Vos futurs avis apparaîtront ici",
+        "loadError": "Erreur lors du chargement des avis",
+        "callLabel": "Appel",
+        "reviewsCount": "avis"
       },
       "payments": {
-        "title": "Payment History",
-        "amount": "Amount",
+        "title": "Historique des Paiements",
+        "amount": "Montant",
         "date": "Date",
-        "from": "From",
-        "total": "Total payments",
-        "availableOn": "Available on",
-        "transferredOn": "Transferred on",
-        "backToDashboard": "Back to dashboard",
-        "subtitle": "View all your received payments",
-        "back": "Return to dashboard",
-        "transferred": "Payments transferred",
-        "pending": "On hold",
-        "available": "Available",
-        "allPayments": "All payments",
-        "allPaymentsDesc": "Complete history of payments received",
-        "noPayments": "No payments yet",
-        "loadError": "Unable to load payments",
+        "from": "De",
+        "total": "Total des paiements",
+        "availableOn": "Disponible le",
+        "transferredOn": "Transféré le",
+        "backToDashboard": "Retour au dashboard",
+        "subtitle": "Suivez l’ensemble de vos paiements et leur statut",
+        "back": "Retour au dashboard",
+        "transferred": "Paiements transférés",
+        "pending": "En attente",
+        "available": "Disponibles",
+        "allPayments": "Tous les paiements",
+        "allPaymentsDesc": "Historique complet des paiements reçus",
+        "noPayments": "Aucun paiement pour le moment",
+        "loadError": "Impossible de charger les paiements",
         "status": {
-          "paid": "✓ Transferred",
-          "ready": "✓ Available",
-          "held": "⏳ Waiting",
-          "pending": "⏳ Pending",
-          "processing": "⏳ Processing",
-          "available": "✓ Available",
-          "transferred": "✓ Transferred"
+          "paid": "✓ Transféré",
+          "ready": "✓ Disponible",
+          "held": "⏳ En attente",
+          "pending": "⏳ En attente",
+          "processing": "⏳ En cours",
+          "available": "✓ Disponible",
+          "transferred": "✓ Transferrer"
         },
         "info": {
           "title": "📋 Information",
-          "amounts": "The amounts displayed correspond to the total amount paid by the user. Fees and commissions are detailed on the Fees and commissions page.",
-          "security": "Payments remain pending for 7 days to protect against disputes.",
-          "transfer": "After the security period, funds are automatically transferred to your Stripe Connect account.",
-          "payouts": "You can manage your bank transfers from the Payouts page."
+          "amounts": "Les montants affichés correspondent au montant total payé par l'utilisateur. Les frais et commissions sont détaillés dans la page Frais et commissions.",
+          "security": "Les paiements restent en attente pendant 7 jours afin de protéger contre les litiges.",
+          "transfer": "Après la période de sécurité, les fonds sont automatiquement transférés vers votre compte Stripe Connect.",
+          "payouts": "Vous pouvez gérer vos virements bancaires depuis la page Payouts."
         }
       },
       "payouts": {
-        "title": "Payments and transfers",
-        "subtitle": "Manage your transfers and history",
-        "noPayouts": "No payouts requested",
-        "minimum": "Minimum required",
+        "title": "Paiements et virements",
+        "subtitle": "Gérez vos virements et historique",
+        "noPayouts": "Aucun payout demandé",
+        "minimum": "Minimum requis",
         "requestPayout": {
-          "title": "Request a payout",
-          "amount": "Amount",
-          "requesting": "Requesting...",
-          "submit": "Request"
+          "title": "Demander un payout",
+          "amount": "Montant",
+          "requesting": "Demande...",
+          "submit": "Demander"
         },
-        "requestManualPayout": "Request manual transfer",
-        "noPayoutHistory": "No transfer history yet",
-        "availableBalance": "Available balance",
-        "pendingBalance": "Pending balance",
+        "requestManualPayout": "Demander un virement manuel",
+        "noPayoutHistory": "Aucun historique de virement pour le moment",
+        "availableBalance": "Solde disponible",
+        "pendingBalance": "Solde en attente",
         "status": {
-          "paid": "✓ Paid",
-          "pending": "⏳ Pending",
-          "processing": "⏳ Processing",
-          "failed": "✗ Failed"
+          "paid": "✓ Payé",
+          "pending": "⏳ En attente",
+          "processing": "⏳ En cours",
+          "failed": "✗ Échoué"
         },
-        "backToDashboard": "Back to dashboard",
+        "backToDashboard": "Retour au dashboard",
         "actions": {
-          "refresh": "Refresh",
-          "edit": "To modify"
+          "refresh": "Actualiser",
+          "edit": "Modifier"
         },
         "toasts": {
-          "refreshed": "Updated data"
+          "refreshed": "Données actualisées"
         },
         "errors": {
-          "generic": "An error has occurred",
-          "balanceFetch": "Unable to recover balance",
-          "noCreatorId": "Unable to recover your creator profile"
+          "generic": "Une erreur est survenue",
+          "balanceFetch": "Impossible de récupérer le solde",
+          "noCreatorId": "Impossible de récupérer votre profil créateur"
         },
         "setup": {
-          "incomplete": "Your payment configuration is incomplete.",
-          "completeLink": "Complete your configuration",
-          "requiredInfoCount": "Information required: {count}"
+          "incomplete": "Votre configuration de paiement est incomplète.",
+          "completeLink": "Complétez votre configuration",
+          "requiredInfoCount": "Informations requises : {count}"
         },
-        "balance": "Available balance",
+        "balance": "Solde disponible",
         "currencyAlert": {
-          "title": "Stripe account currency:",
-          "body": "Your Stripe account is configured as {stripeCurrency}. Amounts are displayed in your Stripe currency. Transfers will be made in this currency. (Calculation basis: EUR)"
+          "title": "Devise du compte Stripe :",
+          "body": "Votre compte Stripe est configuré en {stripeCurrency}. Les montants sont affichés dans votre devise Stripe. Les virements seront effectués dans cette devise. (Base de calcul : EUR)"
         },
         "statusCard": {
-          "title": "Transfer status",
-          "subtitle": "Current status of your payment account",
+          "title": "Statut des virements",
+          "subtitle": "État actuel de votre compte de paiement",
           "badge": {
-            "operational": "Operational account",
-            "verifying": "Verification in progress",
-            "setupRequired": "System requirements"
+            "operational": "Compte opérationnel",
+            "verifying": "Vérification en cours",
+            "setupRequired": "Configuration requise"
           },
           "alert": {
-            "operational": "✅ Account operational - Transfers will be sent according to your configured schedule",
-            "verifying": "🔄 Verification in progress - Some information is awaiting validation",
-            "requiredItems": "Information required: {items}",
-            "incomplete": "⚠️ Incomplete configuration - Complete your configuration to receive transfers"
+            "operational": "✅ Compte opérationnel - Les virements seront envoyés selon votre calendrier configuré",
+            "verifying": "🔄 Vérification en cours - Certaines informations sont en attente de validation",
+            "requiredItems": "Informations requises : {items}",
+            "incomplete": "⚠️ Configuration incomplète - Complétez votre configuration pour recevoir des virements"
           },
           "details": {
             "submitted": {
-              "title": "Information submitted",
-              "yes": "✓ Submitted",
-              "no": "✗ Required"
+              "title": "Informations soumises",
+              "yes": "✓ Soumises",
+              "no": "✗ Requises"
             },
             "verifications": {
-              "title": "Verifications",
-              "complete": "✓ Complete",
-              "pendingCount": "⏳ {count} waiting"
+              "title": "Vérifications",
+              "complete": "✓ Complètes",
+              "pendingCount": "⏳ {count} en attente"
             },
             "payouts": {
-              "title": "Transfers",
-              "enabled": "✓ Enabled",
-              "disabled": "✗ Disabled"
+              "title": "Virements",
+              "enabled": "✓ Activés",
+              "disabled": "✗ Désactivés"
             }
           }
         },
         "settings": {
-          "backToPayouts": "Back to payments",
-          "title": "Payout Settings",
-          "subtitle": "Configure the frequency and minimum amount for your payouts",
+          "backToPayouts": "Retour aux paiements",
+          "title": "Paramètres de virement",
+          "subtitle": "Configurez la fréquence et le montant minimum de vos virements",
           "configuration": "Configuration",
-          "configurationDesc": "Modify your payout preferences",
-          "payoutSchedule": "Payout Schedule",
-          "scheduleDaily": "Daily",
-          "scheduleWeekly": "Weekly",
-          "scheduleManual": "Manual",
-          "scheduleDailyDesc": "Automatic payout every day if available balance reaches minimum",
-          "scheduleWeeklyDesc": "Automatic payout every Monday if available balance reaches minimum",
-          "scheduleManualDesc": "You must manually request each payout (subject to admin approval)",
-          "minimumAmount": "Minimum amount ({currency})",
-          "minimumAmountDesc": "Minimum amount required to trigger a payout (between 10 {currency} and 1,000,000 {currency})",
+          "configurationDesc": "Modifiez vos préférences de virement",
+          "payoutSchedule": "Calendrier de virement",
+          "scheduleDaily": "Quotidien",
+          "scheduleWeekly": "Hebdomadaire",
+          "scheduleManual": "Manuel",
+          "scheduleDailyDesc": "Virement automatique chaque jour si le solde disponible atteint le minimum",
+          "scheduleWeeklyDesc": "Virement automatique chaque lundi si le solde disponible atteint le minimum",
+          "scheduleManualDesc": "Vous devez demander manuellement chaque virement (sujet à approbation admin)",
+          "minimumAmount": "Montant minimum ({currency})",
+          "minimumAmountDesc": "Montant minimum requis pour déclencher un virement (entre 10 {currency} et 1 000 000 {currency})",
           "important": "Important :",
-          "importantNote": "Automatic payouts (daily/weekly) are processed automatically by the system. Manual payouts require administrator approval.",
-          "syncedWithStripe": "Synced with Stripe - Your settings are up to date on Stripe",
-          "outOfSync": "Out of sync - Settings differ between database and Stripe",
-          "database": "Database",
+          "importantNote": "Les virements automatiques (quotidiens/hebdomadaires) sont traités automatiquement par le système. Les virements manuels nécessitent une approbation de l'administrateur.",
+          "syncedWithStripe": "Synchronisé avec Stripe - Vos paramètres sont à jour sur Stripe",
+          "outOfSync": "Désynchronisé - Les paramètres diffèrent entre la base de données et Stripe",
+          "database": "Base de données",
           "stripe": "Stripe",
-          "saveToSync": "Save your settings to sync with Stripe.",
-          "noStripeAccount": "No Stripe account connected",
-          "saveChanges": "Save changes",
-          "saving": "Saving...",
-          "cancel": "Cancel",
-          "noChanges": "No changes to save",
-          "schedulesExplanation": "Schedule Explanations",
-          "dailyTitle": "Daily",
-          "dailyDesc": "The system checks daily if your available balance reaches the minimum amount. If yes, an automatic payout is created to your Stripe account.",
-          "weeklyTitle": "Weekly",
-          "weeklyDesc": "The system checks every Monday if your available balance reaches the minimum amount. If yes, an automatic payout is created to your Stripe account.",
-          "manualTitle": "Manual",
-          "manualDesc": "You must manually request a payout from the payments page. Each request must be approved by an administrator before being processed. This gives you complete control over the schedule of your payouts.",
-          "tip": "Tip",
-          "tipDesc": "If you prefer to have a regular cash flow, choose \"Daily\" or \"Weekly\". If you prefer to manually control your payouts, choose \"Manual\"."
+          "saveToSync": "Enregistrez vos paramètres pour synchroniser avec Stripe.",
+          "noStripeAccount": "Aucun compte Stripe connecté",
+          "saveChanges": "Enregistrer les modifications",
+          "saving": "Enregistrement...",
+          "cancel": "Annuler",
+          "noChanges": "Aucune modification à enregistrer",
+          "schedulesExplanation": "Explications des calendriers",
+          "dailyTitle": "Quotidien",
+          "dailyDesc": "Le système vérifie chaque jour si votre solde disponible atteint le montant minimum. Si oui, un virement automatique est créé vers votre compte Stripe.",
+          "weeklyTitle": "Hebdomadaire",
+          "weeklyDesc": "Le système vérifie chaque lundi si votre solde disponible atteint le montant minimum. Si oui, un virement automatique est créé vers votre compte Stripe.",
+          "manualTitle": "Manuel",
+          "manualDesc": "Vous devez manuellement demander un virement depuis la page des paiements. Chaque demande doit être approuvée par un administrateur avant d'être traitée. Cela vous donne un contrôle total sur le calendrier de vos virements.",
+          "tip": "Conseil",
+          "tipDesc": "Si vous préférez avoir un flux de trésorerie régulier, choisissez \"Quotidien\" ou \"Hebdomadaire\". Si vous préférez contrôler manuellement vos virements, choisissez \"Manuel\"."
         },
         "settingsCard": {
-          "title": "Transfer settings",
-          "subtitle": "Configure the frequency and minimum amount of your transfers",
-          "scheduleTitle": "Transfer schedule",
-          "minimumTitle": "Minimum amount",
-          "minimumHint": "(Minimum required for a transfer)"
+          "title": "Paramètres de virement",
+          "subtitle": "Configurez la fréquence et le montant minimum de vos virements",
+          "scheduleTitle": "Calendrier de virement",
+          "minimumTitle": "Montant minimum",
+          "minimumHint": "(Minimum requis pour un virement)"
         },
         "manual": {
-          "title": "Request a manual transfer",
-          "body": "You have {amount} {currency} available for a transfer.",
-          "baseNote": "(≈ same amount in EUR basis)",
-          "action": "Request a transfer"
+          "title": "Demander un virement manuel",
+          "body": "Vous avez {amount} {currency} disponibles pour un virement.",
+          "baseNote": "(≈ même montant en EUR base)",
+          "action": "Demander un virement"
         },
         "historyCard": {
-          "title": "Transfer history",
-          "subtitle": "List of all your transfers and their status",
-          "emptyTitle": "No transfer history yet",
-          "emptySubtitle": "Transfers will appear here once processed",
+          "title": "Historique des virements",
+          "subtitle": "Liste de tous vos virements et leur statut",
+          "emptyTitle": "Aucun historique de virement pour le moment",
+          "emptySubtitle": "Les virements apparaîtront ici une fois traités",
           "table": {
             "date": "Date",
-            "amount": "Amount",
-            "status": "Status",
-            "type": "Kind",
+            "amount": "Montant",
+            "status": "Statut",
+            "type": "Type",
             "stripeId": "ID Stripe"
           }
         },
         "history": {
           "status": {
-            "paid": "Paid",
-            "failed": "Failed",
-            "processing": "In progress",
-            "unknown": "Unknown"
+            "paid": "Payé",
+            "failed": "Échoué",
+            "processing": "En cours",
+            "unknown": "Inconnu"
           }
         },
         "info": {
-          "title": "How do transfers work?",
+          "title": "Comment fonctionnent les virements ?",
           "auto": {
-            "title": "Automatic transfers:",
+            "title": "Virements automatiques :",
             "daily": {
-              "title": "Daily :",
-              "body": "Automatic transfer each day if the available balance reaches the configured minimum"
+              "title": "Quotidien :",
+              "body": "Virement automatique chaque jour si le solde disponible atteint le minimum configuré"
             },
             "weekly": {
-              "title": "Weekly :",
-              "body": "Automatic transfer every Monday if the available balance reaches the configured minimum"
+              "title": "Hebdomadaire :",
+              "body": "Virement automatique chaque lundi si le solde disponible atteint le minimum configuré"
             },
             "manual": {
-              "title": "Manual :",
-              "body": "You must manually request each transfer (subject to admin approval)"
+              "title": "Manuel :",
+              "body": "Vous devez demander manuellement chaque virement (sujet à approbation admin)"
             }
           },
           "processing": {
-            "title": "Processing times:",
-            "body": "Stripe transfers are typically processed within 2-3 business days. Once the transfer is processed by Stripe, the funds are sent to your bank account according to your Stripe settings (usually another 1-2 days)."
+            "title": "Délais de traitement :",
+            "body": "Les virements Stripe sont généralement traités en 2-3 jours ouvrables. Une fois le virement traité par Stripe, les fonds sont envoyés vers votre compte bancaire selon vos paramètres Stripe (généralement 1-2 jours supplémentaires)."
           },
           "bank": {
-            "title": "Banking configuration:",
-            "bodyStart": "To set up or change your bank account, log in to your",
-            "stripeDashboard": "Stripe dashboard"
+            "title": "Configuration bancaire :",
+            "bodyStart": "Pour configurer ou modifier votre compte bancaire, connectez-vous à votre",
+            "stripeDashboard": "tableau de bord Stripe"
           }
         },
         "common": {
-          "dash": null
+          "dash": "-"
         },
         "request": {
-          "backToPayouts": "Back to payments",
-          "title": "Request Manual Payout",
-          "subtitle": "Submit a payout request for approval",
-          "availableBalance": "Available balance",
-          "maxAmount": "Maximum amount you can request",
-          "currencyConversion": "Currency Conversion",
-          "currencyConversionDesc": "Your Stripe account is in {currency}. The amount will be automatically converted from EUR (base) to {currency} during the transfer. The current conversion rate will be applied at the time of processing.",
+          "backToPayouts": "Retour aux paiements",
+          "title": "Demander un virement manuel",
+          "subtitle": "Soumettez une demande de virement pour approbation",
+          "availableBalance": "Solde disponible",
+          "maxAmount": "Montant maximum que vous pouvez demander",
+          "currencyConversion": "Conversion de devise",
+          "currencyConversionDesc": "Votre compte Stripe est en {currency}. Le montant sera converti automatiquement de EUR (base) vers {currency} lors du virement. Le taux de conversion actuel sera appliqué au moment du traitement.",
           "conversionApprox": "≈ {amount} EUR (base)",
-          "payoutsNotEnabled": "Payouts are not enabled on your account. Please complete your payment setup.",
-          "balanceTooLow": "Your available balance is lower than the required minimum ({minimum} {currency}). You cannot request a payout at this time.",
-          "payoutAmount": "Payout Amount",
-          "payoutAmountDesc": "Specify the amount you wish to receive",
-          "amount": "Amount ({currency})",
+          "payoutsNotEnabled": "Les virements ne sont pas activés sur votre compte. Veuillez compléter votre configuration de paiement.",
+          "balanceTooLow": "Votre solde disponible est inférieur au minimum requis ({minimum} {currency}). Vous ne pouvez pas demander de virement pour le moment.",
+          "payoutAmount": "Montant du virement",
+          "payoutAmountDesc": "Indiquez le montant que vous souhaitez recevoir",
+          "amount": "Montant ({currency})",
           "minMaxInfo": "Minimum: {min} {currency} • Maximum: {max} {currency}",
-          "quickAmounts": "Quick amounts",
+          "quickAmounts": "Montants rapides",
           "important": "Important",
-          "importantNote": "This request will be reviewed by an administrator before being processed. You will be notified once the request is approved or rejected.",
-          "submitRequest": "Submit request",
-          "submitting": "Submitting...",
-          "cannotRequest": "You cannot request a payout at this time",
-          "requestProcess": "Request Process",
-          "step1Title": "Submission",
-          "step1Desc": "You submit your request with the desired amount",
-          "step2Title": "Review",
-          "step2Desc": "An administrator reviews your request (usually within 24-48h)",
-          "step3Title": "Approval",
-          "step3Desc": "If approved, the payout is created to your Stripe account",
-          "step4Title": "Processing",
-          "step4Desc": "Stripe processes the payout to your bank account (2-5 business days)"
+          "importantNote": "Cette demande sera examinée par un administrateur avant d'être traitée. Vous serez notifié une fois la demande approuvée ou rejetée.",
+          "submitRequest": "Soumettre la demande",
+          "submitting": "Soumission en cours...",
+          "cannotRequest": "Vous ne pouvez pas effectuer de demande de virement pour le moment",
+          "requestProcess": "Processus de demande",
+          "step1Title": "Soumission",
+          "step1Desc": "Vous soumettez votre demande avec le montant souhaité",
+          "step2Title": "Examen",
+          "step2Desc": "Un administrateur examine votre demande (généralement sous 24-48h)",
+          "step3Title": "Approbation",
+          "step3Desc": "Si approuvée, le virement est créé vers votre compte Stripe",
+          "step4Title": "Traitement",
+          "step4Desc": "Stripe traite le virement vers votre compte bancaire (2-5 jours ouvrables)"
         }
       },
       "settings": {
-        "title": "Creator Settings",
-        "subtitle": "Manage your profile and preferences",
+        "title": "Paramètres Créateur",
+        "subtitle": "Gérez votre profil et vos préférences",
         "tabs": {
-          "profile": "Profile",
-          "public": "Public Profile",
-          "payments": "Payments",
-          "security": "Security",
+          "profile": "Profil",
+          "public": "Profil Public",
+          "payments": "Paiements",
+          "security": "Sécurité",
           "notifications": "Notifications"
         },
         "profile": {
-          "title": "Personal Information",
-          "description": "This information will be visible on your public profile",
-          "fullName": "Full Name",
+          "title": "Informations personnelles",
+          "description": "Ces informations seront visibles sur votre profil public",
+          "fullName": "Nom complet",
           "email": "Email",
           "bio": "Bio",
-          "bioPlaceholder": "Tell us a bit about yourself...",
-          "expertise": "Field of Expertise",
-          "expertisePlaceholder": "e.g.: Music, Comedy, Sports...",
-          "timezone": "Time Zone",
-          "timezoneTitle": "Time Zone",
-          "timezoneDescription": "Set your time zone to display call times correctly",
-          "autoDetected": "Automatically detected time zone",
-          "currentTimezone": "Current time zone",
-          "selectTimezone": "Select a time zone",
-          "autoDetect": "Auto-detect",
-          "allTimes": "All times will be displayed in this time zone",
-          "preview": "Preview",
-          "previewTime": "It is currently {time} ({abbr}) in your time zone",
-          "save": "Save",
-          "saving": "Saving...",
-          "timezoneDetected": "Time zone detected automatically",
-          "timePreviewTitle": "Time overview:",
-          "timePreviewText": "It is currently {time} ({abbr}) in your time zone"
+          "bioPlaceholder": "Parlez un peu de vous...",
+          "expertise": "Domaine d'expertise",
+          "expertisePlaceholder": "ex: Musique, Comédie, Sport...",
+          "timezone": "Fuseau horaire",
+          "timezoneTitle": "Fuseau horaire",
+          "timezoneDescription": "Configurez votre fuseau horaire pour afficher correctement les horaires des appels",
+          "autoDetected": "Fuseau horaire détecté automatiquement",
+          "currentTimezone": "Fuseau horaire actuel",
+          "selectTimezone": "Sélectionner un fuseau horaire",
+          "autoDetect": "Auto-détecter",
+          "allTimes": "Tous les horaires seront affichés dans ce fuseau horaire",
+          "preview": "Aperçu",
+          "previewTime": "Il est actuellement {time} ({abbr}) dans votre fuseau horaire",
+          "save": "Enregistrer",
+          "saving": "Enregistrement...",
+          "timezoneDetected": "Fuseau horaire détecté automatiquement",
+          "timePreviewTitle": "Aperçu de l’heure :",
+          "timePreviewText": "Il est actuellement {time} ({abbr}) dans votre fuseau horaire"
         },
         "publicProfile": {
-          "title": "Profile Images",
-          "description": "Manage your profile picture and banner",
-          "profileImage": "Profile Picture",
-          "profileImageDesc": "Your photo will be displayed in a circular shape",
-          "bannerImage": "Banner Image",
-          "bannerImageDesc": "Cover image for your profile (recommended landscape format: 1200x300px)",
-          "currentPreview": "Current preview:",
-          "preview": "Preview:",
-          "noImage": "No image",
-          "uploadInProgress": "Upload in progress...",
-          "changeImage": "Change image",
-          "uploadImage": "Upload an image",
-          "deleteInProgress": "Deletion in progress...",
-          "deleteImage": "Delete image",
-          "acceptedFormats": "Accepted formats: JPG, PNG, WEBP (max 5MB). The image will be saved automatically.",
-          "confirmDelete": "Are you sure you want to delete this image?",
-          "cannotLoadImage": "Unable to load image",
-          "bioTitle": "Bio and Description",
-          "bioDescription": "Customize your profile visible to your fans",
-          "richBio": "Enhanced Bio",
-          "richBioPlaceholder": "Tell about yourself, your journey, what you offer...",
-          "richBioHelp": "This bio will be displayed on your public profile. Use line breaks to structure your text.",
-          "socialLinks": "Social Networks",
-          "socialLinksDesc": "Add your social media links so your fans can follow you",
+          "title": "Images du profil",
+          "description": "Gérez votre photo de profil et votre bannière",
+          "profileImage": "Photo de profil",
+          "profileImageDesc": "Votre photo sera affichée de manière circulaire",
+          "bannerImage": "Image de bannière",
+          "bannerImageDesc": "Image de couverture de votre profil (format paysage recommandé: 1200x300px)",
+          "currentPreview": "Aperçu actuel :",
+          "preview": "Aperçu :",
+          "noImage": "Aucune image",
+          "uploadInProgress": "Upload en cours...",
+          "changeImage": "Changer l'image",
+          "uploadImage": "Uploader une image",
+          "deleteInProgress": "Suppression en cours...",
+          "deleteImage": "Supprimer l'image",
+          "acceptedFormats": "Formats acceptés: JPG, PNG, WEBP (max 5MB). L'image sera enregistrée automatiquement.",
+          "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette image ?",
+          "cannotLoadImage": "Impossible de charger l'image",
+          "bioTitle": "Bio et description",
+          "bioDescription": "Personnalisez votre profil visible par vos fans",
+          "richBio": "Bio enrichie",
+          "richBioPlaceholder": "Parlez de vous, de votre parcours, de ce que vous proposez...",
+          "richBioHelp": "Cette bio sera affichée sur votre profil public. Utilisez des sauts de ligne pour structurer votre texte.",
+          "socialLinks": "Réseaux Sociaux",
+          "socialLinksDesc": "Ajoutez vos liens de réseaux sociaux pour que vos fans puissent vous suivre",
           "instagram": "Instagram",
-          "instagramPlaceholder": "https://instagram.com/your-account",
+          "instagramPlaceholder": "https://instagram.com/votre-compte",
           "tiktok": "TikTok",
-          "tiktokPlaceholder": "https://tiktok.com/@your-account",
+          "tiktokPlaceholder": "https://tiktok.com/@votre-compte",
           "twitter": "Twitter / X",
-          "twitterPlaceholder": "https://twitter.com/your-account",
+          "twitterPlaceholder": "https://twitter.com/votre-compte",
           "youtube": "YouTube",
-          "youtubePlaceholder": "https://youtube.com/@your-channel",
-          "other": "Website / Other link",
-          "otherPlaceholder": "https://your-site.com"
+          "youtubePlaceholder": "https://youtube.com/@votre-chaine",
+          "other": "Site web / Autre lien",
+          "otherPlaceholder": "https://votre-site.com"
         },
         "paymentsTab": {
-          "title": "Stripe Connect Configuration",
-          "description": "Manage your payments and transfers",
-          "stripeStatus": "Stripe Connect Status",
-          "configured": "Configured",
-          "notConfigured": "Not configured",
-          "accountReady": "Your account is set up and ready to receive payments",
-          "configRequired": "Configuration required to receive payments",
-          "warningTitle": "⚠️ Configuration needed",
-          "warningDesc": "To receive your payments, you must complete your Stripe Connect account setup. This secure process takes about 5 minutes.",
-          "configureStripe": "Configure Stripe Connect",
-          "manageAccount": "📊 Manage your Stripe account",
-          "manageAccountDesc": "Access your Stripe Connect space to manage your payments, transfers and bank information (IBAN).",
-          "openStripeConnect": "Open Stripe Connect",
-          "howToAddBank": "How to add my bank account?",
-          "bankStep1": "Click the \"Open Stripe Connect\" button above",
-          "bankStep2": "Log in to your Stripe Connect space",
-          "bankStep3": "Add your IBAN and bank information in the dedicated section",
-          "bankStep4": "Your transfers will be automatically sent according to your configuration",
-          "importantNote": "ℹ️ Important: Never use the classic Stripe Dashboard, always use the Stripe Connect link provided above.",
-          "howPaymentsWork": "💵 How do payments work?",
-          "securityPeriod": "Security period:",
-          "securityPeriodDesc": "Payments are held for 7 days to protect against disputes",
+          "title": "Configuration Stripe Connect",
+          "description": "Gérez vos paiements et vos transferts",
+          "stripeStatus": "Statut Stripe Connect",
+          "configured": "Configuré",
+          "notConfigured": "Non configuré",
+          "accountReady": "Votre compte est configuré et prêt à recevoir des paiements",
+          "configRequired": "Configuration requise pour recevoir des paiements",
+          "warningTitle": "⚠️ Configuration nécessaire",
+          "warningDesc": "Pour recevoir vos paiements, vous devez compléter la configuration de votre compte Stripe Connect. Ce processus est sécurisé et prend environ 5 minutes.",
+          "configureStripe": "Configurer Stripe Connect",
+          "manageAccount": "📊 Gérer votre compte Stripe",
+          "manageAccountDesc": "Accédez à votre espace Stripe Connect pour gérer vos paiements, vos transferts et vos informations bancaires (IBAN).",
+          "openStripeConnect": "Ouvrir Stripe Connect",
+          "howToAddBank": "Comment ajouter mon compte bancaire ?",
+          "bankStep1": "Cliquez sur le bouton \"Ouvrir Stripe Connect\" ci-dessus",
+          "bankStep2": "Connectez-vous à votre espace Stripe Connect",
+          "bankStep3": "Ajoutez votre IBAN et les informations de votre banque dans la section dédiée",
+          "bankStep4": "Vos virements seront automatiquement envoyés selon votre configuration",
+          "importantNote": "ℹ️ Important : N'utilisez jamais le Dashboard Stripe classique, utilisez toujours le lien Stripe Connect fourni ci-dessus.",
+          "howPaymentsWork": "💵 Comment fonctionnent les paiements ?",
+          "securityPeriod": "Période de sécurité:",
+          "securityPeriodDesc": "Les paiements sont retenus pendant 7 jours pour protéger contre les litiges",
           "commission": "Commission:",
-          "commissionDesc": "The platform charges a 10% commission on each booking",
-          "paymentRequest": "Payment request:",
-          "paymentRequestDesc": "After 7 days, you can request transfer in the \"Earnings\" tab of your dashboard",
-          "reception": "Reception:",
-          "receptionDesc": "Funds are transferred to your Stripe account, then to your bank according to your configuration"
+          "commissionDesc": "La plateforme prélève une commission de 10% sur chaque réservation",
+          "paymentRequest": "Demande de paiement:",
+          "paymentRequestDesc": "Après 7 jours, vous pouvez demander le transfert dans l'onglet \"Revenus\" de votre dashboard",
+          "reception": "Réception:",
+          "receptionDesc": "Les fonds sont transférés sur votre compte Stripe, puis vers votre banque selon votre configuration"
         },
         "security": {
-          "title": "Change Password",
-          "description": "Make sure to use a strong and unique password",
-          "currentPassword": "Current Password",
-          "newPassword": "New Password",
-          "confirmPassword": "Confirm New Password",
-          "changePassword": "Change password",
-          "changing": "Changing..."
+          "title": "Changer le mot de passe",
+          "description": "Assurez-vous d'utiliser un mot de passe fort et unique",
+          "currentPassword": "Mot de passe actuel",
+          "newPassword": "Nouveau mot de passe",
+          "confirmPassword": "Confirmer le nouveau mot de passe",
+          "changePassword": "Changer le mot de passe",
+          "changing": "Modification..."
         },
         "notificationsTab": {
-          "title": "Notification Preferences",
-          "description": "Choose how you want to be notified",
-          "emailNotifications": "Email Notifications",
-          "emailNotificationsDesc": "Receive notification emails",
-          "newBooking": "New Booking",
-          "newBookingDesc": "Notification when a fan books a call",
-          "payoutAvailable": "Available Payments",
-          "payoutAvailableDesc": "Notification when funds are ready for transfer",
-          "callReminder": "Call Reminders",
-          "callReminderDesc": "Receive a reminder before your scheduled calls",
-          "savePreferences": "Save preferences"
+          "title": "Préférences de notification",
+          "description": "Choisissez comment vous souhaitez être notifié",
+          "emailNotifications": "Notifications par email",
+          "emailNotificationsDesc": "Recevoir des emails de notification",
+          "newBooking": "Nouvelle réservation",
+          "newBookingDesc": "Notification lorsqu'un fan réserve un appel",
+          "payoutAvailable": "Paiements disponibles",
+          "payoutAvailableDesc": "Notification lorsque des fonds sont prêts pour transfert",
+          "callReminder": "Rappels d'appel",
+          "callReminderDesc": "Recevoir un rappel avant vos appels programmés",
+          "savePreferences": "Enregistrer les préférences"
         }
       },
       "payoutSettings": {
-        "title": "Transfer settings",
-        "subtitle": "Configure your transfer preferences",
-        "automaticPayouts": "Automatic transfers",
-        "minimumAmount": "Minimum amount",
-        "backToDashboard": "Back to dashboard"
+        "title": "Paramètres de virement",
+        "subtitle": "Configurez vos préférences de virement",
+        "automaticPayouts": "Virements automatiques",
+        "minimumAmount": "Montant minimum",
+        "backToDashboard": "Retour au dashboard"
       },
       "payoutRequest": {
-        "title": "Request manual transfer",
-        "subtitle": "Request a transfer of your available funds",
-        "amount": "Amount",
-        "submit": "Request transfer",
-        "submitting": "Submitting...",
-        "backToDashboard": "Back to dashboard"
+        "title": "Demander un virement manuel",
+        "subtitle": "Demandez un virement de vos fonds disponibles",
+        "amount": "Montant",
+        "submit": "Demander le virement",
+        "submitting": "Envoi en cours...",
+        "backToDashboard": "Retour au dashboard"
       }
     },
     "admin": {
       "title": "Admin Dashboard",
-      "welcome": "Welcome, {name}",
+      "welcome": "Bienvenue, {name}",
       "stats": {
-        "totalRevenue": "Total Revenue",
+        "totalRevenue": "Revenus totaux",
         "commissions": "Commissions",
-        "bookings": "Bookings",
-        "users": "Users"
+        "bookings": "Réservations",
+        "users": "Utilisateurs"
       },
       "quickActions": {
-        "title": "Administrative Management",
-        "description": "Quick access to administration features",
+        "title": "Gestion Administrative",
+        "description": "Accès rapide aux fonctionnalités d'administration",
         "settings": {
-          "title": "Settings",
-          "description": "Platform configuration"
+          "title": "Paramètres",
+          "description": "Configuration plateforme"
         },
         "payments": {
-          "title": "Payments",
-          "description": "Transaction history"
+          "title": "Paiements",
+          "description": "Historique des transactions"
         },
         "payouts": {
-          "title": "Creator Payments",
-          "description": "Payout management"
+          "title": "Paiements créateurs",
+          "description": "Gestion des payouts"
         },
         "dashboard": {
-          "title": "Dashboard",
-          "description": "Payout overview"
+          "title": "Tableau de bord",
+          "description": "Vue d'ensemble payouts"
         },
         "refunds": {
-          "title": "Refunds",
-          "description": "Refund management"
+          "title": "Remboursements",
+          "description": "Gestion des refunds"
         },
         "logs": {
           "title": "Logs",
-          "description": "Transaction journal"
+          "description": "Journal transactions"
         }
       },
       "revenueChart": {
-        "title": "Revenue (Last 30 Days)",
-        "revenue": "Revenue (€)"
+        "title": "Revenus (30 derniers jours)",
+        "revenue": "Revenus (€)"
       },
       "tabs": {
-        "users": "Users",
-        "payouts": "Payments",
-        "testCalls": "Test Calls"
+        "users": "Utilisateurs",
+        "payouts": "Paiements",
+        "testCalls": "Appels de test"
       },
       "users": {
-        "title": "User Management",
-        "description": "List of all platform users",
-        "name": "Name",
+        "title": "Gestion des utilisateurs",
+        "description": "Liste de tous les utilisateurs de la plateforme",
+        "name": "Nom",
         "email": "Email",
-        "role": "Role",
-        "registered": "Registration",
-        "noUsers": "No users found"
+        "role": "Rôle",
+        "registered": "Inscription",
+        "noUsers": "Aucun utilisateur trouvé"
       },
       "payouts": {
-        "title": "Payment Management",
-        "description": "Payments to creators",
-        "new": "New payment",
-        "create": "Create a payment",
-        "createDescription": "Send a payment to a creator",
-        "creator": "Creator",
-        "selectCreator": "Select a creator",
-        "amount": "Amount (€)",
+        "title": "Gestion des paiements",
+        "description": "Paiements aux créateurs",
+        "new": "Nouveau paiement",
+        "create": "Créer un paiement",
+        "createDescription": "Envoyer un paiement à un créateur",
+        "creator": "Créateur",
+        "selectCreator": "Sélectionnez un créateur",
+        "amount": "Montant (€)",
         "amountPlaceholder": "100.00",
-        "creating": "Creating...",
-        "createButton": "Create",
+        "creating": "Création...",
+        "createButton": "Créer",
         "status": {
-          "paid": "Paid",
-          "processing": "Processing",
-          "failed": "Failed",
-          "pending": "Pending"
+          "paid": "Payé",
+          "processing": "En cours",
+          "failed": "Échoué",
+          "pending": "En attente"
         },
-        "noPayouts": "No payments found",
-        "approve": "Approve",
-        "reject": "Reject",
-        "viewDetails": "View details",
-        "backToDashboard": "Back to dashboard"
+        "noPayouts": "Aucun paiement trouvé",
+        "approve": "Approuver",
+        "reject": "Rejeter",
+        "viewDetails": "Voir détails",
+        "backToDashboard": "Retour au dashboard"
       },
       "testCalls": {
-        "title": "Test Calls",
-        "description": "Test video calls as administrator",
-        "past": "Past",
-        "join": "Join call",
-        "joinTest": "Join (test)",
-        "noCalls": "No confirmed calls available for testing",
-        "callsInfo": "Confirmed calls with Daily.co rooms will appear here",
-        "creator": "Creator:",
+        "title": "Appels de test",
+        "description": "Tester les appels vidéo en tant qu'administrateur",
+        "past": "Passé",
+        "join": "Rejoindre l'appel",
+        "joinTest": "Rejoindre (test)",
+        "noCalls": "Aucun appel confirmé disponible pour le test",
+        "callsInfo": "Les appels confirmés avec des salles Daily.co créées apparaîtront ici",
+        "creator": "Créateur:",
         "participant": "Participant:",
         "id": "ID:"
       },
       "settings": {
-        "title": "Platform Settings",
-        "description": "Configure global settings",
-        "commission": "Platform Commission (%)",
-        "save": "Save",
-        "saving": "Saving...",
-        "cancel": "Cancel",
-        "subtitle": "Complete configuration of financial and operational settings",
-        "stripeMode": "Stripe mode",
-        "administrator": "Administrator",
-        "platformFee": "Platform fee",
-        "backToDashboard": "Back to dashboard"
+        "title": "Paramètres de la plateforme",
+        "description": "Configurer les paramètres globaux",
+        "commission": "Commission plateforme (%)",
+        "save": "Enregistrer",
+        "saving": "Enregistrement...",
+        "cancel": "Annuler",
+        "subtitle": "Configuration complète des paramètres financiers et opérationnels",
+        "stripeMode": "Mode Stripe",
+        "administrator": "Administrateur",
+        "platformFee": "Frais de plateforme",
+        "backToDashboard": "Retour au dashboard"
       },
       "testing": {
-        "title": "Tests & Tools",
-        "subtitle": "Test and validate all platform features",
-        "adminAccount": "Administrator Account",
-        "userAccount": "User Account",
-        "backToDashboard": "Back to dashboard"
+        "title": "Tests & Outils",
+        "subtitle": "Testez et validez toutes les fonctionnalités de la plateforme",
+        "adminAccount": "Compte Administrateur",
+        "userAccount": "Compte Utilisateur",
+        "backToDashboard": "Retour au dashboard"
       },
       "payments": {
-        "noPaymentFound": "No payment found",
-        "paymentId": "Payment ID",
-        "stripeId": "Stripe ID",
-        "amount": "Amount",
-        "status": "Status",
+        "noPaymentFound": "Aucun paiement trouvé",
+        "paymentId": "ID Paiement",
+        "stripeId": "ID Stripe",
+        "amount": "Montant",
+        "status": "Statut",
         "date": "Date",
-        "backToDashboard": "Back to dashboard"
+        "backToDashboard": "Retour au dashboard"
       },
       "logs": {
-        "noLogFound": "No log found",
-        "logId": "Log ID",
-        "timestamp": "Timestamp",
+        "noLogFound": "Aucun log trouvé",
+        "logId": "ID Log",
+        "timestamp": "Horodatage",
         "type": "Type",
         "message": "Message",
-        "backToDashboard": "Back to dashboard"
+        "backToDashboard": "Retour au dashboard"
       },
       "refundsDisputes": {
-        "title": "Refunds and disputes",
-        "status": "Status",
-        "backToDashboard": "Back to dashboard"
+        "title": "Remboursements et litiges",
+        "status": "Statut",
+        "backToDashboard": "Retour au dashboard"
       },
       "payoutsDashboard": {
-        "blockedPayments": "Blocked payments",
-        "affectedCreators": "Affected creators",
-        "backToDashboard": "Back to dashboard"
+        "blockedPayments": "Paiements bloqués",
+        "affectedCreators": "Créateurs concernés",
+        "backToDashboard": "Retour au dashboard"
       },
       "creatorsStripe": {
-        "stripeId": "Stripe ID",
+        "stripeId": "ID Stripe",
         "onboarding": "Onboarding",
-        "chargesEnabled": "Charges enabled",
-        "payoutsEnabled": "Payouts enabled",
-        "detailsSubmitted": "Details submitted",
-        "externalAccount": "External account",
-        "requirements": "Requirements",
-        "backToDashboard": "Back to dashboard"
+        "chargesEnabled": "Charges activées",
+        "payoutsEnabled": "Virements activés",
+        "detailsSubmitted": "Détails soumis",
+        "externalAccount": "Compte externe",
+        "requirements": "Exigences",
+        "backToDashboard": "Retour au dashboard"
       },
       "refunds": {
-        "noRefundFound": "No refund found",
-        "enterPaymentId": "Enter payment ID to refund",
-        "refundAmount": "Refund amount",
-        "reason": "Reason",
-        "processRefund": "Process refund",
-        "backToDashboard": "Back to dashboard"
+        "noRefundFound": "Aucun remboursement trouvé",
+        "enterPaymentId": "Entrez l'ID du paiement à rembourser",
+        "refundAmount": "Montant du remboursement",
+        "reason": "Raison",
+        "processRefund": "Traiter le remboursement",
+        "backToDashboard": "Retour au dashboard"
       },
       "systemLogs": {
-        "noLogFound": "No log found",
-        "logId": "Log ID",
+        "noLogFound": "Aucun log trouvé",
+        "logId": "ID Log",
         "date": "Date",
-        "level": "Level",
-        "category": "Category",
+        "level": "Niveau",
+        "category": "Catégorie",
         "message": "Message",
-        "backToDashboard": "Back to dashboard"
+        "backToDashboard": "Retour au dashboard"
       },
       "notifications": {
         "title": "Notifications",
-        "noNotifications": "No notifications",
-        "backToDashboard": "Back to dashboard"
+        "noNotifications": "Aucune notification",
+        "backToDashboard": "Retour au dashboard"
       }
     }
   },
   "layout": {
     "title": "Callastar",
-    "description": "Video call booking platform with creators"
+    "description": "Plateforme de réservation d'appels vidéo avec des créateurs"
   },
   "toast": {
     "success": {
-      "saved": "Saved successfully",
-      "updated": "Updated successfully",
-      "deleted": "Deleted successfully",
-      "sent": "Sent successfully",
-      "created": "Created successfully",
-      "calendarDownloaded": "Calendar file downloaded!",
-      "dataRefreshed": "Data refreshed",
-      "reviewSent": "Review sent successfully!",
-      "allNotificationsRead": "All notifications have been marked as read",
-      "settingsSaved": "Settings saved successfully",
-      "profileUpdated": "Profile updated successfully",
-      "imageUploaded": "Image uploaded and profile updated successfully!",
-      "imageDeleted": "Image deleted successfully!",
-      "passwordChanged": "Password changed successfully",
-      "preferenceSaved": "Preferences saved",
-      "timezoneDetected": "Timezone detected: {timezone}",
-      "offerCreated": "Offer created successfully!",
-      "offerDeleted": "Offer deleted successfully",
-      "requestAccepted": "Request accepted and offer created!",
-      "requestRejected": "Request rejected",
-      "payoutRequested": "Payout request submitted successfully!",
-      "payoutSettingsSaved": "Settings saved successfully",
-      "settingsUpdated": "Settings updated!",
-      "paymentCreated": "Payment created successfully!",
-      "logsDeleted": "{count} log(s) deleted",
-      "refundCreated": "Refund created successfully",
-      "paymentsUnblocked": "Payments unblocked",
-      "paymentsBlocked": "Payments blocked",
-      "settingsUpdatedStripe": "Settings updated",
-      "eligibilityVerified": "Eligibility verified",
-      "stripeCopied": "Stripe ID copied",
-      "redirecting": "Redirecting...",
-      "stripeConfigured": "✅ Your Stripe account is now configured!",
-      "creatorsPageOpened": "Creators page opened",
-      "adminDashboardOpened": "Admin dashboard opened",
-      "twoLoginWindowsOpened": "Two login windows opened",
-      "copiedToClipboard": "Copied to clipboard",
-      "enterValidAmount": "Please enter a valid amount",
-      "minimumAmountRequired": "Amount must be at least {minimum} {currency}",
-      "amountExceedsBalance": "Requested amount exceeds available balance",
-      "payoutRequestSuccess": "Payout request submitted successfully!"
+      "saved": "Enregistré avec succès",
+      "updated": "Mis à jour avec succès",
+      "deleted": "Supprimé avec succès",
+      "sent": "Envoyé avec succès",
+      "created": "Créé avec succès",
+      "calendarDownloaded": "Fichier calendrier téléchargé !",
+      "dataRefreshed": "Données actualisées",
+      "reviewSent": "Avis envoyé avec succès!",
+      "allNotificationsRead": "Toutes les notifications ont été marquées comme lues",
+      "settingsSaved": "Paramètres enregistrés avec succès",
+      "profileUpdated": "Profil mis à jour avec succès",
+      "imageUploaded": "Image uploadée et profil mis à jour avec succès !",
+      "imageDeleted": "Image supprimée avec succès !",
+      "passwordChanged": "Mot de passe modifié avec succès",
+      "preferenceSaved": "Préférences enregistrées",
+      "timezoneDetected": "Fuseau horaire détecté : {timezone}",
+      "offerCreated": "Offre créée avec succès!",
+      "offerDeleted": "Offre supprimée avec succès",
+      "requestAccepted": "Demande acceptée et offre créée!",
+      "requestRejected": "Demande rejetée",
+      "payoutRequested": "Demande de virement soumise avec succès !",
+      "payoutSettingsSaved": "Paramètres enregistrés avec succès",
+      "settingsUpdated": "Paramètres mis à jour!",
+      "paymentCreated": "Paiement créé avec succès!",
+      "logsDeleted": "{count} log(s) supprimé(s)",
+      "refundCreated": "Remboursement créé avec succès",
+      "paymentsUnblocked": "Paiements débloqués",
+      "paymentsBlocked": "Paiements bloqués",
+      "settingsUpdatedStripe": "Paramètres mis à jour",
+      "eligibilityVerified": "Éligibilité vérifiée",
+      "stripeCopied": "ID Stripe copié",
+      "redirecting": "Redirection en cours...",
+      "stripeConfigured": "✅ Votre compte Stripe est maintenant configuré !",
+      "creatorsPageOpened": "Page créateurs ouverte",
+      "adminDashboardOpened": "Dashboard admin ouvert",
+      "twoLoginWindowsOpened": "Deux fenêtres de connexion ouvertes",
+      "copiedToClipboard": "Copié dans le presse-papier",
+      "enterValidAmount": "Veuillez entrer un montant valide",
+      "minimumAmountRequired": "Le montant doit être au moins {minimum} {currency}",
+      "amountExceedsBalance": "Le montant demandé dépasse votre solde disponible",
+      "payoutRequestSuccess": "Demande de virement soumise avec succès !"
     },
     "error": {
-      "loadingFailed": "Loading failed",
-      "savingFailed": "Saving failed",
-      "deletingFailed": "Deletion failed",
-      "sendingFailed": "Sending failed",
-      "creatingFailed": "Creation failed",
-      "downloadFailed": "Download failed",
-      "updateFailed": "Update failed",
-      "genericError": "An error occurred",
-      "fillAllFields": "Please fill in all fields",
-      "fillAllRequiredFields": "Please fill in all required fields",
-      "unsupportedFormat": "Unsupported format. Use JPG, PNG or WEBP",
-      "fileTooLarge": "File too large. Maximum size: 5MB",
-      "uploadError": "Error uploading image",
-      "serverError": "Server error during upload. Please try again.",
-      "passwordMismatch": "Passwords do not match",
-      "passwordTooShort": "Password must contain at least 8 characters",
-      "stripeError": "Stripe error",
-      "cannotStartStripe": "Cannot start Stripe",
-      "onboardingError": "Error creating onboarding link",
-      "dashboardOpenError": "Error opening dashboard",
-      "cannotCopy": "Cannot copy",
-      "dateRangeRequired": "Please select a date range",
-      "enterValidAmount": "Please enter a valid amount",
-      "minimumAmount": "Amount must be at least {amount} {currency}",
-      "amountExceedsBalance": "Requested amount exceeds available balance",
-      "payoutsNotEnabled": "Payouts are not enabled on your account",
-      "manualPayoutsNotEnabled": "Manual payouts are not enabled",
-      "cannotFetchBalance": "Unable to fetch balance",
-      "minAmountStripe": "Minimum amount must be at least 10 {currency}",
-      "maxAmountStripe": "Minimum amount cannot exceed 1,000,000 {currency}",
-      "enterReason": "Please enter a reason",
-      "rejectReasonRequired": "Please provide a rejection reason",
-      "errorOccurred": "An error occurred",
-      "payoutsNotEnabledToast": "Payouts are not enabled on your account",
-      "payoutRequestError": "Error during request",
-      "settingsNotSynced": "Settings are not synced with Stripe",
-      "errorFetchingSettings": "Error fetching settings",
-      "minAmountError": "Minimum amount must be at least 10 {currency}",
-      "maxAmountError": "Minimum amount cannot exceed 1,000,000 {currency}",
-      "savingError": "Error during save"
+      "loadingFailed": "Erreur lors du chargement",
+      "savingFailed": "Erreur lors de la sauvegarde",
+      "deletingFailed": "Erreur lors de la suppression",
+      "sendingFailed": "Erreur lors de l'envoi",
+      "creatingFailed": "Erreur lors de la création",
+      "downloadFailed": "Erreur lors du téléchargement",
+      "updateFailed": "Erreur lors de la mise à jour",
+      "genericError": "Une erreur est survenue",
+      "fillAllFields": "Veuillez remplir tous les champs",
+      "fillAllRequiredFields": "Veuillez remplir tous les champs requis",
+      "unsupportedFormat": "Format non supporté. Utilisez JPG, PNG ou WEBP",
+      "fileTooLarge": "Fichier trop lourd. Taille maximale : 5MB",
+      "uploadError": "Erreur lors de l'upload de l'image",
+      "serverError": "Erreur serveur lors de l'upload. Veuillez réessayer.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "stripeError": "Erreur Stripe",
+      "cannotStartStripe": "Impossible de démarrer Stripe",
+      "onboardingError": "Erreur lors de la création du lien d'onboarding",
+      "dashboardOpenError": "Erreur lors de l'ouverture du tableau de bord",
+      "cannotCopy": "Impossible de copier",
+      "dateRangeRequired": "Veuillez sélectionner une plage de dates",
+      "enterValidAmount": "Veuillez entrer un montant valide",
+      "minimumAmount": "Le montant doit être au moins {amount} {currency}",
+      "amountExceedsBalance": "Le montant demandé dépasse votre solde disponible",
+      "payoutsNotEnabled": "Les virements ne sont pas activés sur votre compte",
+      "manualPayoutsNotEnabled": "Les demandes manuelles ne sont pas activées",
+      "cannotFetchBalance": "Impossible de récupérer le solde",
+      "minAmountStripe": "Le montant minimum doit être au moins 10 {currency}",
+      "maxAmountStripe": "Le montant minimum ne peut pas dépasser 1 000 000 {currency}",
+      "enterReason": "Veuillez entrer une raison",
+      "rejectReasonRequired": "Veuillez fournir une raison de refus",
+      "errorOccurred": "Une erreur est survenue",
+      "payoutsNotEnabledToast": "Les virements ne sont pas activés sur votre compte",
+      "payoutRequestError": "Erreur lors de la demande",
+      "settingsNotSynced": "Les paramètres ne sont pas synchronisés avec Stripe",
+      "errorFetchingSettings": "Erreur lors de la récupération des paramètres",
+      "minAmountError": "Le montant minimum doit être au moins 10 {currency}",
+      "maxAmountError": "Le montant minimum ne peut pas dépasser 1 000 000 {currency}",
+      "savingError": "Erreur lors de la sauvegarde"
     },
     "info": {
-      "verifyingStripe": "Verifying your Stripe configuration...",
-      "checkingStripeAccount": "Checking your Stripe account...",
-      "configInProgress": "Configuration verification in progress...",
-      "featureToImplement": "Feature to implement via Stripe API"
+      "verifyingStripe": "Vérification de votre configuration Stripe en cours...",
+      "checkingStripeAccount": "Vérification de votre compte Stripe en cours...",
+      "configInProgress": "Configuration en cours de vérification...",
+      "featureToImplement": "Fonctionnalité à implémenter via l'API Stripe"
     },
     "warning": {
-      "incompleteConfig": "Incomplete configuration: {message}",
-      "settingsNotSynced": "Settings are not synced with Stripe"
+      "incompleteConfig": "Configuration incomplète: {message}",
+      "settingsNotSynced": "Les paramètres ne sont pas synchronisés avec Stripe"
     },
     "stripe": {
-      "verifying": "Verifying your Stripe account...",
-      "configured": "✅ Your Stripe account is now configured!",
-      "incompleteConfig": "Incomplete configuration: {issue}",
-      "verificationInProgress": "Configuration being verified...",
-      "redirecting": "Redirecting to Stripe...",
-      "redirectingSuccess": "Redirecting...",
-      "onboardingError": "Error creating onboarding link",
-      "unknownError": "An error occurred: {error}",
-      "genericError": "Unknown error"
+      "verifying": "Vérification de votre compte Stripe en cours...",
+      "configured": "✅ Votre compte Stripe est maintenant configuré !",
+      "incompleteConfig": "Configuration incomplète: {issue}",
+      "verificationInProgress": "Configuration en cours de vérification...",
+      "redirecting": "Redirection vers Stripe...",
+      "redirectingSuccess": "Redirection en cours...",
+      "onboardingError": "Erreur lors de la création du lien d'onboarding",
+      "unknownError": "Une erreur est survenue: {error}",
+      "genericError": "Erreur inconnue"
     }
   },
   "components": {
     "creatorCard": {
-      "creator": "Creator",
-      "imageUnavailable": "Image unavailable",
-      "unknown": "Unknown",
-      "noBio": "No bio available",
-      "offersCount": "{count, plural, =0 {no offers available} one {# offer available} other {# offers available}}",
-      "viewProfile": "View profile"
+      "creator": "Créateur",
+      "imageUnavailable": "Image indisponible",
+      "unknown": "Inconnu",
+      "noBio": "Pas de bio disponible",
+      "offersCount": "{count, plural, =0 {aucune offre disponible} one {# offre disponible} other {# offres disponibles}}",
+      "viewProfile": "Voir le profil"
     },
     "callRequestDialog": {
-      "triggerButton": "Propose a call",
-      "title": "Propose a call with {creatorName}",
-      "description": "Send a personalized request to schedule a video call.",
+      "triggerButton": "Proposer un appel",
+      "title": "Proposer un appel avec {creatorName}",
+      "description": "Envoyez une demande personnalisée pour organiser un appel vidéo.",
       "form": {
-        "dateTime": "Desired date and time",
-        "price": "Proposed price (€)",
-        "message": "Message (optional)",
-        "messagePlaceholder": "Tell us about yourself and why you want a call..."
+        "dateTime": "Date et heure souhaitées",
+        "price": "Prix proposé (€)",
+        "message": "Message (optionnel)",
+        "messagePlaceholder": "Parlez de vous et pourquoi vous souhaitez un appel..."
       },
-      "cancel": "Cancel",
-      "sending": "Sending...",
-      "submit": "Send request",
-      "success": "Call request sent successfully!",
+      "cancel": "Annuler",
+      "sending": "Envoi...",
+      "submit": "Envoyer la demande",
+      "success": "Demande d'appel envoyée avec succès!",
       "errors": {
-        "loginRequired": "Please log in to propose a call",
-        "invalidPrice": "Please enter a valid price",
-        "sendFailed": "Failed to send request",
-        "generic": "An error occurred"
+        "loginRequired": "Veuillez vous connecter pour proposer un appel",
+        "invalidPrice": "Veuillez entrer un prix valide",
+        "sendFailed": "Échec de l'envoi de la demande",
+        "generic": "Une erreur s'est produite"
       }
     },
     "notificationBell": {
       "ariaLabel": "Notifications",
       "title": "Notifications",
-      "markAllRead": "Mark all as read",
-      "loading": "Loading...",
-      "empty": "No notifications",
-      "markAsRead": "Mark as read",
-      "delete": "Delete",
-      "viewDetails": "View details →",
-      "viewAll": "View all notifications"
+      "markAllRead": "Tout marquer comme lu",
+      "loading": "Chargement...",
+      "empty": "Aucune notification",
+      "markAsRead": "Marquer comme lu",
+      "delete": "Supprimer",
+      "viewDetails": "Voir les détails →",
+      "viewAll": "Voir toutes les notifications"
     }
   },
   "errors": {
     "notFound": {
-      "title": "Page not found",
-      "description": "Sorry, the page you are looking for does not exist or has been moved.",
-      "backHome": "Back to home"
+      "title": "Page non trouvée",
+      "description": "Désolé, la page que vous recherchez n'existe pas ou a été déplacée.",
+      "backHome": "Retour à l'accueil"
     },
     "serverError": {
-      "title": "Server Error",
-      "description": "Oops! Something went wrong on our end.",
-      "tryAgain": "Try again",
-      "backHome": "Back to home"
+      "title": "Erreur du serveur",
+      "description": "Oups ! Quelque chose s'est mal passé de notre côté.",
+      "tryAgain": "Réessayer",
+      "backHome": "Retour à l'accueil"
     },
     "loading": {
-      "title": "Loading...",
-      "message": "Please wait"
+      "title": "Chargement en cours...",
+      "message": "Veuillez patienter"
     }
   },
   "validation": {
-    "required": "This field is required",
+    "required": "Ce champ est requis",
     "email": {
-      "invalid": "Invalid email address",
-      "required": "Email address is required"
+      "invalid": "Adresse e-mail invalide",
+      "required": "L'adresse e-mail est requise"
     },
     "password": {
-      "tooShort": "Password must be at least 8 characters",
-      "required": "Password is required",
-      "mismatch": "Passwords do not match",
-      "weak": "Password is too weak"
+      "tooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "required": "Le mot de passe est requis",
+      "mismatch": "Les mots de passe ne correspondent pas",
+      "weak": "Le mot de passe est trop faible"
     },
     "name": {
-      "required": "Name is required",
-      "tooShort": "Name must be at least 2 characters",
-      "tooLong": "Name cannot exceed 50 characters"
+      "required": "Le nom est requis",
+      "tooShort": "Le nom doit contenir au moins 2 caractères",
+      "tooLong": "Le nom ne peut pas dépasser 50 caractères"
     },
     "phone": {
-      "invalid": "Invalid phone number",
-      "required": "Phone number is required"
+      "invalid": "Numéro de téléphone invalide",
+      "required": "Le numéro de téléphone est requis"
     },
     "price": {
-      "invalid": "Invalid price",
-      "tooLow": "Minimum price is {min}",
-      "tooHigh": "Maximum price is {max}",
-      "required": "Price is required"
+      "invalid": "Prix invalide",
+      "tooLow": "Le prix minimum est {min}",
+      "tooHigh": "Le prix maximum est {max}",
+      "required": "Le prix est requis"
     },
     "duration": {
-      "invalid": "Invalid duration",
-      "tooShort": "Minimum duration is {min} minutes",
-      "tooLong": "Maximum duration is {max} minutes",
-      "required": "Duration is required"
+      "invalid": "Durée invalide",
+      "tooShort": "La durée minimum est {min} minutes",
+      "tooLong": "La durée maximum est {max} minutes",
+      "required": "La durée est requise"
     },
     "date": {
-      "invalid": "Invalid date",
-      "required": "Date is required",
-      "past": "Date cannot be in the past"
+      "invalid": "Date invalide",
+      "required": "La date est requise",
+      "past": "La date ne peut pas être dans le passé"
     },
     "file": {
-      "tooLarge": "File is too large (max: {max})",
-      "invalidType": "Unsupported file type",
-      "required": "File is required"
+      "tooLarge": "Le fichier est trop volumineux (max: {max})",
+      "invalidType": "Type de fichier non supporté",
+      "required": "Un fichier est requis"
     },
     "text": {
-      "tooShort": "Text must be at least {min} characters",
-      "tooLong": "Text cannot exceed {max} characters",
-      "required": "This text field is required"
+      "tooShort": "Le texte doit contenir au moins {min} caractères",
+      "tooLong": "Le texte ne peut pas dépasser {max} caractères",
+      "required": "Ce champ texte est requis"
     },
     "url": {
-      "invalid": "Invalid URL",
-      "required": "URL is required"
+      "invalid": "URL invalide",
+      "required": "L'URL est requise"
     },
     "generic": {
-      "invalid": "Invalid value",
-      "required": "This field is required"
+      "invalid": "Valeur invalide",
+      "required": "Ce champ est requis"
     }
   }
 }
