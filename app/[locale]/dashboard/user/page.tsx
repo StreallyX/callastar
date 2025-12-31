@@ -184,7 +184,7 @@ export default function UserDashboard() {
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">{tCommon('myDashboard')}</h1>
-          <p className="text-gray-600">{t('welcome', { name: user?.name })}</p>
+          <p className="text-gray-600">  {t('welcome', { name: user?.name ?? '' })}</p>        
         </div>
 
         {/* Navigation Hub */}
