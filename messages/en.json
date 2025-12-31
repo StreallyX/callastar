@@ -502,6 +502,31 @@
       },
       "main": {
         "reviewPlaceholder": "Share your experience..."
+      },
+      "navigation": "Go to",
+      "cards": {
+        "calls": {
+          "title": "My Calls",
+          "description": "View and join your upcoming calls"
+        },
+        "requests": {
+          "title": "Call Requests",
+          "description": "Track your requests sent to creators",
+          "pending": "{count} pending"
+        },
+        "history": {
+          "title": "History",
+          "description": "View your past calls and leave reviews"
+        },
+        "notifications": {
+          "title": "Notifications",
+          "description": "Stay informed of all your activities",
+          "unread": "{count} unread"
+        },
+        "settings": {
+          "title": "Settings",
+          "description": "Manage your account and preferences"
+        }
       }
     },
     "creator": {

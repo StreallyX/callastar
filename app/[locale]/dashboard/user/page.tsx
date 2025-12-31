@@ -1,52 +1,69 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from '@/navigation';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Calendar, Clock, Video, Loader2, CheckCircle, MessageSquare, Star, Download } from 'lucide-react';
-import { toast } from 'sonner';
+import { 
+  Loader2, 
+  Video, 
+  MessageSquare, 
+  Star, 
+  Bell,
+  Settings,
+  ArrowRight,
+  Phone
+} from 'lucide-react';
 import { Link } from '@/navigation';
-import { CurrencyDisplay } from '@/components/ui/currency-display';
+
+interface NavigationCard {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  href: string;
+  badge?: {
+    text: string;
+    variant: 'default' | 'destructive' | 'outline' | 'secondary';
+  };
+  count?: number;
+}
+
+interface Booking {
+  status?: string;
+  callOffer?: {
+    dateTime?: string;
+  };
+}
+
+interface CallRequest {
+  status?: string;
+}
 
 export default function UserDashboard() {
   const router = useRouter();
-  const locale = useLocale();
   const t = useTranslations('dashboard.user');
+  const tCards = useTranslations('dashboard.user.cards');
   const tCommon = useTranslations('dashboard.common');
-  const [user, setUser] = useState<any>(null);
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [callRequests, setCallRequests] = useState<any[]>([]);
+  const [user, setUser] = useState<{ name?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
-  const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
-  const [submittingReview, setSubmittingReview] = useState(false);
-  const [reviewedBookingIds, setReviewedBookingIds] = useState<Set<string>>(new Set());
+  const [stats, setStats] = useState({
+    upcomingCalls: 0,
+    pendingRequests: 0,
+    completedCalls: 0,
+    unreadNotifications: 0,
+  });
 
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       // Get user data
       const userResponse = await fetch('/api/auth/me', {
         credentials: 'include',
       });
       if (!userResponse.ok) {
-        // User is not authenticated - clear cookie and redirect
         document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        // Use router.push instead of window.location to work with Next.js
         router.push('/auth/login');
         return;
       }
@@ -58,92 +75,51 @@ export default function UserDashboard() {
       const bookingsResponse = await fetch('/api/bookings');
       if (bookingsResponse.ok) {
         const bookingsData = await bookingsResponse.json();
-        setBookings(bookingsData?.bookings ?? []);
-      }
-      // Get reviews by user
-      const reviewsResponse = await fetch(`/api/reviews?userId=${userData.user.id}`, {
-        credentials: 'include',
-      });
+        const bookings = bookingsData?.bookings ?? [];
+        
+        // Count upcoming calls
+        const upcomingCalls = bookings.filter((b: Booking) => {
+          const callDate = new Date(b?.callOffer?.dateTime ?? new Date());
+          return (b?.status === 'CONFIRMED' || b?.status === 'PENDING') && callDate.getTime() > Date.now();
+        }).length;
 
-      if (reviewsResponse.ok) {
-        const reviews = await reviewsResponse.json();
-        setReviewedBookingIds(new Set(reviews.map((r: any) => r.bookingId)));
+        // Count completed calls
+        const completedCalls = bookings.filter((b: Booking) => {
+          const callDate = new Date(b?.callOffer?.dateTime ?? new Date());
+          return b?.status === 'COMPLETED' || callDate.getTime() <= Date.now();
+        }).length;
+
+        setStats((prev) => ({ ...prev, upcomingCalls, completedCalls }));
       }
+
       // Get call requests
       const requestsResponse = await fetch('/api/call-requests?type=sent');
       if (requestsResponse.ok) {
         const requestsData = await requestsResponse.json();
-        // L'API retourne directement le tableau, pas un objet avec une propriété callRequests
-        setCallRequests(Array.isArray(requestsData) ? requestsData : []);
+        const requests = Array.isArray(requestsData) ? requestsData : [];
+        const pendingRequests = requests.filter((r: CallRequest) => r?.status === 'PENDING').length;
+        setStats((prev) => ({ ...prev, pendingRequests }));
       }
+
+      // Get unread notifications count
+      const notificationsResponse = await fetch('/api/notifications?read=false');
+      if (notificationsResponse.ok) {
+        const notificationsData = await notificationsResponse.json();
+        const unreadNotifications = notificationsData?.unreadCount ?? 0;
+        setStats((prev) => ({ ...prev, unreadNotifications }));
+      }
+
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
-  };
-  
+  }, [router]);
 
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedBooking) return;
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-    setSubmittingReview(true);
-
-    try {
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId: selectedBooking.id,
-          creatorId: selectedBooking.callOffer?.creator?.id,
-          rating: reviewData.rating,
-          comment: reviewData.comment,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || t('review.error'));
-      }
-
-      toast.success(t('review.success'));
-      setReviewDialogOpen(false);
-      setReviewData({ rating: 5, comment: '' });
-      setSelectedBooking(null);
-      fetchData();
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setSubmittingReview(false);
-    }
-  };
-
-  const handleDownloadCalendar = async (bookingId: string) => {
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}/calendar`);
-      if (!response.ok) {
-        throw new Error(t('upcoming.calendarDownloadError'));
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `appel-${bookingId}.ics`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast.success(t('upcoming.calendarDownloadSuccess'));
-    } catch (error) {
-      toast.error(t('upcoming.calendarDownloadError'));
-    }
-  };
-
-  // Don't render anything until authentication is verified
   if (!authChecked || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -155,48 +131,51 @@ export default function UserDashboard() {
     );
   }
 
-  const upcomingBookings = bookings.filter((b: any) => {
-    const callDate = new Date(b?.callOffer?.dateTime ?? new Date());
-    // Show both CONFIRMED and PENDING bookings (PENDING may have paid but webhook not processed)
-    return (b?.status === 'CONFIRMED' || b?.status === 'PENDING') && callDate.getTime() > Date.now();
-  });
-
-  const pastBookings = bookings.filter((b: any) => {
-    const callDate = new Date(b?.callOffer?.dateTime ?? new Date());
-    return b?.status === 'COMPLETED' || callDate.getTime() <= Date.now();
-  });
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return <Badge className="bg-green-500">{t('status.confirmed')}</Badge>;
-      case 'PENDING':
-        return <Badge className="bg-yellow-500">{t('status.pending')}</Badge>;
-      case 'COMPLETED':
-        return <Badge variant="outline">{t('status.completed')}</Badge>;
-      case 'CANCELLED':
-        return <Badge variant="destructive">{t('status.cancelled')}</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const canJoinCall = (booking: any) => {
-    const callTime = new Date(booking?.callOffer?.dateTime ?? new Date()).getTime();
-    const now = Date.now();
-    const fifteenMinutesBefore = callTime - 15 * 60 * 1000;
-    const twentyFourHoursAfter = callTime + 24 * 60 * 60 * 1000;
-    
-    return now >= fifteenMinutesBefore && now <= twentyFourHoursAfter;
-  };
-
-  const canLeaveReview = (booking: any) => {
-    return (
-      booking?.status === 'COMPLETED' &&
-      !reviewedBookingIds.has(booking.id)
-    );
-  };
-
+  // Navigation cards configuration
+  const navigationCards: NavigationCard[] = [
+    {
+      title: tCards('calls.title'),
+      description: tCards('calls.description'),
+      icon: <Phone className="w-6 h-6" />,
+      href: '/dashboard/user/calls',
+      count: stats.upcomingCalls,
+    },
+    {
+      title: tCards('requests.title'),
+      description: tCards('requests.description'),
+      icon: <MessageSquare className="w-6 h-6" />,
+      href: '/dashboard/user/requests',
+      count: stats.pendingRequests,
+      badge: stats.pendingRequests > 0 ? {
+        text: tCards('requests.pending', { count: stats.pendingRequests }),
+        variant: 'destructive'
+      } : undefined,
+    },
+    {
+      title: tCards('history.title'),
+      description: tCards('history.description'),
+      icon: <Star className="w-6 h-6" />,
+      href: '/dashboard/user/history',
+      count: stats.completedCalls,
+    },
+    {
+      title: tCards('notifications.title'),
+      description: tCards('notifications.description'),
+      icon: <Bell className="w-6 h-6" />,
+      href: '/dashboard/user/notifications',
+      count: stats.unreadNotifications,
+      badge: stats.unreadNotifications > 0 ? {
+        text: tCards('notifications.unread', { count: stats.unreadNotifications }),
+        variant: 'destructive'
+      } : undefined,
+    },
+    {
+      title: tCards('settings.title'),
+      description: tCards('settings.description'),
+      icon: <Settings className="w-6 h-6" />,
+      href: '/dashboard/user/settings',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -208,345 +187,64 @@ export default function UserDashboard() {
           <p className="text-gray-600">{t('welcome', { name: user?.name })}</p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Link href="/dashboard/user/calls">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <CardDescription>{t('stats.upcomingCalls')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-purple-600">{upcomingBookings.length}</div>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link href="/dashboard/user/requests">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <CardDescription>{t('stats.sentRequests')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-600">{callRequests.length}</div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/dashboard/user/history">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <CardDescription>{t('stats.completedCalls')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-600">{pastBookings.length}</div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/dashboard/user/notifications">
-            <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <CardDescription>{t('stats.notifications')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-600">0</div>
-              </CardContent>
-            </Card>
-          </Link>
+        {/* Navigation Hub */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-6">{t('navigation')}</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {navigationCards.map((card) => (
+              <Link key={card.href} href={card.href}>
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="p-3 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg">
+                        {card.icon}
+                      </div>
+                      {card.badge && (
+                        <Badge variant={card.badge.variant}>
+                          {card.badge.text}
+                        </Badge>
+                      )}
+                      {card.count !== undefined && !card.badge && (
+                        <Badge variant="outline">
+                          {card.count}
+                        </Badge>
+                      )}
+                    </div>
+                    <CardTitle className="text-xl mt-4">{card.title}</CardTitle>
+                    <CardDescription>{card.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-purple-600 font-medium">
+                      {t('navigation')}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="upcoming" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upcoming">{t('tabs.upcoming')}</TabsTrigger>
-            <TabsTrigger value="requests">{t('tabs.requests')}</TabsTrigger>
-            <TabsTrigger value="history">{t('tabs.history')}</TabsTrigger>
-          </TabsList>
-
-          {/* Upcoming Bookings Tab */}
-          <TabsContent value="upcoming">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('upcoming.title')}</CardTitle>
-                <CardDescription>{t('upcoming.description')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {upcomingBookings.length > 0 ? (
-                  <div className="space-y-4">
-                    {upcomingBookings.map((booking: any) => {
-                      const callDate = new Date(booking?.callOffer?.dateTime ?? new Date());
-                      const formattedDate = callDate.toLocaleDateString(locale, {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      });
-                      const formattedTime = callDate.toLocaleTimeString(locale, {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      });
-
-                      return (
-                        <Card key={booking?.id}>
-                          <CardContent className="pt-6">
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-2 flex-1">
-                                <div className="flex items-center gap-3">
-                                  <h3 className="font-semibold text-lg">{booking?.callOffer?.title}</h3>
-                                  {getStatusBadge(booking?.status)}
-                                </div>
-                                <p className="text-sm text-gray-600">{t('booking.with')} {booking?.callOffer?.creator?.user?.name}</p>
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>{formattedDate}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                  <Clock className="w-4 h-4" />
-                                  <span>{formattedTime} - {booking?.callOffer?.duration} minutes</span>
-                                </div>
-                              </div>
-                              <div className="flex flex-col gap-2">
-                                {canJoinCall(booking) && (
-                                  <Button
-                                    onClick={() => router.push(`/call/${booking?.id}`)}
-                                    className="bg-gradient-to-r from-purple-600 to-pink-600"
-                                  >
-                                    <Video className="w-4 h-4 mr-2" />
-                                    {t('upcoming.joinCall')}
-                                  </Button>
-                                )}
-                                <Button
-                                  onClick={() => handleDownloadCalendar(booking?.id)}
-                                  variant="outline"
-                                  size="sm"
-                                >
-                                  <Download className="w-4 h-4 mr-2" />
-                                  {t('upcoming.downloadCalendar')}
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="py-12 text-center">
-                    <Video className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">{t('upcoming.noBookings')}</p>
-                    <Link href="/creators">
-                      <Button variant="outline" className="mt-4">
-                        {t('upcoming.exploreCreators')}
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Call Requests Tab */}
-          <TabsContent value="requests">
-            <Card>
-              <CardHeader>
-                <CardTitle>Mes demandes d'appels</CardTitle>
-                <CardDescription>{t('requests.description')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {callRequests.length > 0 ? (
-                  <div className="space-y-4">
-                    {callRequests.map((request: any) => {
-                      const statusColors = {
-                        PENDING: 'bg-yellow-100 text-yellow-800',
-                        ACCEPTED: 'bg-green-100 text-green-800',
-                        REJECTED: 'bg-red-100 text-red-800',
-                      };
-                      return (
-                        <Card key={request.id}>
-                          <CardContent className="pt-6">
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-2 flex-1">
-                                <div className="flex items-center gap-3">
-                                  <h3 className="font-semibold text-lg">{t('requests.requestTo')} {request?.creator?.user?.name}</h3>
-                                  <Badge className={statusColors[request.status as keyof typeof statusColors]}>
-                                    {request.status === 'PENDING' ? t('requests.pending') : request.status === 'ACCEPTED' ? t('requests.accepted') : t('requests.rejected')}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-gray-600">
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{new Date(request.proposedDateTime).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')}</span>
-                                  </div>
-                                  <span>•</span>
-                                  <CurrencyDisplay 
-                                    amount={Number(request.proposedPrice)} 
-                                    currency={request?.creator?.currency || 'EUR'} 
-                                  />
-                                </div>
-                                {request.message && (
-                                  <div className="flex items-start gap-2 mt-2">
-                                    <MessageSquare className="w-4 h-4 mt-0.5 text-gray-400" />
-                                    <p className="text-sm text-gray-600">{request.message}</p>
-                                  </div>
-                                )}
-                                <p className="text-xs text-gray-400">
-                                  {t('requests.sentOn')} {new Date(request.createdAt).toLocaleDateString(locale)}
-                                </p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="py-12 text-center">
-                    <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">{t('requests.noRequests')}</p>
-                    <p className="text-sm text-gray-400 mt-2">{t('requests.noRequestsDescription')}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* History Tab */}
-          <TabsContent value="history">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('history.title')}</CardTitle>
-                <CardDescription>{t('history.description')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {pastBookings.length > 0 ? (
-                  <div className="space-y-4">
-                    {pastBookings.map((booking: any) => {
-                      const callDate = new Date(booking?.callOffer?.dateTime ?? new Date());
-                      const formattedDate = callDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      });
-
-                      return (
-                        <Card key={booking?.id}>
-                          <CardContent className="pt-6">
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-2 flex-1">
-                                <div className="flex items-center gap-3">
-                                  <h3 className="font-semibold text-lg">{booking?.callOffer?.title}</h3>
-                                  {getStatusBadge(booking?.status)}
-                                </div>
-                                <p className="text-sm text-gray-600">{t('booking.with')} {booking?.callOffer?.creator?.user?.name}</p>
-                                <p className="text-sm text-gray-500">{formattedDate}</p>
-                                {reviewedBookingIds.has(booking.id) && (
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <CheckCircle className="w-4 h-4 text-green-600" />
-                                    <span className="text-sm text-green-600">
-                                      {t('review.alreadyReviewed')}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              {canLeaveReview(booking) && (
-                                <Button
-                                  onClick={() => {
-                                    setSelectedBooking(booking);
-                                    setReviewDialogOpen(true);
-                                  }}
-                                  variant="outline"
-                                >
-                                  <Star className="w-4 h-4 mr-2" />
-                                  {t('review.title')}
-                                </Button>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="py-12 text-center">
-                    <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">{t('history.noHistory')}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Review Dialog */}
-      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <form onSubmit={handleSubmitReview}>
-            <DialogHeader>
-              <DialogTitle>{t('review.title')}</DialogTitle>
-              <DialogDescription>
-                {t('review.description', { name: selectedBooking?.callOffer?.creator?.user?.name || '' })}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>{t('review.rating')}</Label>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewData({ ...reviewData, rating: star })}
-                      className="transition-transform hover:scale-110"
-                    >
-                      <Star
-                        className={`w-8 h-8 ${
-                          star <= reviewData.rating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
+        {/* Quick Link to Creators */}
+        <Card className="border-purple-200 bg-purple-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Découvrir les créateurs</h3>
+                <p className="text-sm text-gray-600">
+                  Parcourez tous nos créateurs et réservez votre premier appel
+                </p>
               </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="comment">{t('review.comment')}</Label>
-                <Textarea
-                  id="comment"
-                  placeholder="Share your experience..."
-                  className="min-h-[100px]"
-                  value={reviewData.comment}
-                  onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
-                />
-              </div>
+              <Link href="/creators">
+                <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+                  <Video className="w-4 h-4" />
+                  Parcourir
+                </button>
+              </Link>
             </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setReviewDialogOpen(false);
-                  setReviewData({ rating: 5, comment: '' });
-                }}
-                disabled={submittingReview}
-              >
-                Annuler
-              </Button>
-              <Button
-                type="submit"
-                disabled={submittingReview}
-                className="bg-gradient-to-r from-purple-600 to-pink-600"
-              >
-                {submittingReview ? t('review.submitting') : t('review.submit')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

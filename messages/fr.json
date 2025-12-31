@@ -412,26 +412,21 @@
         "title": "Demandes d’appel",
         "subtitle": "Consultez les demandes d’appel que vous avez envoyées",
         "backToDashboard": "Retour au tableau de bord",
-
         "requestTo": "Demande à",
         "sentOn": "Envoyé le",
-
         "noRequests": "Vous n’avez envoyé aucune demande d’appel.",
         "visitCreatorProfile": "Rendez-vous sur le profil d’un créateur pour lui envoyer une demande.",
         "browseCreators": "Parcourir les créateurs",
-
         "status": {
           "pending": "En attente",
           "accepted": "Acceptée",
           "rejected": "Rejetée"
         },
-
         "stats": {
           "pending": "En attente",
           "accepted": "Acceptées",
           "rejected": "Rejetées"
         },
-
         "sections": {
           "pending": "Demandes en attente",
           "pendingDesc": "En attente de réponse du créateur",
@@ -445,7 +440,6 @@
         "title": "Historique des appels",
         "subtitle": "Consultez vos appels passés et laissez un avis",
         "backToDashboard": "Retour au tableau de bord",
-
         "pastCalls": "Appels passés",
         "count": "Vous avez {count} appel(s) dans l’historique",
         "with": "Avec",
@@ -476,31 +470,26 @@
           "load": "Impossible de charger vos appels"
         }
       },
-       "settings": {
+      "settings": {
         "title": "Paramètres du compte",
         "subtitle": "Gérez vos informations personnelles et vos préférences",
         "backToDashboard": "Retour au tableau de bord",
-
         "yourName": "Votre nom",
         "saveChanges": "Sauvegarder les modifications",
         "saving": "Sauvegarde…",
         "cancel": "Annuler",
         "saveSuccess": "Paramètres sauvegardés avec succès",
-
         "emailReadonly": "L’email ne peut pas être modifié. Contactez le support si nécessaire.",
-
         "sections": {
           "profile": "Informations de base",
           "profileDesc": "Vos informations personnelles",
           "timezone": "Fuseau horaire",
           "timezoneDesc": "Configurez votre fuseau horaire pour afficher correctement les horaires des appels"
         },
-
         "fields": {
           "name": "Nom",
           "email": "Email"
         },
-
         "timezone": {
           "detectedTitle": "Fuseau horaire détecté automatiquement",
           "detectedToast": "Fuseau horaire détecté : {timezone}",
@@ -510,7 +499,6 @@
           "hint": "Tous les horaires seront affichés dans ce fuseau horaire",
           "preview": "Aperçu"
         },
-
         "errors": {
           "load": "Erreur lors du chargement des données",
           "save": "Erreur lors de la sauvegarde des paramètres"
@@ -575,6 +563,31 @@
       },
       "main": {
         "reviewPlaceholder": "Partagez votre expérience..."
+      },
+      "navigation": "Accéder",
+      "cards": {
+        "calls": {
+          "title": "Mes appels",
+          "description": "Consultez et rejoignez vos appels à venir"
+        },
+        "requests": {
+          "title": "Demandes d'appel",
+          "description": "Suivez vos demandes envoyées aux créateurs",
+          "pending": "{count} en attente"
+        },
+        "history": {
+          "title": "Historique",
+          "description": "Consultez vos appels passés et laissez des avis"
+        },
+        "notifications": {
+          "title": "Notifications",
+          "description": "Restez informé de toutes vos activités",
+          "unread": "{count} non lue(s)"
+        },
+        "settings": {
+          "title": "Paramètres",
+          "description": "Gérez votre compte et vos préférences"
+        }
       }
     },
     "creator": {
