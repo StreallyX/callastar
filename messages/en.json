@@ -1343,6 +1343,36 @@
       }
     },
     "admin": {
+      "admin": {
+      "common": {
+        "loading": "Chargement…"
+      },
+      "payments": {
+        "loading": "Chargement des paiements…",
+        "filters": {
+          "status": "Statut",
+          "statusSucceeded": "Réussi",
+          "statusFailed": "Échoué",
+          "statusPending": "En attente",
+          "statusRefunded": "Remboursé",
+          "search": "Rechercher",
+          "searchPlaceholder": "Rechercher par utilisateur, ID ou montant"
+        }
+        },
+        "payouts": {
+          "statusRequested": "Demandé",
+          "statusApproved": "Approuvé",
+          "statusProcessing": "En cours de traitement",
+          "statusPaid": "Payé",
+          "statusFailed": "Échec",
+          "statusRejected": "Rejeté",
+          "statusCanceled": "Annulé"
+        },
+
+        "settings": {
+          "loading": "Chargement des paramètres…"
+        }
+      },
       "title": "Admin Dashboard",
       "welcome": "Bienvenue, {name}",
       "stats": {
@@ -1742,4 +1772,7 @@
       "required": "Ce champ est requis"
     }
   }
+
+    
+  
 }
