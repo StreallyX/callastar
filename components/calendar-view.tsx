@@ -5,6 +5,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { useLocale } from 'next-intl';
 
 interface CalendarViewProps {
   events: any[];
@@ -13,6 +14,7 @@ interface CalendarViewProps {
 
 export default function CalendarView({ events, onEventClick }: CalendarViewProps) {
   const calendarRef = useRef<any>(null);
+  const locale = useLocale();
 
   return (
     <>
@@ -50,7 +52,7 @@ export default function CalendarView({ events, onEventClick }: CalendarViewProps
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
           }}
-          locale="fr"
+          locale={locale}
           events={events}
           height="auto"
           slotMinTime="06:00:00"

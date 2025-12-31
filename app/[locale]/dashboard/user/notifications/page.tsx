@@ -1,0 +1,285 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from '@/navigation';
+import { Navbar } from '@/components/navbar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Bell, Loader2, ArrowLeft, CheckCircle2, Circle } from 'lucide-react';
+import { toast } from 'sonner';
+import { Link } from '@/navigation';
+import { formatDistanceToNow } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
+
+export default function NotificationsPage() {
+  const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('dashboard.user.notifications');
+
+  const [user, setUser] = useState<any>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const userResponse = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
+
+      if (!userResponse.ok) {
+        router.push('/auth/login');
+        return;
+      }
+
+      const userData = await userResponse.json();
+      setUser(userData?.user);
+
+      const notificationsResponse = await fetch('/api/notifications');
+      if (notificationsResponse.ok) {
+        const data = await notificationsResponse.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error(t('errors.load'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      const response = await fetch(
+        `/api/notifications/${notificationId}/read`,
+        { method: 'POST' }
+      );
+
+      if (!response.ok) {
+        throw new Error();
+      }
+
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId
+            ? { ...n, read: true, readAt: new Date().toISOString() }
+            : n
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      toast.error(t('errors.update'));
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const response = await fetch('/api/notifications/mark-all-read', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error();
+      }
+
+      const now = new Date().toISOString();
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, read: true, readAt: now }))
+      );
+      setUnreadCount(0);
+      toast.success(t('markAllSuccess'));
+    } catch (error) {
+      toast.error(t('errors.update'));
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+        <Navbar />
+        <div className="container mx-auto max-w-7xl px-4 py-12 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        </div>
+      </div>
+    );
+  }
+
+  const unreadNotifications = notifications.filter((n) => !n.read);
+  const readNotifications = notifications.filter((n) => n.read);
+
+  const getNotificationTypeColor = (type: string) => {
+    switch (type) {
+      case 'BOOKING_CONFIRMED':
+        return 'bg-green-100 text-green-800';
+      case 'BOOKING_CANCELLED':
+        return 'bg-red-100 text-red-800';
+      case 'CALL_REQUEST':
+        return 'bg-blue-100 text-blue-800';
+      case 'REVIEW_RECEIVED':
+        return 'bg-purple-100 text-purple-800';
+      case 'PAYMENT_RECEIVED':
+        return 'bg-emerald-100 text-emerald-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getNotificationTypeLabel = (type: string) => {
+    return t(`types.${type}`, { default: t('types.DEFAULT') });
+  };
+
+  const renderNotificationCard = (notification: any) => (
+    <Card
+      key={notification.id}
+      className={!notification.read ? 'border-l-4 border-l-purple-600' : ''}
+    >
+      <CardContent className="pt-6">
+        <div className="flex items-start gap-4">
+          <div className="mt-1">
+            {notification.read ? (
+              <CheckCircle2 className="w-5 h-5 text-gray-400" />
+            ) : (
+              <Circle className="w-5 h-5 text-purple-600 fill-purple-600" />
+            )}
+          </div>
+
+          <div className="flex-1 space-y-2">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge className={getNotificationTypeColor(notification.type)}>
+                    {getNotificationTypeLabel(notification.type)}
+                  </Badge>
+                  {!notification.read && (
+                    <Badge variant="secondary">{t('new')}</Badge>
+                  )}
+                </div>
+
+                <h3 className="font-semibold text-lg">
+                  {notification.title}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {notification.message}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {formatDistanceToNow(
+                    new Date(notification.createdAt),
+                    {
+                      addSuffix: true,
+                      locale: locale === 'fr' ? fr : enUS,
+                    }
+                  )}
+                </p>
+              </div>
+
+              {!notification.read && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleMarkAsRead(notification.id)}
+                >
+                  {t('markAsRead')}
+                </Button>
+              )}
+            </div>
+
+            {notification.link && (
+              <Link href={notification.link}>
+                <Button variant="outline" size="sm" className="mt-2">
+                  {t('viewDetails')}
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+      <Navbar />
+
+      <div className="container mx-auto max-w-7xl px-4 py-8">
+        <div className="mb-6">
+          <Link href="/dashboard/user">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t('backToDashboard')}
+            </Button>
+          </Link>
+        </div>
+
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+            <p className="text-gray-600">
+              {unreadCount > 0
+                ? t('unreadCount', { count: unreadCount })
+                : t('noNotifications')}
+            </p>
+          </div>
+
+          {unreadCount > 0 && (
+            <Button onClick={handleMarkAllAsRead} variant="outline">
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              {t('markAll')}
+            </Button>
+          )}
+        </div>
+
+        {unreadNotifications.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>{t('sections.unread')}</CardTitle>
+              <CardDescription>
+                {t('sections.unreadCount', {
+                  count: unreadNotifications.length,
+                })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {unreadNotifications.map(renderNotificationCard)}
+            </CardContent>
+          </Card>
+        )}
+
+        {readNotifications.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>{t('sections.read')}</CardTitle>
+              <CardDescription>
+                {t('sections.readCount', {
+                  count: readNotifications.length,
+                })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {readNotifications.map(renderNotificationCard)}
+            </CardContent>
+          </Card>
+        )}
+
+        {notifications.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">{t('noNotifications')}</p>
+              <p className="text-sm text-gray-400 mt-2">
+                {t('noNotificationsDesc')}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

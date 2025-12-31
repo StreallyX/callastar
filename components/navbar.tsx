@@ -1,9 +1,17 @@
 'use client';
 
-import Link from 'next/link';
-import { Star, LogOut, User, LayoutDashboard, Settings, TestTube2, Wallet } from 'lucide-react';
+import { Link, useRouter, usePathname } from '@/navigation';
+import {
+  Star,
+  LogOut,
+  User,
+  LayoutDashboard,
+  Settings,
+  TestTube2,
+  Wallet,
+  Languages
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   DropdownMenu,
@@ -13,6 +21,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import NotificationBell from '@/components/NotificationBell';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface UserData {
   id: string;
@@ -23,6 +32,17 @@ interface UserData {
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+  const localeFromContext = useLocale();
+
+  // 🔑 SOURCE DE VÉRITÉ = URL
+  const currentLocale =
+    pathname.startsWith('/en') ? 'en'
+    : pathname.startsWith('/fr') ? 'fr'
+    : localeFromContext;
+
+  const t = useTranslations('navbar');
+
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,16 +52,15 @@ export function Navbar() {
 
   const fetchUser = async () => {
     try {
-      const response = await fetch('/api/auth/me');
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
         setUser(data?.user ?? null);
-      } else if (response.status === 401) {
-        // User not logged in - this is expected
+      } else {
         setUser(null);
       }
-    } catch (error) {
-      // Silently handle network errors
+    } catch {
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -51,8 +70,7 @@ export function Navbar() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
-      router.push('/');
-      router.refresh();
+      router.push('/', { locale: currentLocale });
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -70,75 +88,125 @@ export function Navbar() {
     return '/dashboard/user/settings';
   };
 
+  const switchLanguage = (newLocale: 'fr' | 'en') => {
+    // Nettoie le pathname (retire /fr ou /en)
+    const cleanPathname = pathname.replace(/^\/(fr|en)(\/|$)/, '/');
+    router.replace(cleanPathname, { locale: newLocale });
+  };
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto max-w-7xl px-4">
         <div className="flex h-16 items-center justify-between">
+
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600">
-              <Star className="w-6 h-6 text-white fill-white" />
+          <Link href="/" locale={currentLocale} className="flex items-center gap-2 hover:opacity-80">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-600">
+              <Star className="h-6 w-6 fill-white text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-xl font-bold text-transparent">
               Call a Star
             </span>
           </Link>
 
-          {/* Navigation */}
           <div className="flex items-center gap-4">
-            <Link href="/creators">
-              <Button variant="ghost">Créateurs</Button>
+
+            {/* Creators */}
+            <Link href="/creators" locale={currentLocale}>
+              <Button variant="ghost">{t('creators')}</Button>
             </Link>
+
+            {/* Language selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Languages className="h-4 w-4" />
+                  {currentLocale.toUpperCase()}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => switchLanguage('fr')}>
+                  🇫🇷 Français
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => switchLanguage('en')}>
+                  🇬🇧 English
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {!loading && (
               <>
                 {user ? (
                   <>
                     <NotificationBell />
+
                     <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="gap-2">
-                        <User className="w-4 h-4" />
-                        {user.name}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => router.push(getDashboardPath())}>
-                        <LayoutDashboard className="w-4 h-4 mr-2" />
-                        Dashboard
-                      </DropdownMenuItem>
-                      {user?.role === 'CREATOR' && (
-                        <DropdownMenuItem onClick={() => router.push('/dashboard/creator/payouts')}>
-                          <Wallet className="w-4 h-4 mr-2" />
-                          Paiements
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="gap-2">
+                          <User className="h-4 w-4" />
+                          {user.name}
+                        </Button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(getDashboardPath(), { locale: currentLocale })
+                          }
+                        >
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          {t('dashboard')}
                         </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => router.push(getSettingsPath())}>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Paramètres
-                      </DropdownMenuItem>
-                      {user?.role === 'ADMIN' && (
-                        <DropdownMenuItem onClick={() => router.push('/dashboard/admin/testing')}>
-                          <TestTube2 className="w-4 h-4 mr-2" />
-                          Tests & Outils
+
+                        {user.role === 'CREATOR' && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push('/dashboard/creator/payouts', { locale: currentLocale })
+                            }
+                          >
+                            <Wallet className="mr-2 h-4 w-4" />
+                            {t('payments')}
+                          </DropdownMenuItem>
+                        )}
+
+                        <DropdownMenuItem
+                          onClick={() =>
+                            router.push(getSettingsPath(), { locale: currentLocale })
+                          }
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          {t('settings')}
                         </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Déconnexion
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+
+                        {user.role === 'ADMIN' && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push('/dashboard/admin/testing', { locale: currentLocale })
+                            }
+                          >
+                            <TestTube2 className="mr-2 h-4 w-4" />
+                            {t('testsTools')}
+                          </DropdownMenuItem>
+                        )}
+
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem onClick={handleLogout}>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          {t('logout')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </>
                 ) : (
                   <>
-                    <Link href="/auth/login">
-                      <Button variant="ghost">Connexion</Button>
+                    <Link href="/auth/login" locale={currentLocale}>
+                      <Button variant="ghost">{t('login')}</Button>
                     </Link>
-                    <Link href="/auth/register">
-                      <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                        S'inscrire
+
+                    <Link href="/auth/register" locale={currentLocale}>
+                      <Button className="bg-gradient-to-r from-purple-600 to-pink-600">
+                        {t('register')}
                       </Button>
                     </Link>
                   </>

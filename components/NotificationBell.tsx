@@ -5,8 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, Check, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 import { useSession } from "next-auth/react";
+import { useTranslations, useLocale } from 'next-intl';
 
 interface Notification {
   id: string;
@@ -20,6 +21,8 @@ interface Notification {
 }
 
 export default function NotificationBell() {
+  const t = useTranslations('components.notificationBell');
+  const locale = useLocale();
   const { data: session } = useSession();
   const pathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -28,10 +31,13 @@ export default function NotificationBell() {
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
+  // Get date-fns locale
+  const dateFnsLocale = locale === 'fr' ? fr : enUS;
+  
   // Determine notification page link based on current path
   const notificationsPageLink = pathname?.startsWith('/dashboard/admin')
-    ? '/dashboard/admin/notifications'
-    : '/dashboard/creator/notifications';
+    ? `/${locale}/dashboard/admin/notifications`
+    : `/${locale}/dashboard/creator/notifications`;
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -165,7 +171,7 @@ export default function NotificationBell() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none"
-        aria-label="Notifications"
+        aria-label={t('ariaLabel')}
       >
         <Bell className="h-6 w-6" />
         {unreadCount > 0 && (
@@ -181,14 +187,14 @@ export default function NotificationBell() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">
-              Notifications
+              {t('title')}
             </h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
                 className="text-sm text-blue-600 hover:text-blue-800"
               >
-                Tout marquer comme lu
+                {t('markAllRead')}
               </button>
             )}
           </div>
@@ -197,12 +203,12 @@ export default function NotificationBell() {
           <div className="max-h-96 overflow-y-auto">
             {isLoading ? (
               <div className="p-4 text-center text-gray-500">
-                Chargement...
+                {t('loading')}
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <Bell className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                <p>Aucune notification</p>
+                <p>{t('empty')}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
@@ -234,7 +240,7 @@ export default function NotificationBell() {
                             <p className="text-xs text-gray-400 mt-1">
                               {formatDistanceToNow(
                                 new Date(notification.createdAt),
-                                { addSuffix: true, locale: fr }
+                                { addSuffix: true, locale: dateFnsLocale }
                               )}
                             </p>
                           </div>
@@ -245,7 +251,7 @@ export default function NotificationBell() {
                               <button
                                 onClick={() => markAsRead(notification.id)}
                                 className="p-1 text-gray-400 hover:text-green-600"
-                                title="Marquer comme lu"
+                                title={t('markAsRead')}
                               >
                                 <Check className="h-4 w-4" />
                               </button>
@@ -253,7 +259,7 @@ export default function NotificationBell() {
                             <button
                               onClick={() => deleteNotification(notification.id)}
                               className="p-1 text-gray-400 hover:text-red-600"
-                              title="Supprimer"
+                              title={t('delete')}
                             >
                               <X className="h-4 w-4" />
                             </button>
@@ -272,7 +278,7 @@ export default function NotificationBell() {
                               setIsOpen(false);
                             }}
                           >
-                            Voir les détails →
+                            {t('viewDetails')}
                           </Link>
                         )}
                       </div>
@@ -291,7 +297,7 @@ export default function NotificationBell() {
                 className="text-sm text-blue-600 hover:text-blue-800"
                 onClick={() => setIsOpen(false)}
               >
-                Voir toutes les notifications
+                {t('viewAll')}
               </Link>
             </div>
           )}

@@ -1,0 +1,247 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from '@/navigation';
+import { useTranslations } from 'next-intl';
+import { Navbar } from '@/components/navbar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Loader2,
+  AlertCircle,
+  FileText,
+  Shield,
+  CheckCircle,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+type OnboardingStatus = 'incomplete' | 'in_progress' | 'complete';
+
+interface StripeAccountData {
+  stripeAccountId?: string;
+  isFullyOnboarded: boolean;
+  canReceivePayments: boolean;
+  canReceivePayouts: boolean;
+  detailsSubmitted?: boolean;
+  hasExternalAccount?: boolean;
+  issues?: string[];
+  recommendedAction?: string;
+}
+
+export default function PaymentSetupPage() {
+  const router = useRouter();
+  const t = useTranslations('dashboard.creator.paymentSetup');
+  const tToast = useTranslations('toast');
+
+  const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
+  const [accountData, setAccountData] = useState<StripeAccountData | null>(null);
+
+  useEffect(() => {
+    fetchAccountStatus();
+
+    const params = new URLSearchParams(window.location.search);
+    const onboardingParam = params.get('onboarding');
+
+    if (onboardingParam === 'success' || onboardingParam === 'refresh') {
+      toast.info(tToast('info.verifyingStripe'));
+
+      setTimeout(() => {
+        fetchAccountStatus();
+        window.history.replaceState({}, '', window.location.pathname);
+      }, 2000);
+    }
+  }, []);
+
+  const fetchAccountStatus = async () => {
+    try {
+      const res = await fetch('/api/stripe/connect-onboard');
+
+      if (res.status === 401) {
+        router.push('/auth/login');
+        return;
+      }
+
+      if (!res.ok) {
+        toast.error(tToast('error.loadingFailed'));
+        return;
+      }
+
+      const data = await res.json();
+      setAccountData(data);
+    } catch {
+      toast.error(tToast('error.genericError'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartOnboarding = async () => {
+    setStarting(true);
+    try {
+      const res = await fetch('/api/stripe/connect-onboard', { method: 'POST' });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data?.error || tToast('error.stripeError'));
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      toast.error(tToast('error.cannotStartStripe'));
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const status: OnboardingStatus = !accountData?.stripeAccountId
+    ? 'incomplete'
+    : accountData.canReceivePayments
+    ? 'complete'
+    : 'in_progress';
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+        <Navbar />
+        <div className="flex justify-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+      <Navbar />
+
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
+        </div>
+
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-xl">{t('status.title')}</CardTitle>
+              <CardDescription>{t('status.description')}</CardDescription>
+            </div>
+
+            {status === 'complete' && (
+              <Badge className="bg-green-500 text-white px-4 py-2">
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                {t('badges.complete')}
+              </Badge>
+            )}
+
+            {status === 'in_progress' && (
+              <Badge className="bg-yellow-500 text-white px-4 py-2">
+                <Clock className="w-4 h-4 mr-2" />
+                {t('badges.inProgress')}
+              </Badge>
+            )}
+
+            {status === 'incomplete' && (
+              <Badge className="bg-red-500 text-white px-4 py-2">
+                <XCircle className="w-4 h-4 mr-2" />
+                {t('badges.incomplete')}
+              </Badge>
+            )}
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            <StatusItem icon={CheckCircle} label={t('steps.accountCreated')} completed={!!accountData?.stripeAccountId} />
+            <StatusItem icon={FileText} label={t('steps.detailsSubmitted')} completed={!!accountData?.detailsSubmitted} />
+            <StatusItem icon={Shield} label={t('steps.operational')} completed={!!accountData?.canReceivePayments} />
+
+            {/* ISSUES */}
+            {accountData?.issues && accountData.issues.length > 0 && (
+              <div className="pt-4 border-t">
+                <h4 className="font-semibold text-sm mb-2 text-gray-700">
+                  {t('issues.title')}
+                </h4>
+                <ul className="space-y-1">
+                  {accountData.issues.map((issue, i) => (
+                    <li key={i} className="text-sm text-red-600 flex gap-2">
+                      <XCircle className="w-4 h-4 mt-0.5" />
+                      {issue}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {accountData?.recommendedAction && !accountData?.canReceivePayments && (
+              <Alert className="bg-blue-50 border-blue-200">
+                <AlertCircle className="w-4 h-4 text-blue-600" />
+                <AlertDescription className="text-blue-700">
+                  <strong>{t('actionRequired')}:</strong> {accountData.recommendedAction}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="pt-4 border-t">
+              {status === 'complete' ? (
+                <Alert className="bg-green-50 border-green-200">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <AlertDescription className="text-green-700">
+                    {t('success')}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Button
+                  onClick={handleStartOnboarding}
+                  disabled={starting}
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
+                >
+                  {starting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      {t('redirecting')}
+                    </>
+                  ) : (
+                    t('cta')
+                  )}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* UI */
+function StatusItem({
+  icon: Icon,
+  label,
+  completed,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  completed: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${completed ? 'bg-green-100' : 'bg-gray-100'}`}>
+        {completed ? (
+          <CheckCircle2 className="w-5 h-5 text-green-600" />
+        ) : (
+          <Icon className="w-5 h-5 text-gray-400" />
+        )}
+      </div>
+      <span className={completed ? 'text-gray-900 font-medium' : 'text-gray-500'}>
+        {label}
+      </span>
+    </div>
+  );
+}

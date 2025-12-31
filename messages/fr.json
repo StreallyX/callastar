@@ -1,0 +1,1745 @@
+{
+  "common": {
+    "appName": "Call a Star",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "all": "Tous",
+    "none": "Aucun"
+  },
+  "navbar": {
+    "creators": "Créateurs",
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "dashboard": "Dashboard",
+    "payments": "Paiements",
+    "settings": "Paramètres",
+    "testsTools": "Tests & Outils",
+    "logout": "Déconnexion"
+  },
+  "homepage": {
+    "meta": {
+      "title": "Callastar - Connectez-vous avec des créateurs et experts pour des appels vidéo payants",
+      "description": "Réservez des appels vidéo avec des créateurs, experts et influenceurs. Paiements sécurisés via Stripe, appels vidéo via Daily.co. Monétisez votre temps ou obtenez des conseils personnalisés."
+    },
+    "hero": {
+      "title": "Connectez-vous avec des créateurs et experts",
+      "subtitle": "La plateforme qui connecte fans et créateurs pour des appels vidéo privés",
+      "description": "Callastar est une plateforme de réservation d'appels vidéo payants qui permet aux utilisateurs de se connecter directement avec des créateurs, experts et influenceurs pour des consultations, du coaching ou des conseils personnalisés.",
+      "becomeCreator": "Devenir créateur",
+      "exploreCreators": "Explorer les créateurs"
+    },
+    "about": {
+      "title": "Qu'est-ce que Callastar ?",
+      "description": "Callastar est une plateforme innovante qui met en relation des utilisateurs avec des créateurs de contenu, experts et influenceurs pour des appels vidéo privés et payants.",
+      "usedFor": {
+        "title": "À quoi sert Callastar ?",
+        "consultations": "Consultations personnalisées avec des experts",
+        "coaching": "Séances de coaching et mentorat",
+        "advice": "Conseils professionnels dans divers domaines",
+        "meetGreet": "Rencontres virtuelles avec vos créateurs préférés"
+      },
+      "forWhom": {
+        "title": "Pour qui ?",
+        "users": {
+          "title": "Pour les utilisateurs",
+          "description": "Obtenez des conseils d'experts, du coaching personnalisé ou discutez avec vos créateurs favoris"
+        },
+        "creators": {
+          "title": "Pour les créateurs",
+          "description": "Monétisez votre temps et expertise en offrant des appels vidéo à votre communauté"
+        }
+      }
+    },
+    "features": {
+      "title": "Fonctionnalités clés",
+      "description": "Tout ce dont vous avez besoin pour des appels vidéo professionnels",
+      "booking": {
+        "title": "Réservation facile",
+        "description": "Système de réservation simple et intuitif. Choisissez votre créateur, sélectionnez une offre et réservez en quelques clics."
+      },
+      "payments": {
+        "title": "Paiements sécurisés",
+        "description": "Transactions sécurisées via Stripe. Protection complète des données bancaires et paiements instantanés."
+      },
+      "videoCalls": {
+        "title": "Appels vidéo HD",
+        "description": "Appels vidéo de haute qualité via Daily.co. Connexion stable et fiable pour une expérience optimale."
+      },
+      "reviews": {
+        "title": "Avis et évaluations",
+        "description": "Système de reviews transparent. Consultez les avis des autres utilisateurs avant de réserver."
+      },
+      "profiles": {
+        "title": "Profils créateurs",
+        "description": "Profils détaillés avec biographie, tarifs et disponibilités. Trouvez le créateur parfait pour vos besoins."
+      },
+      "offers": {
+        "title": "Offres personnalisées",
+        "description": "Les créateurs proposent différentes durées et tarifs. Choisissez l'offre qui vous convient le mieux."
+      }
+    },
+    "journey": {
+      "title": "Comment ça marche ?",
+      "description": "Quatre étapes simples pour connecter avec des créateurs",
+      "step1": {
+        "title": "1. Découvrez",
+        "description": "Explorez les profils des créateurs et découvrez leurs offres d'appels vidéo"
+      },
+      "step2": {
+        "title": "2. Inscrivez-vous",
+        "description": "Créez votre compte gratuitement en quelques secondes"
+      },
+      "step3": {
+        "title": "3. Réservez",
+        "description": "Choisissez une offre, effectuez le paiement sécurisé et confirmez votre réservation"
+      },
+      "step4": {
+        "title": "4. Connectez",
+        "description": "Rejoignez votre appel vidéo à l'heure prévue et profitez de votre échange"
+      }
+    },
+    "cta": {
+      "users": {
+        "title": "Vous cherchez des conseils d'expert ?",
+        "description": "Explorez nos créateurs et réservez votre premier appel dès maintenant",
+        "button": "Explorer les créateurs"
+      },
+      "creators": {
+        "title": "Vous êtes créateur ou expert ?",
+        "description": "Rejoignez Callastar et commencez à monétiser votre temps et expertise",
+        "button": "Devenir créateur"
+      }
+    },
+    "popularCreators": {
+      "title": "Créateurs populaires",
+      "description": "Découvrez nos créateurs les plus demandés",
+      "seeAll": "Voir tous les créateurs"
+    },
+    "footer": {
+      "copyright": "© 2024 Callastar. Tous droits réservés.",
+      "terms": "Conditions Générales",
+      "privacy": "Politique de confidentialité",
+      "legal": "Mentions légales"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "description": "Connectez-vous pour accéder à votre compte",
+      "email": "Email",
+      "emailPlaceholder": "votre@email.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "loginButton": "Se connecter",
+      "loggingIn": "Connexion...",
+      "orContinueWith": "Ou continuer avec",
+      "googleLogin": "Se connecter avec Google",
+      "testAccounts": "Comptes de test",
+      "admin": "Admin",
+      "creator": "Créateur",
+      "user": "Utilisateur",
+      "noAccount": "Pas encore de compte ?",
+      "registerLink": "S'inscrire",
+      "backToHome": "Retour à l'accueil",
+      "successMessage": "Connexion réussie ! Bienvenue",
+      "errorMessage": "Erreur de connexion",
+      "genericError": "Une erreur est survenue lors de la connexion",
+      "googleError": "Erreur lors de la connexion avec Google"
+    },
+    "register": {
+      "title": "Inscription",
+      "description": "Créez votre compte pour commencer",
+      "fullName": "Nom complet",
+      "fullNamePlaceholder": "John Doe",
+      "email": "Email",
+      "emailPlaceholder": "votre@email.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "accountType": "Type de compte",
+      "accountTypePlaceholder": "Sélectionnez un type",
+      "userRole": "Utilisateur (Fan)",
+      "creatorRole": "Créateur (Influenceur)",
+      "termsAcceptance": "J'accepte les",
+      "termsLink": "conditions générales d'utilisation",
+      "termsRequired": "Vous devez accepter les conditions générales pour continuer",
+      "registerButton": "S'inscrire",
+      "registering": "Inscription...",
+      "orContinueWith": "Ou continuer avec",
+      "googleRegister": "S'inscrire avec Google",
+      "haveAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter",
+      "backToHome": "Retour à l'accueil",
+      "successTitle": "Inscription réussie !",
+      "successDescription": "Votre compte a été créé avec succès",
+      "errorTitle": "Erreur d'inscription",
+      "errorDescription": "Une erreur est survenue",
+      "genericError": "Une erreur est survenue lors de l'inscription",
+      "googleError": "Erreur lors de la connexion avec Google"
+    }
+  },
+  "creators": {
+    "list": {
+      "title": "Nos Créateurs",
+      "description": "Découvrez tous nos créateurs et réservez un appel vidéo privé avec votre star préférée",
+      "noCreators": "Aucun créateur disponible pour le moment"
+    },
+    "profile": {
+      "notFound": "Créateur introuvable",
+      "backToCreators": "Retour aux créateurs",
+      "noBio": "Pas de bio disponible",
+      "offersAvailable": "offre(s) disponible(s)",
+      "availableOffers": "Appels disponibles",
+      "noOffers": "Aucun appel disponible pour le moment",
+      "noOffersDescription": "Utilisez le bouton \"Proposer un appel\" pour envoyer une demande personnalisée",
+      "minutes": "minutes",
+      "reserve": "Réserver",
+      "reviews": "Avis des utilisateurs",
+      "anonymous": "Anonyme",
+      "rating": "avis",
+      "other": "Site web"
+    }
+  },
+  "booking": {
+    "title": "Réservation et paiement",
+    "callDetails": "Détails de l'appel",
+    "verifyInfo": "Vérifiez les informations avant de payer",
+    "payment": "Paiement",
+    "paymentInfo": "Entrez vos informations de paiement",
+    "total": "Total",
+    "creator": "Créateur",
+    "loading": "Chargement...",
+    "error": "Erreur de réservation",
+    "backToCreators": "Retour aux créateurs",
+    "offerNotFound": "Offre introuvable",
+    "bookingError": "Erreur lors de la réservation",
+    "paymentError": "Erreur de paiement",
+    "paymentSuccess": "Paiement réussi !",
+    "bookingConfirmed": "Votre réservation est confirmée",
+    "processing": "Traitement...",
+    "payAndBook": "Payer et réserver",
+    "genericError": "Une erreur est survenue lors du paiement",
+    "yourBooking": "✅ Votre réservation",
+    "offerUnavailable": "❌ Offre indisponible",
+    "yourBookingDesc": "Cette réservation vous appartient",
+    "offerUnavailableDesc": "Cette offre a déjà été réservée par un autre utilisateur",
+    "status": "Statut",
+    "confirmed": "Confirmé ✓",
+    "pending": "En attente de paiement",
+    "viewBookings": "Voir mes réservations",
+    "joinCall": "Rejoindre l'appel",
+    "offerNotAvailable": "Cette offre n'est plus disponible. Explorez d'autres opportunités !",
+    "viewCreatorProfile": "Voir le profil du créateur",
+    "exploreCreators": "Explorer d'autres créateurs",
+    "minutes": "minutes"
+  },
+  "call": {
+    "room": {
+      "title": "Appel vidéo",
+      "waitingRoom": "Salle d'attente - Prêt à rejoindre",
+      "testMode": "🧪 Mode Test",
+      "callastar": "Callastar",
+      "with": "avec",
+      "scheduledDuration": "Durée prévue",
+      "minutes": "minutes",
+      "testCallInfo": "ℹ️ Ceci est un appel de test pour le développement",
+      "callStatusTitle": "Statut de l'appel",
+      "callEnded": "L'appel est terminé",
+      "canStartNow": "L'appel peut commencer maintenant !",
+      "startsIn": "Commence dans",
+      "scheduledFor": "Prévu le",
+      "callRulesTitle": "Règles de l'appel",
+      "ruleDuration": "Durée:",
+      "minutesAllocated": "minutes allouées",
+      "ruleBehavior": "Comportement:",
+      "ruleeBehaviorDesc": "Soyez respectueux et courtois",
+      "ruleConfidentiality": "Confidentialité:",
+      "ruleConfidentialityDesc": "Ne partagez pas le contenu de l'appel",
+      "ruleDisconnection": "Déconnexion:",
+      "ruleDisconnectionDesc": "Si vous êtes déconnecté, vous pouvez rejoindre à nouveau",
+      "testEquipment": "Testez vos équipements",
+      "testCameraAndMic": "Tester caméra et micro",
+      "testInProgress": "Test en cours...",
+      "checkCamera": "✓ Vérifiez que votre caméra fonctionne",
+      "checkMic": "✓ Testez votre microphone",
+      "findQuietPlace": "✓ Trouvez un endroit calme",
+      "freeAccessTitle": "✨ Accès libre :",
+      "freeAccessDesc": "Vous pouvez rejoindre l'appel à tout moment. Arrivez en avance pour tester votre équipement ou rejoignez si vous êtes en retard - l'accès n'est jamais bloqué.",
+      "joinCall": "Rejoindre l'appel",
+      "loading": "Chargement de l'appel...",
+      "inCall": "Appel en cours",
+      "ended": "Appel terminé",
+      "redirecting": "Redirection vers le résumé...",
+      "error": "Erreur",
+      "callError": "Une erreur est survenue lors de l'appel",
+      "retry": "Réessayer",
+      "timeRemaining": "Restant",
+      "noTimeLimit": "Mode Test - Pas de limite",
+      "joinedInProgress": "(rejoint en cours)",
+      "connectionLost": "Connexion perdue",
+      "reconnecting": "Reconnexion en cours...",
+      "reconnected": "Reconnecté",
+      "reconnectedDesc": "Vous êtes de nouveau connecté",
+      "leaveCall": "Quitter l'appel",
+      "disableCamera": "Désactiver la caméra",
+      "enableCamera": "Activer la caméra",
+      "disableMic": "Désactiver le micro",
+      "enableMic": "Activer le micro",
+      "enterFullscreen": "Plein écran",
+      "exitFullscreen": "Quitter le plein écran",
+      "backToDashboard": "Retour au dashboard",
+      "bookingNotFound": "Réservation introuvable",
+      "testSuccess": "Test réussi",
+      "testSuccessDesc": "Votre caméra et micro fonctionnent correctement",
+      "testError": "Erreur",
+      "testErrorDesc": "Impossible d'accéder à la caméra ou au micro",
+      "participantJoined": "Participant rejoint",
+      "participantJoinedDesc": "a rejoint l'appel",
+      "participantLeft": "Participant parti",
+      "participantLeftDesc": "a quitté l'appel",
+      "callErrorDuring": "Erreur durant l'appel",
+      "weakConnection": "Connexion faible",
+      "weakConnectionDesc": "Votre connexion internet est instable",
+      "connectionLostDesc": "Tentative de reconnexion...",
+      "aParticipant": "Un participant",
+      "cannotAccessCall": "Impossible d'accéder à l'appel",
+      "cannotJoinCall": "Impossible de rejoindre l'appel"
+    },
+    "summary": {
+      "title": "Résumé de l'appel",
+      "loading": "Chargement du résumé...",
+      "error": "Erreur",
+      "notFound": "Résumé introuvable",
+      "status": "État",
+      "completedNormally": "✓ Terminé normalement",
+      "completedMultiple": "✓ Terminé (sessions multiples)",
+      "interrupted": "⚠ Interrompu",
+      "inProgress": "⏳ En cours",
+      "noShow": "✗ Absent",
+      "unknown": "? Inconnu",
+      "totalDuration": "Durée totale cumulée",
+      "efficiency": "Efficacité",
+      "ofScheduled": "de la durée prévue",
+      "participants": "Participants",
+      "creator": "Créateur",
+      "fan": "Fan",
+      "temporalDetails": "Détails temporels",
+      "scheduledDate": "Date prévue",
+      "actualStart": "Début réel",
+      "actualEnd": "Fin réelle",
+      "sessions": "Sessions d'appel",
+      "sessionsDescription": "Cet appel a été interrompu et repris plusieurs fois. Voici le détail des sessions.",
+      "session": "Session",
+      "totalInfo": "La durée totale affichée est la somme de toutes les sessions.",
+      "timeline": "Chronologie de l'appel",
+      "timelineDescription": "Tous les événements enregistrés durant l'appel",
+      "viewHistory": "Voir l'historique",
+      "backToDashboard": "Retour au dashboard",
+      "summaryInfo": "Ce résumé est calculé dynamiquement à partir des logs de l'appel et reflète la durée réelle cumulée de toutes les sessions.",
+      "onSessions": "Sur {count} session(s)",
+      "date": "Date",
+      "duration": "Durée",
+      "amount": "Montant",
+      "backToHome": "Retour à l'accueil",
+      "cannotFetchSummary": "Impossible de récupérer le résumé",
+      "errorOccurred": "Une erreur est survenue"
+    }
+  },
+  "legal": {
+    "terms": {
+      "title": "Conditions Générales d'Utilisation et de Vente (CGU/CGV)",
+      "lastUpdated": "Dernière mise à jour"
+    },
+    "privacy": {
+      "title": "Politique de Confidentialité",
+      "lastUpdated": "Dernière mise à jour"
+    },
+    "notice": {
+      "title": "Mentions Légales",
+      "lastUpdated": "Dernière mise à jour"
+    }
+  },
+  "dashboard": {
+    "common": {
+      "loading": "Chargement...",
+      "welcome": "Bienvenue",
+      "myDashboard": "Mon Dashboard",
+      "backToDashboard": "Retour au dashboard",
+      "error": "Erreur",
+      "success": "Succès",
+      "calendar": "Calendrier",
+      "testMode": "Mode Test"
+    },
+    "user": {
+      "title": "Dashboard Utilisateur",
+      "welcome": "Bienvenue, {name}",
+      "stats": {
+        "upcomingCalls": "Appels à venir",
+        "sentRequests": "Demandes envoyées",
+        "completedCalls": "Appels terminés",
+        "notifications": "Notifications"
+      },
+      "tabs": {
+        "upcoming": "À venir",
+        "requests": "Mes demandes",
+        "history": "Historique"
+      },
+      "upcoming": {
+        "title": "Mes appels à venir",
+        "description": "Appels confirmés et payés",
+        "noBookings": "Aucun appel à venir",
+        "noBookingsDescription": "Explorez nos créateurs pour réserver votre premier appel",
+        "exploreCreators": "Parcourir les créateurs",
+        "joinCall": "Rejoindre l'appel",
+        "downloadCalendar": "Calendrier",
+        "leaveReview": "Laisser un avis",
+        "calendarDownloadSuccess": "Fichier calendrier téléchargé !",
+        "calendarDownloadError": "Impossible de télécharger le fichier calendrier",
+        "reviewLeft": "Avis laissé"
+      },
+      "requests": {
+        "title": "Demandes d’appel",
+        "subtitle": "Consultez les demandes d’appel que vous avez envoyées",
+        "backToDashboard": "Retour au tableau de bord",
+        "requestTo": "Demande à",
+        "sentOn": "Envoyé le",
+        "noRequests": "Vous n’avez envoyé aucune demande d’appel.",
+        "visitCreatorProfile": "Rendez-vous sur le profil d’un créateur pour lui envoyer une demande.",
+        "browseCreators": "Parcourir les créateurs",
+        "status": {
+          "pending": "En attente",
+          "accepted": "Acceptée",
+          "rejected": "Rejetée"
+        },
+        "stats": {
+          "pending": "En attente",
+          "accepted": "Acceptées",
+          "rejected": "Rejetées"
+        },
+        "sections": {
+          "pending": "Demandes en attente",
+          "pendingDesc": "En attente de réponse du créateur",
+          "accepted": "Demandes acceptées",
+          "acceptedDesc": "Ces demandes ont été acceptées par le créateur",
+          "rejected": "Demandes rejetées",
+          "rejectedDesc": "Ces demandes ont été rejetées"
+        }
+      },
+      "history": {
+        "title": "Historique des appels",
+        "subtitle": "Consultez vos appels passés et laissez un avis",
+        "backToDashboard": "Retour au tableau de bord",
+        "pastCalls": "Appels passés",
+        "count": "Vous avez {count} appel(s) dans l’historique",
+        "with": "Avec",
+        "noCalls": "Vous n’avez aucun appel dans votre historique.",
+        "reviewLeft": "Avis déjà laissé",
+        "leaveReview": "Laisser un avis",
+        "errors": {
+          "load": "Impossible de charger l’historique des appels"
+        }
+      },
+      "calls": {
+        "title": "Mes appels",
+        "subtitle": "Retrouvez ici vos appels à venir",
+        "backToDashboard": "Retour au tableau de bord",
+        "with": "Avec",
+        "duration": "Durée",
+        "minutes": "minutes",
+        "join": "Rejoindre l’appel",
+        "noCalls": "Vous n’avez aucun appel programmé pour le moment.",
+        "browseCreators": "Découvrir les créateurs",
+        "testMode": "🧪 Mode test",
+        "calendar": {
+          "download": "Ajouter au calendrier",
+          "downloadSuccess": "Fichier calendrier téléchargé avec succès",
+          "downloadError": "Erreur lors du téléchargement du calendrier"
+        },
+        "errors": {
+          "load": "Impossible de charger vos appels"
+        }
+      },
+      "settings": {
+        "title": "Paramètres du compte",
+        "subtitle": "Gérez vos informations personnelles et vos préférences",
+        "backToDashboard": "Retour au tableau de bord",
+        "yourName": "Votre nom",
+        "saveChanges": "Sauvegarder les modifications",
+        "saving": "Sauvegarde…",
+        "cancel": "Annuler",
+        "saveSuccess": "Paramètres sauvegardés avec succès",
+        "emailReadonly": "L’email ne peut pas être modifié. Contactez le support si nécessaire.",
+        "sections": {
+          "profile": "Informations de base",
+          "profileDesc": "Vos informations personnelles",
+          "timezone": "Fuseau horaire",
+          "timezoneDesc": "Configurez votre fuseau horaire pour afficher correctement les horaires des appels"
+        },
+        "fields": {
+          "name": "Nom",
+          "email": "Email"
+        },
+        "timezone": {
+          "detectedTitle": "Fuseau horaire détecté automatiquement",
+          "detectedToast": "Fuseau horaire détecté : {timezone}",
+          "current": "Fuseau horaire actuel",
+          "select": "Sélectionner un fuseau horaire",
+          "autoDetect": "Auto-détecter",
+          "hint": "Tous les horaires seront affichés dans ce fuseau horaire",
+          "preview": "Aperçu"
+        },
+        "errors": {
+          "load": "Erreur lors du chargement des données",
+          "save": "Erreur lors de la sauvegarde des paramètres"
+        }
+      },
+      "notifications": {
+        "title": "Notifications",
+        "backToDashboard": "Retour au tableau de bord",
+        "unreadCount": "{count} notification(s) non lue(s)",
+        "noNotifications": "Aucune notification",
+        "noNotificationsDesc": "Vous serez informé ici des mises à jour importantes.",
+        "new": "Nouveau",
+        "markAsRead": "Marquer comme lu",
+        "markAll": "Tout marquer comme lu",
+        "markAllSuccess": "Toutes les notifications ont été marquées comme lues",
+        "viewDetails": "Voir les détails",
+        "sections": {
+          "unread": "Nouvelles notifications",
+          "unreadCount": "{count} notification(s) non lue(s)",
+          "read": "Notifications lues",
+          "readCount": "{count} notification(s) lue(s)"
+        },
+        "types": {
+          "BOOKING_CONFIRMED": "Réservation",
+          "BOOKING_CANCELLED": "Annulation",
+          "CALL_REQUEST": "Demande",
+          "REVIEW_RECEIVED": "Avis",
+          "PAYMENT_RECEIVED": "Paiement",
+          "DEFAULT": "Notification"
+        },
+        "errors": {
+          "load": "Impossible de charger les notifications",
+          "update": "Erreur lors de la mise à jour des notifications"
+        }
+      },
+      "booking": {
+        "with": "avec",
+        "duration": "Durée",
+        "minutes": "minutes",
+        "scheduledFor": "Prévu le",
+        "price": "Prix",
+        "status": "Statut"
+      },
+      "status": {
+        "confirmed": "Confirmé",
+        "pending": "En attente",
+        "completed": "Terminé",
+        "cancelled": "Annulé"
+      },
+      "review": {
+        "title": "Laisser un avis",
+        "description": "Partagez votre expérience avec {name}",
+        "rating": "Note",
+        "comment": "Commentaire (optionnel)",
+        "commentPlaceholder": "Partagez votre expérience...",
+        "submit": "Envoyer l'avis",
+        "submitting": "Envoi...",
+        "cancel": "Annuler",
+        "success": "Avis envoyé avec succès!",
+        "error": "Échec de l'envoi de l'avis",
+        "alreadyReviewed": "Déjà évalué"
+      },
+      "main": {
+        "reviewPlaceholder": "Partagez votre expérience..."
+      },
+      "navigation": "Accéder",
+      "cards": {
+        "calls": {
+          "title": "Mes appels",
+          "description": "Consultez et rejoignez vos appels à venir"
+        },
+        "requests": {
+          "title": "Demandes d'appel",
+          "description": "Suivez vos demandes envoyées aux créateurs",
+          "pending": "{count} en attente"
+        },
+        "history": {
+          "title": "Historique",
+          "description": "Consultez vos appels passés et laissez des avis"
+        },
+        "notifications": {
+          "title": "Notifications",
+          "description": "Restez informé de toutes vos activités",
+          "unread": "{count} non lue(s)"
+        },
+        "settings": {
+          "title": "Paramètres",
+          "description": "Gérez votre compte et vos préférences"
+        }
+      }
+    },
+    "creator": {
+      "title": "Dashboard Créateur",
+      "welcome": "Bienvenue, {name}",
+      "navigation": "Navigation",
+      "paymentSetup": {
+        "required": "Configuration des paiements requise",
+        "description": "Gérez votre compte Stripe et vos paiements",
+        "completeSetup": "Pour recevoir vos paiements automatiquement via Stripe Connect, vous devez compléter votre configuration. Cela ne prend que quelques minutes.",
+        "configureStripe": "Configurer Stripe",
+        "paymentsEnabled": "Paiements activés",
+        "incomplete": "Configuration incomplète",
+        "accountReady": "Votre compte est configuré et prêt à recevoir des paiements",
+        "completeConfig": "Complétez votre configuration pour recevoir des paiements",
+        "viewDetails": "Voir les détails",
+        "configure": "Configurer",
+        "verifying": "Vérification de votre configuration Stripe...",
+        "errorFetching": "Erreur lors de la récupération du statut Stripe",
+        "errorStripe": "Erreur Stripe",
+        "cannotStart": "Impossible de démarrer Stripe",
+        "stripeStatus": "Statut Stripe",
+        "stripeStatusDesc": "État réel de votre compte Stripe Connect",
+        "incompleteConfig": "Configuration incomplète",
+        "stripeAccountCreated": "Compte Stripe créé",
+        "accountOperational": "Compte opérationnel",
+        "accountConfigured": "Votre compte Stripe est correctement configuré.",
+        "title": "Configuration des paiements",
+        "subtitle": "Configurez votre compte Stripe Connect pour recevoir vos paiements",
+        "status": {
+          "title": "Statut Stripe",
+          "description": "État réel de votre compte Stripe Connect"
+        },
+        "badges": {
+          "complete": "Paiements activés",
+          "inProgress": "Action requise",
+          "incomplete": "Non configuré"
+        },
+        "steps": {
+          "accountCreated": "Compte Stripe créé",
+          "detailsSubmitted": "Informations soumises",
+          "operational": "Compte opérationnel"
+        },
+        "issues": {
+          "title": "Problèmes détectés"
+        },
+        "actionRequired": "Action requise",
+        "success": "Votre compte Stripe est correctement configuré.",
+        "cta": "Configurer Stripe",
+        "redirecting": "Redirection…"
+      },
+      "earnings": {
+        "title": "Revenus",
+        "subtitle": "Suivez vos gains, paiements et transferts Stripe",
+        "backToDashboard": "Retour au dashboard",
+        "loadError": "Impossible de charger les revenus. Veuillez réessayer.",
+        "totalTransferred": "Total gagné",
+        "onStripeAccount": "Présent sur votre compte Stripe",
+        "pending": "En attente",
+        "securityPeriod": "Période de sécurité",
+        "available": "Disponible",
+        "readyForTransfer": "Prêt à être transféré",
+        "requestPayout": "Demander un paiement",
+        "requestPayoutDesc": "Accédez à la page des paiements pour demander un virement vers votre compte bancaire.",
+        "requestPayoutInfo": "Vous pouvez demander un virement manuel dès que les fonds sont disponibles.",
+        "payouts": "Paiements",
+        "paymentHistory": "Historique des paiements",
+        "paymentHistoryDesc": "Consultez tous vos paiements et transactions passées.",
+        "view": "Voir",
+        "recentPayments": "Paiements récents",
+        "recentPaymentsDesc": "Les derniers paiements générés par vos appels.",
+        "viewAllPayments": "Voir tous les paiements",
+        "availability": "Disponibilité",
+        "availabilityDesc": "Une fois la période de sécurité terminée, les fonds deviennent disponibles pour le paiement.",
+        "automaticTransfer": "Transfert automatique",
+        "automaticTransferDesc": "Stripe peut effectuer des virements automatiques selon la configuration de votre compte.",
+        "bankSetup": "Configuration bancaire",
+        "bankSetupDesc": "Assurez-vous que votre compte bancaire est correctement configuré dans votre",
+        "stripeDashboard": "dashboard Stripe",
+        "howItWorks": "Comment ça fonctionne",
+        "alreadyInStripe": "Déjà présent sur votre compte Stripe",
+        "availableForPayout": "Disponible pour le paiement",
+        "noEarnings": "Aucun gain pour le moment",
+        "pendingPayments": "Paiements en attente",
+        "recentPaymentsSubtitle": "Vos derniers paiements reçus",
+        "totalEarnings": "Gains totaux",
+        "totalPayouts": "Paiements effectués",
+        "viewPayouts": "Paiements"
+      },
+      "calls": {
+        "title": "Mes appels",
+        "subtitle": "Gérez et suivez tous vos appels planifiés avec vos clients",
+        "backToDashboard": "Retour au dashboard",
+        "loadError": "Impossible de charger les appels. Veuillez réessayer.",
+        "total": "Total",
+        "upcoming": "À venir",
+        "past": "Passés",
+        "cancelled": "Annulés",
+        "filters": {
+          "all": "Tous",
+          "upcoming": "À venir",
+          "past": "Passés",
+          "cancelled": "Annulés"
+        },
+        "status": {
+          "confirmed": "Confirmé",
+          "pending": "En attente",
+          "completed": "Terminé",
+          "cancelled": "Annulé",
+          "past": "Passé",
+          "testMode": "Mode test",
+          "with": "avec"
+        },
+        "actions": {
+          "join": "Rejoindre l’appel",
+          "startingSoon": "Bientôt disponible"
+        },
+        "noCallsFor": {
+          "all": "Vous n’avez encore aucun appel.",
+          "upcoming": "Aucun appel à venir.",
+          "past": "Aucun appel passé.",
+          "cancelled": "Aucun appel annulé."
+        },
+        "noCalls": "Aucun appel planifié",
+        "youHave": "Vous avez {count} appel(s) à venir"
+      },
+      "fees": {
+        "backToDashboard": "Retour au dashboard",
+        "title": "Frais et commissions",
+        "subtitle": "Comprendre comment fonctionne la rémunération sur Call a Star",
+        "platformFee": "Commission de la plateforme",
+        "stripe": {
+          "title": "Frais de paiement (Stripe)",
+          "subtitle": "Frais de traitement des paiements par carte bancaire",
+          "details": "Les paiements sont traités par Stripe, notre prestataire de paiement sécurisé.",
+          "standardFees": "Par transaction (frais standard Stripe Europe)"
+        },
+        "example": {
+          "title": "Exemple de calcul",
+          "subtitle": "Pour un appel de {amount} EUR",
+          "paidByUser": "Montant payé par l'utilisateur",
+          "platformFee": "Commission plateforme ({fee}%)",
+          "stripeFee": "Frais Stripe (2.9% + 0.30)",
+          "net": "Vous recevez",
+          "percent": "Soit environ {percent}% du montant total"
+        },
+        "notes": {
+          "title": "Notes importantes",
+          "amounts": "Les montants affichés sont des montants bruts. Les frais sont automatiquement déduits lors du transfert.",
+          "security": "Les paiements sont transférés après une période de sécurité de 7 jours pour gérer litiges et remboursements.",
+          "payouts": "Pour transférer les fonds vers votre compte bancaire, consultez la page",
+          "payoutLink": "Payouts"
+        },
+        "calculationExample": "Exemple de calcul",
+        "description": "Callastar prélève une commission sur chaque appel",
+        "forACallOf": "Pour un appel de",
+        "initialAmount": "Montant initial",
+        "netAmount": "Montant net reçu",
+        "paymentFees": "Frais de paiement (Stripe)",
+        "paymentFeesDesc": "Frais de traitement du paiement par carte bancaire",
+        "percentOf": "% du montant total",
+        "percentageNote": "Environ",
+        "platformCommission": "Commission de la plateforme",
+        "platformCommissionDesc": "Callastar prélève une commission de",
+        "stripeFee": "Frais Stripe (2,9 % + 0,30 €)"
+      },
+      "notifications": {
+        "backToDashboard": "Retour au dashboard",
+        "title": "Notifications",
+        "subtitle": "Gérez vos notifications système et financières",
+        "stats": {
+          "total": "Total",
+          "unread": "Non lues",
+          "read": "Lues"
+        },
+        "categories": {
+          "all": "Toutes",
+          "payments": "Paiements",
+          "payouts": "Payouts",
+          "bookings": "Rendez-vous",
+          "disputes": "Litiges & remboursements",
+          "system": "Système"
+        },
+        "filters": {
+          "advanced": "Filtres avancés",
+          "readStatus": "Statut de lecture",
+          "type": "Type spécifique",
+          "all": "Toutes",
+          "unread": "Non lues",
+          "read": "Lues"
+        },
+        "actions": {
+          "markAllRead": "Tout marquer comme lu",
+          "markRead": "Marquer comme lu",
+          "delete": "Supprimer",
+          "viewDetails": "Voir les détails"
+        },
+        "loading": "Chargement...",
+        "empty": {
+          "title": "Aucune notification",
+          "subtitle": "Vous n'avez aucune notification pour le moment"
+        },
+        "pagination": {
+          "page": "Page {current} sur {total}",
+          "previous": "Précédent",
+          "next": "Suivant"
+        },
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette notification ?",
+        "markAllRead": "Tout marquer comme lu",
+        "noNotifications": "Aucune notification"
+      },
+      "cards": {
+        "offers": {
+          "title": "Offres",
+          "description": "Gérez vos offres d'appels disponibles"
+        },
+        "requests": {
+          "title": "Demandes",
+          "description": "Répondez aux demandes de rendez-vous",
+          "pending": "{count} en attente"
+        },
+        "calls": {
+          "title": "Appels",
+          "description": "Consultez vos appels passés et à venir"
+        },
+        "reviews": {
+          "title": "Avis",
+          "description": "Consultez les avis de vos fans"
+        },
+        "payments": {
+          "title": "Paiements",
+          "description": "Historique de vos paiements reçus"
+        },
+        "earnings": {
+          "title": "Revenus",
+          "description": "Consultez vos revenus et statistiques"
+        },
+        "notifications": {
+          "title": "Notifications",
+          "description": "Gérez vos notifications",
+          "unread": "{count} non lues"
+        },
+        "settings": {
+          "title": "Paramètres",
+          "description": "Personnalisez votre profil et vos préférences"
+        },
+        "payouts": {
+          "title": "Gérer vos payouts",
+          "description": "Demandez le transfert de vos revenus vers votre compte bancaire",
+          "button": "Payouts"
+        },
+        "fees": {
+          "title": "Frais",
+          "description": "Consulter les frais et commissions"
+        }
+      },
+      "offers": {
+        "title": "Mes Offres",
+        "subtitle": "Gérez vos offres d'appels",
+        "create": "Créer une offre",
+        "new": "Nouvelle offre d'appel",
+        "newDescription": "Créez une nouvelle offre d'appel pour vos fans",
+        "titleField": "Titre",
+        "description": "Description",
+        "price": "Prix",
+        "duration": "Durée",
+        "dateTime": "Date et heure",
+        "creating": "Création...",
+        "durationMinutes": "Minutes",
+        "createButton": "Créer",
+        "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette offre ?",
+        "deleteSuccess": "Offre supprimée avec succès",
+        "deleteError": "Impossible de supprimer l'offre",
+        "createSuccess": "Offre créée avec succès!",
+        "createError": "Erreur lors de la création",
+        "viewMode": {
+          "list": "Vue Liste",
+          "calendar": "Vue Calendrier"
+        },
+        "filters": {
+          "all": "Toutes ({count})",
+          "available": "Disponibles",
+          "booked": "Réservées",
+          "completed": "Terminées ({count})",
+          "cancelled": "Annulées ({count})",
+          "archived": "Archivées"
+        },
+        "status": {
+          "available": "Disponible",
+          "booked": "Réservée",
+          "completed": "Terminée",
+          "cancelled": "Annulée"
+        },
+        "table": {
+          "offer": "Offre",
+          "dateTime": "Date & Heure",
+          "duration": "Durée",
+          "price": "Prix",
+          "status": "Statut",
+          "actions": "Actions"
+        },
+        "bookedBy": "Réservé par {name}",
+        "noOffers": "Aucune offre",
+        "noOffersWithStatus": "Aucune offre avec le statut \"{status}\"",
+        "legend": {
+          "available": "Disponible",
+          "booked": "Réservée",
+          "completed": "Terminée",
+          "cancelled": "Annulée",
+          "confirmedCall": "📞 Appel confirmé"
+        },
+        "createOffer": "Créer une offre",
+        "editOffer": "Modifier l'offre",
+        "deleteOffer": "Supprimer l'offre",
+        "minutes": "min",
+        "backToDashboard": "Retour au dashboard",
+        "calendar": {
+          "call": "Appel",
+          "user": "Utilisateur"
+        }
+      },
+      "requests": {
+        "title": "Demandes d'appel",
+        "subtitle": "Gérez les demandes d'appel de vos fans",
+        "pending": "En attente",
+        "accepted": "Acceptées",
+        "rejected": "Refusées",
+        "pendingRequests": "Demandes en attente",
+        "accept": "Accepter",
+        "reject": "Refuser",
+        "confirmAccept": "Confirmer l'acceptation",
+        "confirmAcceptDesc": "Êtes-vous sûr de vouloir accepter cette demande ? Une offre sera créée automatiquement.",
+        "user": "Utilisateur",
+        "dateTime": "Date/Heure",
+        "proposedPrice": "Prix proposé",
+        "message": "Message",
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "confirming": "Confirmation...",
+        "rejectReason": "Raison du refus",
+        "reasonNotAvailable": "Non disponible",
+        "reasonPriceTooLow": "Prix trop bas",
+        "reasonOther": "Autre",
+        "specifyReason": "Précisez la raison",
+        "explainRejection": "Expliquez pourquoi vous refusez cette demande...",
+        "rejecting": "Refus...",
+        "acceptedRequests": "Demandes acceptées",
+        "rejectedRequests": "Demandes refusées",
+        "noRequests": "Aucune demande d'appel reçue",
+        "loadError": "Erreur de chargement des demandes",
+        "backToDashboard": "Retour au dashboard",
+        "notifyUser": "L'utilisateur sera notifié.",
+        "rejectDesc": "Veuillez indiquer la raison du refus. L'utilisateur sera notifié."
+      },
+      "reviews": {
+        "title": "Mes Avis",
+        "subtitle": "Consultez les avis laissés par vos fans",
+        "noReviews": "Aucun avis pour le moment",
+        "averageRating": "Note moyenne",
+        "totalReviews": "avis",
+        "allReviews": "Tous les avis",
+        "anonymousUser": "Utilisateur anonyme",
+        "backToDashboard": "Retour au dashboard",
+        "summary": "Résumé des notes",
+        "summaryDesc": "Aperçu de vos évaluations",
+        "noReviewsDesc": "Vos futurs avis apparaîtront ici",
+        "loadError": "Erreur lors du chargement des avis",
+        "callLabel": "Appel",
+        "reviewsCount": "avis"
+      },
+      "payments": {
+        "title": "Historique des Paiements",
+        "amount": "Montant",
+        "date": "Date",
+        "from": "De",
+        "total": "Total des paiements",
+        "availableOn": "Disponible le",
+        "transferredOn": "Transféré le",
+        "backToDashboard": "Retour au dashboard",
+        "subtitle": "Suivez l’ensemble de vos paiements et leur statut",
+        "back": "Retour au dashboard",
+        "transferred": "Paiements transférés",
+        "pending": "En attente",
+        "available": "Disponibles",
+        "allPayments": "Tous les paiements",
+        "allPaymentsDesc": "Historique complet des paiements reçus",
+        "noPayments": "Aucun paiement pour le moment",
+        "loadError": "Impossible de charger les paiements",
+        "status": {
+          "paid": "✓ Transféré",
+          "ready": "✓ Disponible",
+          "held": "⏳ En attente",
+          "pending": "⏳ En attente",
+          "processing": "⏳ En cours",
+          "available": "✓ Disponible",
+          "transferred": "✓ Transferrer"
+        },
+        "info": {
+          "title": "📋 Information",
+          "amounts": "Les montants affichés correspondent au montant total payé par l'utilisateur. Les frais et commissions sont détaillés dans la page Frais et commissions.",
+          "security": "Les paiements restent en attente pendant 7 jours afin de protéger contre les litiges.",
+          "transfer": "Après la période de sécurité, les fonds sont automatiquement transférés vers votre compte Stripe Connect.",
+          "payouts": "Vous pouvez gérer vos virements bancaires depuis la page Payouts."
+        }
+      },
+      "payouts": {
+        "title": "Paiements et virements",
+        "subtitle": "Gérez vos virements et historique",
+        "noPayouts": "Aucun payout demandé",
+        "minimum": "Minimum requis",
+        "requestPayout": {
+          "title": "Demander un payout",
+          "amount": "Montant",
+          "requesting": "Demande...",
+          "submit": "Demander"
+        },
+        "requestManualPayout": "Demander un virement manuel",
+        "noPayoutHistory": "Aucun historique de virement pour le moment",
+        "availableBalance": "Solde disponible",
+        "pendingBalance": "Solde en attente",
+        "status": {
+          "paid": "✓ Payé",
+          "pending": "⏳ En attente",
+          "processing": "⏳ En cours",
+          "failed": "✗ Échoué"
+        },
+        "backToDashboard": "Retour au dashboard",
+        "actions": {
+          "refresh": "Actualiser",
+          "edit": "Modifier"
+        },
+        "toasts": {
+          "refreshed": "Données actualisées"
+        },
+        "errors": {
+          "generic": "Une erreur est survenue",
+          "balanceFetch": "Impossible de récupérer le solde",
+          "noCreatorId": "Impossible de récupérer votre profil créateur"
+        },
+        "setup": {
+          "incomplete": "Votre configuration de paiement est incomplète.",
+          "completeLink": "Complétez votre configuration",
+          "requiredInfoCount": "Informations requises : {count}"
+        },
+        "balance": "Solde disponible",
+        "currencyAlert": {
+          "title": "Devise du compte Stripe :",
+          "body": "Votre compte Stripe est configuré en {stripeCurrency}. Les montants sont affichés dans votre devise Stripe. Les virements seront effectués dans cette devise. (Base de calcul : EUR)"
+        },
+        "statusCard": {
+          "title": "Statut des virements",
+          "subtitle": "État actuel de votre compte de paiement",
+          "badge": {
+            "operational": "Compte opérationnel",
+            "verifying": "Vérification en cours",
+            "setupRequired": "Configuration requise"
+          },
+          "alert": {
+            "operational": "✅ Compte opérationnel - Les virements seront envoyés selon votre calendrier configuré",
+            "verifying": "🔄 Vérification en cours - Certaines informations sont en attente de validation",
+            "requiredItems": "Informations requises : {items}",
+            "incomplete": "⚠️ Configuration incomplète - Complétez votre configuration pour recevoir des virements"
+          },
+          "details": {
+            "submitted": {
+              "title": "Informations soumises",
+              "yes": "✓ Soumises",
+              "no": "✗ Requises"
+            },
+            "verifications": {
+              "title": "Vérifications",
+              "complete": "✓ Complètes",
+              "pendingCount": "⏳ {count} en attente"
+            },
+            "payouts": {
+              "title": "Virements",
+              "enabled": "✓ Activés",
+              "disabled": "✗ Désactivés"
+            }
+          }
+        },
+        "settings": {
+          "backToPayouts": "Retour aux paiements",
+          "title": "Paramètres de virement",
+          "subtitle": "Configurez la fréquence et le montant minimum de vos virements",
+          "configuration": "Configuration",
+          "configurationDesc": "Modifiez vos préférences de virement",
+          "payoutSchedule": "Calendrier de virement",
+          "scheduleDaily": "Quotidien",
+          "scheduleWeekly": "Hebdomadaire",
+          "scheduleManual": "Manuel",
+          "scheduleDailyDesc": "Virement automatique chaque jour si le solde disponible atteint le minimum",
+          "scheduleWeeklyDesc": "Virement automatique chaque lundi si le solde disponible atteint le minimum",
+          "scheduleManualDesc": "Vous devez demander manuellement chaque virement (sujet à approbation admin)",
+          "minimumAmount": "Montant minimum ({currency})",
+          "minimumAmountDesc": "Montant minimum requis pour déclencher un virement (entre 10 {currency} et 1 000 000 {currency})",
+          "important": "Important :",
+          "importantNote": "Les virements automatiques (quotidiens/hebdomadaires) sont traités automatiquement par le système. Les virements manuels nécessitent une approbation de l'administrateur.",
+          "syncedWithStripe": "Synchronisé avec Stripe - Vos paramètres sont à jour sur Stripe",
+          "outOfSync": "Désynchronisé - Les paramètres diffèrent entre la base de données et Stripe",
+          "database": "Base de données",
+          "stripe": "Stripe",
+          "saveToSync": "Enregistrez vos paramètres pour synchroniser avec Stripe.",
+          "noStripeAccount": "Aucun compte Stripe connecté",
+          "saveChanges": "Enregistrer les modifications",
+          "saving": "Enregistrement...",
+          "cancel": "Annuler",
+          "noChanges": "Aucune modification à enregistrer",
+          "schedulesExplanation": "Explications des calendriers",
+          "dailyTitle": "Quotidien",
+          "dailyDesc": "Le système vérifie chaque jour si votre solde disponible atteint le montant minimum. Si oui, un virement automatique est créé vers votre compte Stripe.",
+          "weeklyTitle": "Hebdomadaire",
+          "weeklyDesc": "Le système vérifie chaque lundi si votre solde disponible atteint le montant minimum. Si oui, un virement automatique est créé vers votre compte Stripe.",
+          "manualTitle": "Manuel",
+          "manualDesc": "Vous devez manuellement demander un virement depuis la page des paiements. Chaque demande doit être approuvée par un administrateur avant d'être traitée. Cela vous donne un contrôle total sur le calendrier de vos virements.",
+          "tip": "Conseil",
+          "tipDesc": "Si vous préférez avoir un flux de trésorerie régulier, choisissez \"Quotidien\" ou \"Hebdomadaire\". Si vous préférez contrôler manuellement vos virements, choisissez \"Manuel\"."
+        },
+        "settingsCard": {
+          "title": "Paramètres de virement",
+          "subtitle": "Configurez la fréquence et le montant minimum de vos virements",
+          "scheduleTitle": "Calendrier de virement",
+          "minimumTitle": "Montant minimum",
+          "minimumHint": "(Minimum requis pour un virement)"
+        },
+        "manual": {
+          "title": "Demander un virement manuel",
+          "body": "Vous avez {amount} {currency} disponibles pour un virement.",
+          "baseNote": "(≈ même montant en EUR base)",
+          "action": "Demander un virement"
+        },
+        "historyCard": {
+          "title": "Historique des virements",
+          "subtitle": "Liste de tous vos virements et leur statut",
+          "emptyTitle": "Aucun historique de virement pour le moment",
+          "emptySubtitle": "Les virements apparaîtront ici une fois traités",
+          "table": {
+            "date": "Date",
+            "amount": "Montant",
+            "status": "Statut",
+            "type": "Type",
+            "stripeId": "ID Stripe"
+          }
+        },
+        "history": {
+          "status": {
+            "paid": "Payé",
+            "failed": "Échoué",
+            "processing": "En cours",
+            "unknown": "Inconnu"
+          }
+        },
+        "info": {
+          "title": "Comment fonctionnent les virements ?",
+          "auto": {
+            "title": "Virements automatiques :",
+            "daily": {
+              "title": "Quotidien :",
+              "body": "Virement automatique chaque jour si le solde disponible atteint le minimum configuré"
+            },
+            "weekly": {
+              "title": "Hebdomadaire :",
+              "body": "Virement automatique chaque lundi si le solde disponible atteint le minimum configuré"
+            },
+            "manual": {
+              "title": "Manuel :",
+              "body": "Vous devez demander manuellement chaque virement (sujet à approbation admin)"
+            }
+          },
+          "processing": {
+            "title": "Délais de traitement :",
+            "body": "Les virements Stripe sont généralement traités en 2-3 jours ouvrables. Une fois le virement traité par Stripe, les fonds sont envoyés vers votre compte bancaire selon vos paramètres Stripe (généralement 1-2 jours supplémentaires)."
+          },
+          "bank": {
+            "title": "Configuration bancaire :",
+            "bodyStart": "Pour configurer ou modifier votre compte bancaire, connectez-vous à votre",
+            "stripeDashboard": "tableau de bord Stripe"
+          }
+        },
+        "common": {
+          "dash": "-"
+        },
+        "request": {
+          "backToPayouts": "Retour aux paiements",
+          "title": "Demander un virement manuel",
+          "subtitle": "Soumettez une demande de virement pour approbation",
+          "availableBalance": "Solde disponible",
+          "maxAmount": "Montant maximum que vous pouvez demander",
+          "currencyConversion": "Conversion de devise",
+          "currencyConversionDesc": "Votre compte Stripe est en {currency}. Le montant sera converti automatiquement de EUR (base) vers {currency} lors du virement. Le taux de conversion actuel sera appliqué au moment du traitement.",
+          "conversionApprox": "≈ {amount} EUR (base)",
+          "payoutsNotEnabled": "Les virements ne sont pas activés sur votre compte. Veuillez compléter votre configuration de paiement.",
+          "balanceTooLow": "Votre solde disponible est inférieur au minimum requis ({minimum} {currency}). Vous ne pouvez pas demander de virement pour le moment.",
+          "payoutAmount": "Montant du virement",
+          "payoutAmountDesc": "Indiquez le montant que vous souhaitez recevoir",
+          "amount": "Montant ({currency})",
+          "minMaxInfo": "Minimum: {min} {currency} • Maximum: {max} {currency}",
+          "quickAmounts": "Montants rapides",
+          "important": "Important",
+          "importantNote": "Cette demande sera examinée par un administrateur avant d'être traitée. Vous serez notifié une fois la demande approuvée ou rejetée.",
+          "submitRequest": "Soumettre la demande",
+          "submitting": "Soumission en cours...",
+          "cannotRequest": "Vous ne pouvez pas effectuer de demande de virement pour le moment",
+          "requestProcess": "Processus de demande",
+          "step1Title": "Soumission",
+          "step1Desc": "Vous soumettez votre demande avec le montant souhaité",
+          "step2Title": "Examen",
+          "step2Desc": "Un administrateur examine votre demande (généralement sous 24-48h)",
+          "step3Title": "Approbation",
+          "step3Desc": "Si approuvée, le virement est créé vers votre compte Stripe",
+          "step4Title": "Traitement",
+          "step4Desc": "Stripe traite le virement vers votre compte bancaire (2-5 jours ouvrables)"
+        }
+      },
+      "settings": {
+        "title": "Paramètres Créateur",
+        "subtitle": "Gérez votre profil et vos préférences",
+        "tabs": {
+          "profile": "Profil",
+          "public": "Profil Public",
+          "payments": "Paiements",
+          "security": "Sécurité",
+          "notifications": "Notifications"
+        },
+        "profile": {
+          "title": "Informations personnelles",
+          "description": "Ces informations seront visibles sur votre profil public",
+          "fullName": "Nom complet",
+          "email": "Email",
+          "bio": "Bio",
+          "bioPlaceholder": "Parlez un peu de vous...",
+          "expertise": "Domaine d'expertise",
+          "expertisePlaceholder": "ex: Musique, Comédie, Sport...",
+          "timezone": "Fuseau horaire",
+          "timezoneTitle": "Fuseau horaire",
+          "timezoneDescription": "Configurez votre fuseau horaire pour afficher correctement les horaires des appels",
+          "autoDetected": "Fuseau horaire détecté automatiquement",
+          "currentTimezone": "Fuseau horaire actuel",
+          "selectTimezone": "Sélectionner un fuseau horaire",
+          "autoDetect": "Auto-détecter",
+          "allTimes": "Tous les horaires seront affichés dans ce fuseau horaire",
+          "preview": "Aperçu",
+          "previewTime": "Il est actuellement {time} ({abbr}) dans votre fuseau horaire",
+          "save": "Enregistrer",
+          "saving": "Enregistrement...",
+          "timezoneDetected": "Fuseau horaire détecté automatiquement",
+          "timePreviewTitle": "Aperçu de l’heure :",
+          "timePreviewText": "Il est actuellement {time} ({abbr}) dans votre fuseau horaire"
+        },
+        "publicProfile": {
+          "title": "Images du profil",
+          "description": "Gérez votre photo de profil et votre bannière",
+          "profileImage": "Photo de profil",
+          "profileImageDesc": "Votre photo sera affichée de manière circulaire",
+          "bannerImage": "Image de bannière",
+          "bannerImageDesc": "Image de couverture de votre profil (format paysage recommandé: 1200x300px)",
+          "currentPreview": "Aperçu actuel :",
+          "preview": "Aperçu :",
+          "noImage": "Aucune image",
+          "uploadInProgress": "Upload en cours...",
+          "changeImage": "Changer l'image",
+          "uploadImage": "Uploader une image",
+          "deleteInProgress": "Suppression en cours...",
+          "deleteImage": "Supprimer l'image",
+          "acceptedFormats": "Formats acceptés: JPG, PNG, WEBP (max 5MB). L'image sera enregistrée automatiquement.",
+          "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette image ?",
+          "cannotLoadImage": "Impossible de charger l'image",
+          "bioTitle": "Bio et description",
+          "bioDescription": "Personnalisez votre profil visible par vos fans",
+          "richBio": "Bio enrichie",
+          "richBioPlaceholder": "Parlez de vous, de votre parcours, de ce que vous proposez...",
+          "richBioHelp": "Cette bio sera affichée sur votre profil public. Utilisez des sauts de ligne pour structurer votre texte.",
+          "socialLinks": "Réseaux Sociaux",
+          "socialLinksDesc": "Ajoutez vos liens de réseaux sociaux pour que vos fans puissent vous suivre",
+          "instagram": "Instagram",
+          "instagramPlaceholder": "https://instagram.com/votre-compte",
+          "tiktok": "TikTok",
+          "tiktokPlaceholder": "https://tiktok.com/@votre-compte",
+          "twitter": "Twitter / X",
+          "twitterPlaceholder": "https://twitter.com/votre-compte",
+          "youtube": "YouTube",
+          "youtubePlaceholder": "https://youtube.com/@votre-chaine",
+          "other": "Site web / Autre lien",
+          "otherPlaceholder": "https://votre-site.com"
+        },
+        "paymentsTab": {
+          "title": "Configuration Stripe Connect",
+          "description": "Gérez vos paiements et vos transferts",
+          "stripeStatus": "Statut Stripe Connect",
+          "configured": "Configuré",
+          "notConfigured": "Non configuré",
+          "accountReady": "Votre compte est configuré et prêt à recevoir des paiements",
+          "configRequired": "Configuration requise pour recevoir des paiements",
+          "warningTitle": "⚠️ Configuration nécessaire",
+          "warningDesc": "Pour recevoir vos paiements, vous devez compléter la configuration de votre compte Stripe Connect. Ce processus est sécurisé et prend environ 5 minutes.",
+          "configureStripe": "Configurer Stripe Connect",
+          "manageAccount": "📊 Gérer votre compte Stripe",
+          "manageAccountDesc": "Accédez à votre espace Stripe Connect pour gérer vos paiements, vos transferts et vos informations bancaires (IBAN).",
+          "openStripeConnect": "Ouvrir Stripe Connect",
+          "howToAddBank": "Comment ajouter mon compte bancaire ?",
+          "bankStep1": "Cliquez sur le bouton \"Ouvrir Stripe Connect\" ci-dessus",
+          "bankStep2": "Connectez-vous à votre espace Stripe Connect",
+          "bankStep3": "Ajoutez votre IBAN et les informations de votre banque dans la section dédiée",
+          "bankStep4": "Vos virements seront automatiquement envoyés selon votre configuration",
+          "importantNote": "ℹ️ Important : N'utilisez jamais le Dashboard Stripe classique, utilisez toujours le lien Stripe Connect fourni ci-dessus.",
+          "howPaymentsWork": "💵 Comment fonctionnent les paiements ?",
+          "securityPeriod": "Période de sécurité:",
+          "securityPeriodDesc": "Les paiements sont retenus pendant 7 jours pour protéger contre les litiges",
+          "commission": "Commission:",
+          "commissionDesc": "La plateforme prélève une commission de 10% sur chaque réservation",
+          "paymentRequest": "Demande de paiement:",
+          "paymentRequestDesc": "Après 7 jours, vous pouvez demander le transfert dans l'onglet \"Revenus\" de votre dashboard",
+          "reception": "Réception:",
+          "receptionDesc": "Les fonds sont transférés sur votre compte Stripe, puis vers votre banque selon votre configuration"
+        },
+        "security": {
+          "title": "Changer le mot de passe",
+          "description": "Assurez-vous d'utiliser un mot de passe fort et unique",
+          "currentPassword": "Mot de passe actuel",
+          "newPassword": "Nouveau mot de passe",
+          "confirmPassword": "Confirmer le nouveau mot de passe",
+          "changePassword": "Changer le mot de passe",
+          "changing": "Modification..."
+        },
+        "notificationsTab": {
+          "title": "Préférences de notification",
+          "description": "Choisissez comment vous souhaitez être notifié",
+          "emailNotifications": "Notifications par email",
+          "emailNotificationsDesc": "Recevoir des emails de notification",
+          "newBooking": "Nouvelle réservation",
+          "newBookingDesc": "Notification lorsqu'un fan réserve un appel",
+          "payoutAvailable": "Paiements disponibles",
+          "payoutAvailableDesc": "Notification lorsque des fonds sont prêts pour transfert",
+          "callReminder": "Rappels d'appel",
+          "callReminderDesc": "Recevoir un rappel avant vos appels programmés",
+          "savePreferences": "Enregistrer les préférences"
+        }
+      },
+      "payoutSettings": {
+        "title": "Paramètres de virement",
+        "subtitle": "Configurez vos préférences de virement",
+        "automaticPayouts": "Virements automatiques",
+        "minimumAmount": "Montant minimum",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "payoutRequest": {
+        "title": "Demander un virement manuel",
+        "subtitle": "Demandez un virement de vos fonds disponibles",
+        "amount": "Montant",
+        "submit": "Demander le virement",
+        "submitting": "Envoi en cours...",
+        "backToDashboard": "Retour au dashboard"
+      }
+    },
+    "admin": {
+      "title": "Admin Dashboard",
+      "welcome": "Bienvenue, {name}",
+      "stats": {
+        "totalRevenue": "Revenus totaux",
+        "commissions": "Commissions",
+        "bookings": "Réservations",
+        "users": "Utilisateurs"
+      },
+      "quickActions": {
+        "title": "Gestion Administrative",
+        "description": "Accès rapide aux fonctionnalités d'administration",
+        "settings": {
+          "title": "Paramètres",
+          "description": "Configuration plateforme"
+        },
+        "payments": {
+          "title": "Paiements",
+          "description": "Historique des transactions"
+        },
+        "payouts": {
+          "title": "Paiements créateurs",
+          "description": "Gestion des payouts"
+        },
+        "dashboard": {
+          "title": "Tableau de bord",
+          "description": "Vue d'ensemble payouts"
+        },
+        "refunds": {
+          "title": "Remboursements",
+          "description": "Gestion des refunds"
+        },
+        "logs": {
+          "title": "Logs",
+          "description": "Journal transactions"
+        }
+      },
+      "revenueChart": {
+        "title": "Revenus (30 derniers jours)",
+        "revenue": "Revenus (€)"
+      },
+      "tabs": {
+        "users": "Utilisateurs",
+        "payouts": "Paiements",
+        "testCalls": "Appels de test"
+      },
+      "users": {
+        "title": "Gestion des utilisateurs",
+        "description": "Liste de tous les utilisateurs de la plateforme",
+        "name": "Nom",
+        "email": "Email",
+        "role": "Rôle",
+        "registered": "Inscription",
+        "noUsers": "Aucun utilisateur trouvé"
+      },
+      "payouts": {
+        "title": "Gestion des paiements",
+        "description": "Paiements aux créateurs",
+        "new": "Nouveau paiement",
+        "create": "Créer un paiement",
+        "createDescription": "Envoyer un paiement à un créateur",
+        "creator": "Créateur",
+        "selectCreator": "Sélectionnez un créateur",
+        "amount": "Montant (€)",
+        "amountPlaceholder": "100.00",
+        "creating": "Création...",
+        "createButton": "Créer",
+        "status": {
+          "paid": "Payé",
+          "processing": "En cours",
+          "failed": "Échoué",
+          "pending": "En attente"
+        },
+        "noPayouts": "Aucun paiement trouvé",
+        "approve": "Approuver",
+        "reject": "Rejeter",
+        "viewDetails": "Voir détails",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "testCalls": {
+        "title": "Appels de test",
+        "description": "Tester les appels vidéo en tant qu'administrateur",
+        "past": "Passé",
+        "join": "Rejoindre l'appel",
+        "joinTest": "Rejoindre (test)",
+        "noCalls": "Aucun appel confirmé disponible pour le test",
+        "callsInfo": "Les appels confirmés avec des salles Daily.co créées apparaîtront ici",
+        "creator": "Créateur:",
+        "participant": "Participant:",
+        "id": "ID:"
+      },
+      "settings": {
+        "title": "Paramètres de la plateforme",
+        "description": "Configurer les paramètres globaux",
+        "commission": "Commission plateforme (%)",
+        "save": "Enregistrer",
+        "saving": "Enregistrement...",
+        "cancel": "Annuler",
+        "subtitle": "Configuration complète des paramètres financiers et opérationnels",
+        "stripeMode": "Mode Stripe",
+        "administrator": "Administrateur",
+        "platformFee": "Frais de plateforme",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "testing": {
+        "title": "Tests & Outils",
+        "subtitle": "Testez et validez toutes les fonctionnalités de la plateforme",
+        "adminAccount": "Compte Administrateur",
+        "userAccount": "Compte Utilisateur",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "payments": {
+        "noPaymentFound": "Aucun paiement trouvé",
+        "paymentId": "ID Paiement",
+        "stripeId": "ID Stripe",
+        "amount": "Montant",
+        "status": "Statut",
+        "date": "Date",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "logs": {
+        "noLogFound": "Aucun log trouvé",
+        "logId": "ID Log",
+        "timestamp": "Horodatage",
+        "type": "Type",
+        "message": "Message",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "refundsDisputes": {
+        "title": "Remboursements et litiges",
+        "status": "Statut",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "payoutsDashboard": {
+        "blockedPayments": "Paiements bloqués",
+        "affectedCreators": "Créateurs concernés",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "creatorsStripe": {
+        "stripeId": "ID Stripe",
+        "onboarding": "Onboarding",
+        "chargesEnabled": "Charges activées",
+        "payoutsEnabled": "Virements activés",
+        "detailsSubmitted": "Détails soumis",
+        "externalAccount": "Compte externe",
+        "requirements": "Exigences",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "refunds": {
+        "noRefundFound": "Aucun remboursement trouvé",
+        "enterPaymentId": "Entrez l'ID du paiement à rembourser",
+        "refundAmount": "Montant du remboursement",
+        "reason": "Raison",
+        "processRefund": "Traiter le remboursement",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "systemLogs": {
+        "noLogFound": "Aucun log trouvé",
+        "logId": "ID Log",
+        "date": "Date",
+        "level": "Niveau",
+        "category": "Catégorie",
+        "message": "Message",
+        "backToDashboard": "Retour au dashboard"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "noNotifications": "Aucune notification",
+        "backToDashboard": "Retour au dashboard"
+      }
+    }
+  },
+  "layout": {
+    "title": "Callastar",
+    "description": "Plateforme de réservation d'appels vidéo avec des créateurs"
+  },
+  "toast": {
+    "success": {
+      "saved": "Enregistré avec succès",
+      "updated": "Mis à jour avec succès",
+      "deleted": "Supprimé avec succès",
+      "sent": "Envoyé avec succès",
+      "created": "Créé avec succès",
+      "calendarDownloaded": "Fichier calendrier téléchargé !",
+      "dataRefreshed": "Données actualisées",
+      "reviewSent": "Avis envoyé avec succès!",
+      "allNotificationsRead": "Toutes les notifications ont été marquées comme lues",
+      "settingsSaved": "Paramètres enregistrés avec succès",
+      "profileUpdated": "Profil mis à jour avec succès",
+      "imageUploaded": "Image uploadée et profil mis à jour avec succès !",
+      "imageDeleted": "Image supprimée avec succès !",
+      "passwordChanged": "Mot de passe modifié avec succès",
+      "preferenceSaved": "Préférences enregistrées",
+      "timezoneDetected": "Fuseau horaire détecté : {timezone}",
+      "offerCreated": "Offre créée avec succès!",
+      "offerDeleted": "Offre supprimée avec succès",
+      "requestAccepted": "Demande acceptée et offre créée!",
+      "requestRejected": "Demande rejetée",
+      "payoutRequested": "Demande de virement soumise avec succès !",
+      "payoutSettingsSaved": "Paramètres enregistrés avec succès",
+      "settingsUpdated": "Paramètres mis à jour!",
+      "paymentCreated": "Paiement créé avec succès!",
+      "logsDeleted": "{count} log(s) supprimé(s)",
+      "refundCreated": "Remboursement créé avec succès",
+      "paymentsUnblocked": "Paiements débloqués",
+      "paymentsBlocked": "Paiements bloqués",
+      "settingsUpdatedStripe": "Paramètres mis à jour",
+      "eligibilityVerified": "Éligibilité vérifiée",
+      "stripeCopied": "ID Stripe copié",
+      "redirecting": "Redirection en cours...",
+      "stripeConfigured": "✅ Votre compte Stripe est maintenant configuré !",
+      "creatorsPageOpened": "Page créateurs ouverte",
+      "adminDashboardOpened": "Dashboard admin ouvert",
+      "twoLoginWindowsOpened": "Deux fenêtres de connexion ouvertes",
+      "copiedToClipboard": "Copié dans le presse-papier",
+      "enterValidAmount": "Veuillez entrer un montant valide",
+      "minimumAmountRequired": "Le montant doit être au moins {minimum} {currency}",
+      "amountExceedsBalance": "Le montant demandé dépasse votre solde disponible",
+      "payoutRequestSuccess": "Demande de virement soumise avec succès !"
+    },
+    "error": {
+      "loadingFailed": "Erreur lors du chargement",
+      "savingFailed": "Erreur lors de la sauvegarde",
+      "deletingFailed": "Erreur lors de la suppression",
+      "sendingFailed": "Erreur lors de l'envoi",
+      "creatingFailed": "Erreur lors de la création",
+      "downloadFailed": "Erreur lors du téléchargement",
+      "updateFailed": "Erreur lors de la mise à jour",
+      "genericError": "Une erreur est survenue",
+      "fillAllFields": "Veuillez remplir tous les champs",
+      "fillAllRequiredFields": "Veuillez remplir tous les champs requis",
+      "unsupportedFormat": "Format non supporté. Utilisez JPG, PNG ou WEBP",
+      "fileTooLarge": "Fichier trop lourd. Taille maximale : 5MB",
+      "uploadError": "Erreur lors de l'upload de l'image",
+      "serverError": "Erreur serveur lors de l'upload. Veuillez réessayer.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "stripeError": "Erreur Stripe",
+      "cannotStartStripe": "Impossible de démarrer Stripe",
+      "onboardingError": "Erreur lors de la création du lien d'onboarding",
+      "dashboardOpenError": "Erreur lors de l'ouverture du tableau de bord",
+      "cannotCopy": "Impossible de copier",
+      "dateRangeRequired": "Veuillez sélectionner une plage de dates",
+      "enterValidAmount": "Veuillez entrer un montant valide",
+      "minimumAmount": "Le montant doit être au moins {amount} {currency}",
+      "amountExceedsBalance": "Le montant demandé dépasse votre solde disponible",
+      "payoutsNotEnabled": "Les virements ne sont pas activés sur votre compte",
+      "manualPayoutsNotEnabled": "Les demandes manuelles ne sont pas activées",
+      "cannotFetchBalance": "Impossible de récupérer le solde",
+      "minAmountStripe": "Le montant minimum doit être au moins 10 {currency}",
+      "maxAmountStripe": "Le montant minimum ne peut pas dépasser 1 000 000 {currency}",
+      "enterReason": "Veuillez entrer une raison",
+      "rejectReasonRequired": "Veuillez fournir une raison de refus",
+      "errorOccurred": "Une erreur est survenue",
+      "payoutsNotEnabledToast": "Les virements ne sont pas activés sur votre compte",
+      "payoutRequestError": "Erreur lors de la demande",
+      "settingsNotSynced": "Les paramètres ne sont pas synchronisés avec Stripe",
+      "errorFetchingSettings": "Erreur lors de la récupération des paramètres",
+      "minAmountError": "Le montant minimum doit être au moins 10 {currency}",
+      "maxAmountError": "Le montant minimum ne peut pas dépasser 1 000 000 {currency}",
+      "savingError": "Erreur lors de la sauvegarde"
+    },
+    "info": {
+      "verifyingStripe": "Vérification de votre configuration Stripe en cours...",
+      "checkingStripeAccount": "Vérification de votre compte Stripe en cours...",
+      "configInProgress": "Configuration en cours de vérification...",
+      "featureToImplement": "Fonctionnalité à implémenter via l'API Stripe"
+    },
+    "warning": {
+      "incompleteConfig": "Configuration incomplète: {message}",
+      "settingsNotSynced": "Les paramètres ne sont pas synchronisés avec Stripe"
+    },
+    "stripe": {
+      "verifying": "Vérification de votre compte Stripe en cours...",
+      "configured": "✅ Votre compte Stripe est maintenant configuré !",
+      "incompleteConfig": "Configuration incomplète: {issue}",
+      "verificationInProgress": "Configuration en cours de vérification...",
+      "redirecting": "Redirection vers Stripe...",
+      "redirectingSuccess": "Redirection en cours...",
+      "onboardingError": "Erreur lors de la création du lien d'onboarding",
+      "unknownError": "Une erreur est survenue: {error}",
+      "genericError": "Erreur inconnue"
+    }
+  },
+  "components": {
+    "creatorCard": {
+      "creator": "Créateur",
+      "imageUnavailable": "Image indisponible",
+      "unknown": "Inconnu",
+      "noBio": "Pas de bio disponible",
+      "offersCount": "{count, plural, =0 {aucune offre disponible} one {# offre disponible} other {# offres disponibles}}",
+      "viewProfile": "Voir le profil"
+    },
+    "callRequestDialog": {
+      "triggerButton": "Proposer un appel",
+      "title": "Proposer un appel avec {creatorName}",
+      "description": "Envoyez une demande personnalisée pour organiser un appel vidéo.",
+      "form": {
+        "dateTime": "Date et heure souhaitées",
+        "price": "Prix proposé (€)",
+        "message": "Message (optionnel)",
+        "messagePlaceholder": "Parlez de vous et pourquoi vous souhaitez un appel..."
+      },
+      "cancel": "Annuler",
+      "sending": "Envoi...",
+      "submit": "Envoyer la demande",
+      "success": "Demande d'appel envoyée avec succès!",
+      "errors": {
+        "loginRequired": "Veuillez vous connecter pour proposer un appel",
+        "invalidPrice": "Veuillez entrer un prix valide",
+        "sendFailed": "Échec de l'envoi de la demande",
+        "generic": "Une erreur s'est produite"
+      }
+    },
+    "notificationBell": {
+      "ariaLabel": "Notifications",
+      "title": "Notifications",
+      "markAllRead": "Tout marquer comme lu",
+      "loading": "Chargement...",
+      "empty": "Aucune notification",
+      "markAsRead": "Marquer comme lu",
+      "delete": "Supprimer",
+      "viewDetails": "Voir les détails →",
+      "viewAll": "Voir toutes les notifications"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Page non trouvée",
+      "description": "Désolé, la page que vous recherchez n'existe pas ou a été déplacée.",
+      "backHome": "Retour à l'accueil"
+    },
+    "serverError": {
+      "title": "Erreur du serveur",
+      "description": "Oups ! Quelque chose s'est mal passé de notre côté.",
+      "tryAgain": "Réessayer",
+      "backHome": "Retour à l'accueil"
+    },
+    "loading": {
+      "title": "Chargement en cours...",
+      "message": "Veuillez patienter"
+    }
+  },
+  "validation": {
+    "required": "Ce champ est requis",
+    "email": {
+      "invalid": "Adresse e-mail invalide",
+      "required": "L'adresse e-mail est requise"
+    },
+    "password": {
+      "tooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "required": "Le mot de passe est requis",
+      "mismatch": "Les mots de passe ne correspondent pas",
+      "weak": "Le mot de passe est trop faible"
+    },
+    "name": {
+      "required": "Le nom est requis",
+      "tooShort": "Le nom doit contenir au moins 2 caractères",
+      "tooLong": "Le nom ne peut pas dépasser 50 caractères"
+    },
+    "phone": {
+      "invalid": "Numéro de téléphone invalide",
+      "required": "Le numéro de téléphone est requis"
+    },
+    "price": {
+      "invalid": "Prix invalide",
+      "tooLow": "Le prix minimum est {min}",
+      "tooHigh": "Le prix maximum est {max}",
+      "required": "Le prix est requis"
+    },
+    "duration": {
+      "invalid": "Durée invalide",
+      "tooShort": "La durée minimum est {min} minutes",
+      "tooLong": "La durée maximum est {max} minutes",
+      "required": "La durée est requise"
+    },
+    "date": {
+      "invalid": "Date invalide",
+      "required": "La date est requise",
+      "past": "La date ne peut pas être dans le passé"
+    },
+    "file": {
+      "tooLarge": "Le fichier est trop volumineux (max: {max})",
+      "invalidType": "Type de fichier non supporté",
+      "required": "Un fichier est requis"
+    },
+    "text": {
+      "tooShort": "Le texte doit contenir au moins {min} caractères",
+      "tooLong": "Le texte ne peut pas dépasser {max} caractères",
+      "required": "Ce champ texte est requis"
+    },
+    "url": {
+      "invalid": "URL invalide",
+      "required": "L'URL est requise"
+    },
+    "generic": {
+      "invalid": "Valeur invalide",
+      "required": "Ce champ est requis"
+    }
+  }
+}

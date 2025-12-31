@@ -1,91 +1,115 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import createMiddleware from 'next-intl/middleware';
+import { NextResponse, type NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
+import { locales, defaultLocale } from './i18n-config';
 
-const publicPaths = ['/', '/auth/login', '/auth/register', '/creators'];
+const intlMiddleware = createMiddleware({
+  locales,
+  defaultLocale,
+  localePrefix: 'always'
+});
+
+const publicPaths = ['/', '/auth/login', '/auth/register', '/creators', '/legal'];
 const authPaths = ['/auth/login', '/auth/register'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  // Get auth token
+
+  // 🚨 next-intl middleware FIRST
+  const intlResponse = intlMiddleware(request);
+
+  // Skip static & api
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('/favicon') ||
+    pathname.includes('/og-image')
+  ) {
+    return intlResponse;
+  }
+
+  // 🔹 Detect locale from pathname
+  const detectedLocale =
+    locales.find(
+      (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`)
+    ) ?? defaultLocale;
+
+
+  // 🔹 Remove locale safely
+  const pathnameWithoutLocale = pathname.replace(
+    new RegExp(`^/(${locales.join('|')})`),
+    ''
+  ) || '/';
+
+
   const token = request.cookies.get('auth-token')?.value;
+
   const user = token ? await verifyToken(token) : null;
 
-  // Check if path is public
-  const isPublicPath = publicPaths.some(path => 
-    pathname === path || pathname.startsWith(path + '/')
+  const isPublicPath = publicPaths.some(
+    (path) =>
+      pathnameWithoutLocale === path ||
+      pathnameWithoutLocale.startsWith(`${path}/`)
   );
-  const isAuthPath = authPaths.some(path => pathname.startsWith(path));
 
-  // Redirect authenticated users away from auth pages
+  const isAuthPath = authPaths.some((path) =>
+    pathnameWithoutLocale.startsWith(path)
+  );
+
+
+  // Redirect helper WITH locale
+  const redirectTo = (path: string) => {
+    const target = `/${detectedLocale}${path}`;
+    return NextResponse.redirect(new URL(target, request.url));
+  };
+
+  // 🔐 Auth guards
   if (isAuthPath && user) {
-    if (user.role === 'ADMIN') {
-      return NextResponse.redirect(new URL('/dashboard/admin', request.url));
-    } else if (user.role === 'CREATOR') {
-      return NextResponse.redirect(new URL('/dashboard/creator', request.url));
-    }
-    return NextResponse.redirect(new URL('/dashboard/user', request.url));
+    if (user.role === 'ADMIN') return redirectTo('/dashboard/admin');
+    if (user.role === 'CREATOR') return redirectTo('/dashboard/creator');
+    return redirectTo('/dashboard/user');
   }
 
-  // Allow public paths
-  if (isPublicPath || pathname.startsWith('/_next') || pathname.startsWith('/api/')) {
-    return NextResponse.next();
-  }
-
-  // Protect dashboard routes - CRITICAL: All dashboard routes require authentication
-  if (pathname.startsWith('/dashboard')) {
+  if (!isPublicPath && pathnameWithoutLocale.startsWith('/dashboard')) {
     if (!user) {
-      // No valid authentication - redirect to login immediately
-      const response = NextResponse.redirect(new URL('/auth/login', request.url));
-      // Clear any invalid auth cookies
-      response.cookies.delete('auth-token');
-      return response;
+      const res = redirectTo('/auth/login');
+      res.cookies.delete('auth-token');
+      return res;
     }
 
-    // Protect admin dashboard
-    if (pathname.startsWith('/dashboard/admin') && user.role !== 'ADMIN') {
-      if (user.role === 'CREATOR') {
-        return NextResponse.redirect(new URL('/dashboard/creator', request.url));
-      }
-      return NextResponse.redirect(new URL('/dashboard/user', request.url));
+    if (pathnameWithoutLocale.startsWith('/dashboard/admin') && user.role !== 'ADMIN') {
+      return redirectTo(
+        user.role === 'CREATOR'
+          ? '/dashboard/creator'
+          : '/dashboard/user'
+      );
     }
 
-    // Check creator role for creator dashboard
-    if (pathname.startsWith('/dashboard/creator') && user.role !== 'CREATOR') {
-      if (user.role === 'ADMIN') {
-        return NextResponse.redirect(new URL('/dashboard/admin', request.url));
-      }
-      return NextResponse.redirect(new URL('/dashboard/user', request.url));
-    }
-
-    // Redirect creators and admins trying to access user dashboard
-    if (pathname.startsWith('/dashboard/user')) {
-      if (user.role === 'ADMIN') {
-        return NextResponse.redirect(new URL('/dashboard/admin', request.url));
-      } else if (user.role === 'CREATOR') {
-        return NextResponse.redirect(new URL('/dashboard/creator', request.url));
-      }
+    if (
+      pathnameWithoutLocale.startsWith('/dashboard/creator') &&
+      user.role !== 'CREATOR'
+    ) {
+      return redirectTo(
+        user.role === 'ADMIN'
+          ? '/dashboard/admin'
+          : '/dashboard/user'
+      );
     }
   }
 
-  // Protect booking and call routes
-  if ((pathname.startsWith('/book') || pathname.startsWith('/call')) && !user) {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+  if (
+    (pathnameWithoutLocale.startsWith('/book') ||
+      pathnameWithoutLocale.startsWith('/call')) &&
+    !user
+  ) {
+    return redirectTo('/auth/login');
   }
 
-  return NextResponse.next();
+  return intlResponse;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, favicon.svg, robots.txt (metadata files)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|favicon.svg|robots.txt|og-image.png).*)',
-  ],
+    '/((?!_next|api|favicon.ico|favicon.svg|robots.txt|og-image.png).*)'
+  ]
 };

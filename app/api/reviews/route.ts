@@ -5,10 +5,19 @@ import { verifyToken } from '@/lib/auth';
 
 // Schema validation
 const createReviewSchema = z.object({
-  bookingId: z.string(),
-  rating: z.number().int().min(1).max(5),
-  comment: z.string().min(10).max(1000),
+  bookingId: z.string().min(1),
+  rating: z.coerce.number().int().min(1).max(5),
+  comment: z.preprocess(
+    (val) => {
+      if (val === null || val === undefined) return '';
+      if (typeof val === 'string') return val.trim();
+      return '';
+    },
+    z.string().max(200)
+  ),
 });
+
+
 
 // POST /api/reviews - Create a review
 export async function POST(request: NextRequest) {
@@ -54,12 +63,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if booking is completed
-    if (booking.status !== 'COMPLETED') {
+    const callDate = new Date(booking.callOffer.dateTime).getTime();
+    const callEnd = callDate + booking.callOffer.duration * 60 * 1000;
+
+    if (Date.now() < callEnd) {
       return NextResponse.json(
-        { error: 'Vous ne pouvez évaluer qu\'un appel terminé' },
+        { error: 'Vous ne pouvez évaluer qu’un appel terminé' },
         { status: 400 }
       );
     }
+
 
     // Check if already reviewed
     if (booking.review) {
@@ -76,7 +89,7 @@ export async function POST(request: NextRequest) {
         userId: decoded.userId,
         creatorId: booking.callOffer.creatorId,
         rating: validatedData.rating,
-        comment: validatedData.comment,
+        comment: validatedData.comment ?? '',
       },
       include: {
         user: {

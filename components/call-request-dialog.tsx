@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { MessageSquare } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface CallRequestDialogProps {
   creatorId: string;
@@ -25,6 +26,8 @@ interface CallRequestDialogProps {
 }
 
 export function CallRequestDialog({ creatorId, creatorName }: CallRequestDialogProps) {
+  const t = useTranslations('components.callRequestDialog');
+  const tToast = useTranslations('toast');
   const router = useRouter();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -39,13 +42,13 @@ export function CallRequestDialog({ creatorId, creatorName }: CallRequestDialogP
     e.preventDefault();
     
     if (!user) {
-      toast.error('Veuillez vous connecter pour proposer un appel');
+      toast.error(t('errors.loginRequired'));
       router.push('/auth/login');
       return;
     }
 
     if (!formData.proposedPrice || Number(formData.proposedPrice) <= 0) {
-      toast.error('Veuillez entrer un prix valide');
+      toast.error(t('errors.invalidPrice'));
       return;
     }
 
@@ -66,15 +69,15 @@ export function CallRequestDialog({ creatorId, creatorName }: CallRequestDialogP
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Échec de l\'envoi de la demande');
+        throw new Error(data.error || t('errors.sendFailed'));
       }
 
-      toast.success('Demande d\'appel envoyée avec succès!');
+      toast.success(t('success'));
       setOpen(false);
       setFormData({ proposedDateTime: '', proposedPrice: '', message: '' });
       router.refresh();
     } catch (error: any) {
-      toast.error(error.message || 'Une erreur s\'est produite');
+      toast.error(error.message || t('errors.generic'));
     } finally {
       setLoading(false);
     }
@@ -85,21 +88,21 @@ export function CallRequestDialog({ creatorId, creatorName }: CallRequestDialogP
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4" />
-          Proposer un appel
+          {t('triggerButton')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Proposer un appel avec {creatorName}</DialogTitle>
+            <DialogTitle>{t('title', { creatorName })}</DialogTitle>
             <DialogDescription>
-              Envoyez une demande personnalisée pour organiser un appel vidéo.
+              {t('description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="proposedDateTime">Date et heure souhaitées</Label>
+              <Label htmlFor="proposedDateTime">{t('form.dateTime')}</Label>
               <Input
                 id="proposedDateTime"
                 type="datetime-local"
@@ -111,7 +114,7 @@ export function CallRequestDialog({ creatorId, creatorName }: CallRequestDialogP
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="proposedPrice">Prix proposé (€)</Label>
+              <Label htmlFor="proposedPrice">{t('form.price')}</Label>
               <Input
                 id="proposedPrice"
                 type="number"
@@ -125,10 +128,10 @@ export function CallRequestDialog({ creatorId, creatorName }: CallRequestDialogP
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="message">Message (optionnel)</Label>
+              <Label htmlFor="message">{t('form.message')}</Label>
               <Textarea
                 id="message"
-                placeholder="Parlez de vous et pourquoi vous souhaitez un appel..."
+                placeholder={t('form.messagePlaceholder')}
                 className="min-h-[100px]"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -138,10 +141,10 @@ export function CallRequestDialog({ creatorId, creatorName }: CallRequestDialogP
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={loading} className="bg-gradient-to-r from-purple-600 to-pink-600">
-              {loading ? 'Envoi...' : 'Envoyer la demande'}
+              {loading ? t('sending') : t('submit')}
             </Button>
           </DialogFooter>
         </form>
