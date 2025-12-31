@@ -30,6 +30,8 @@ export default function UserDashboard() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewedBookingIds, setReviewedBookingIds] = useState<Set<string>>(new Set());
+
 
   useEffect(() => {
     fetchData();
@@ -58,7 +60,15 @@ export default function UserDashboard() {
         const bookingsData = await bookingsResponse.json();
         setBookings(bookingsData?.bookings ?? []);
       }
+      // Get reviews by user
+      const reviewsResponse = await fetch(`/api/reviews?userId=${userData.user.id}`, {
+        credentials: 'include',
+      });
 
+      if (reviewsResponse.ok) {
+        const reviews = await reviewsResponse.json();
+        setReviewedBookingIds(new Set(reviews.map((r: any) => r.bookingId)));
+      }
       // Get call requests
       const requestsResponse = await fetch('/api/call-requests?type=sent');
       if (requestsResponse.ok) {
@@ -72,6 +82,7 @@ export default function UserDashboard() {
       setLoading(false);
     }
   };
+  
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +93,7 @@ export default function UserDashboard() {
     try {
       const response = await fetch('/api/reviews', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bookingId: selectedBooking.id,
@@ -179,8 +191,12 @@ export default function UserDashboard() {
   };
 
   const canLeaveReview = (booking: any) => {
-    return booking?.status === 'COMPLETED' && !booking?.review;
+    return (
+      booking?.status === 'COMPLETED' &&
+      !reviewedBookingIds.has(booking.id)
+    );
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -423,10 +439,12 @@ export default function UserDashboard() {
                                 </div>
                                 <p className="text-sm text-gray-600">{t('booking.with')} {booking?.callOffer?.creator?.user?.name}</p>
                                 <p className="text-sm text-gray-500">{formattedDate}</p>
-                                {booking?.review && (
+                                {reviewedBookingIds.has(booking.id) && (
                                   <div className="flex items-center gap-2 mt-2">
                                     <CheckCircle className="w-4 h-4 text-green-600" />
-                                    <span className="text-sm text-green-600">{t('upcoming.reviewLeft')}</span>
+                                    <span className="text-sm text-green-600">
+                                      {t('review.alreadyReviewed')}
+                                    </span>
                                   </div>
                                 )}
                               </div>
@@ -498,7 +516,7 @@ export default function UserDashboard() {
                 <Label htmlFor="comment">{t('review.comment')}</Label>
                 <Textarea
                   id="comment"
-                  placeholder="Partagez votre expérience..."
+                  placeholder="Share your experience..."
                   className="min-h-[100px]"
                   value={reviewData.comment}
                   onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}

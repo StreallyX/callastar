@@ -475,7 +475,7 @@ export default function CreatorSettings() {
 
   const handleDeleteImage = async (imageType: 'profile' | 'banner') => {
     // Confirmation before deletion
-    if (!confirm(`{t('publicProfile.confirmDelete')}`)) {
+    if (!confirm(t('publicProfile.confirmDelete'))) {
       return;
     }
 
@@ -574,6 +574,7 @@ export default function CreatorSettings() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
+                
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -592,7 +593,7 @@ export default function CreatorSettings() {
                     rows={4}
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    placeholder="{t('profile.bioPlaceholder')}"
+                    placeholder={t('profile.bioPlaceholder')}
                   />
                 </div>
 
@@ -602,7 +603,7 @@ export default function CreatorSettings() {
                     id="expertise"
                     value={formData.expertise}
                     onChange={(e) => setFormData({ ...formData, expertise: e.target.value })}
-                    placeholder="{t('profile.expertisePlaceholder')}"
+                    placeholder={t('profile.expertisePlaceholder')}
                   />
                 </div>
               </CardContent>
@@ -623,8 +624,8 @@ export default function CreatorSettings() {
                   <Clock className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div className="text-sm">
                     <p className="font-medium text-blue-900 mb-1">
-                      {t('profile.timezone')} détecté automatiquement
-                    </p>
+                      {t('profile.timezoneDetected')}
+                    </p>  
                     <p className="text-blue-700">
                       {detectedTimezone} ({getTimezoneAbbreviation(detectedTimezone)})
                     </p>
@@ -632,11 +633,11 @@ export default function CreatorSettings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="timezone">{t('profile.timezone')} actuel</Label>
+                  <Label htmlFor="timezone">{t('profile.currentTimezone')}</Label>
                   <div className="flex gap-2">
                     <Select value={timezone} onValueChange={setTimezone}>
                       <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="{t('profile.selectTimezone')}" />
+                        <SelectValue placeholder={t('profile.selectTimezone')} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px]">
                         {timezones.map((tz) => (
@@ -661,13 +662,16 @@ export default function CreatorSettings() {
 
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                   <p className="text-sm text-purple-900">
-                    <strong>{t('publicProfile.preview')}</strong> Il est actuellement{' '}
-                    {new Date().toLocaleTimeString(locale, {
-                      timeZone: timezone,
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}{' '}
-                    ({getTimezoneAbbreviation(timezone)}) dans votre fuseau horaire
+                    <strong>{t('profile.timePreviewTitle')}</strong>{' '}
+{t('profile.timePreviewText', {
+  time: new Date().toLocaleTimeString(locale, {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+  }),
+  abbr: getTimezoneAbbreviation(timezone),
+})}
+
                   </p>
                 </div>
               </CardContent>
@@ -700,8 +704,8 @@ export default function CreatorSettings() {
               <CardContent className="space-y-6">
                 {/* ✅ Profile Image Upload - Simplified */}
                 <ImageUpload
-                  label="{t('publicProfile.profileImage')}"
-                  description="{t('publicProfile.profileImageDesc')}"
+                  label={t('publicProfile.profileImage')}
+                  description={t('publicProfile.profileImageDesc')}
                   imageUrl={profileData.profileImage}
                   onUploadSuccess={fetchData}
                   onDelete={() => handleDeleteImage('profile')}
@@ -711,8 +715,8 @@ export default function CreatorSettings() {
 
                 {/* ✅ Banner Image Upload - Simplified */}
                 <ImageUpload
-                  label="{t('publicProfile.bannerImage')}"
-                  description="{t('publicProfile.bannerImageDesc')}"
+                  label={t('publicProfile.bannerImage')}
+                  description={t('publicProfile.bannerImageDesc')}
                   imageUrl={profileData.bannerImage}
                   onUploadSuccess={fetchData}
                   onDelete={() => handleDeleteImage('banner')}
@@ -737,7 +741,7 @@ export default function CreatorSettings() {
                     rows={6}
                     value={profileData.bio}
                     onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                    placeholder="{t('publicProfile.richBioPlaceholder')}"
+                    placeholder={t('publicProfile.richBioPlaceholder')}
                   />
                   <p className="text-xs text-gray-500">
                     {t('publicProfile.richBioHelp')}
@@ -764,7 +768,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, instagram: e.target.value }
                     })}
-                    placeholder="{t('publicProfile.instagramPlaceholder')}"
+                    placeholder={t('publicProfile.instagramPlaceholder')}
                   />
                 </div>
 
@@ -778,7 +782,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, tiktok: e.target.value }
                     })}
-                    placeholder="{t('publicProfile.tiktokPlaceholder')}"
+                    placeholder={t('publicProfile.tiktokPlaceholder')}
                   />
                 </div>
 
@@ -792,7 +796,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, twitter: e.target.value }
                     })}
-                    placeholder="{t('publicProfile.twitterPlaceholder')}"
+                    placeholder={t('publicProfile.twitterPlaceholder')}
                   />
                 </div>
 
@@ -806,7 +810,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, youtube: e.target.value }
                     })}
-                    placeholder="{t('publicProfile.youtubePlaceholder')}"
+                    placeholder={t('publicProfile.youtubePlaceholder')}
                   />
                 </div>
 
@@ -820,7 +824,7 @@ export default function CreatorSettings() {
                       ...profileData, 
                       socialLinks: { ...profileData.socialLinks, other: e.target.value }
                     })}
-                    placeholder="{t('publicProfile.otherPlaceholder')}"
+                    placeholder={t('publicProfile.otherPlaceholder')}
                   />
                 </div>
 

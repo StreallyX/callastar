@@ -498,7 +498,8 @@
         "submitting": "Envoi...",
         "cancel": "Annuler",
         "success": "Avis envoyé avec succès!",
-        "error": "Échec de l'envoi de l'avis"
+        "error": "Échec de l'envoi de l'avis",
+        "alreadyReviewed": "Déjà évalué"
       },
       "main": {
         "reviewPlaceholder": "Partagez votre expérience..."
@@ -582,14 +583,14 @@
         "bankSetupDesc": "Assurez-vous que votre compte bancaire est correctement configuré dans votre",
         "stripeDashboard": "dashboard Stripe",
         "howItWorks": "Comment ça fonctionne",
-        "alreadyInStripe": "[À TRADUIRE] Already in your Stripe account",
-        "availableForPayout": "[À TRADUIRE] Available for payout",
-        "noEarnings": "[À TRADUIRE] No earnings yet",
-        "pendingPayments": "[À TRADUIRE] Pending payments",
-        "recentPaymentsSubtitle": "[À TRADUIRE] Your latest received payments",
-        "totalEarnings": "[À TRADUIRE] Total Earnings",
-        "totalPayouts": "[À TRADUIRE] Total Payouts",
-        "viewPayouts": "[À TRADUIRE] Payouts"
+        "alreadyInStripe": "Déjà présent sur votre compte Stripe",
+        "availableForPayout": "Disponible pour le paiement",
+        "noEarnings": "Aucun gain pour le moment",
+        "pendingPayments": "Paiements en attente",
+        "recentPaymentsSubtitle": "Vos derniers paiements reçus",
+        "totalEarnings": "Gains totaux",
+        "totalPayouts": "Paiements effectués",
+        "viewPayouts": "Paiements"
       },
       "calls": {
         "title": "Mes appels",
@@ -625,8 +626,8 @@
           "past": "Aucun appel passé.",
           "cancelled": "Aucun appel annulé."
         },
-        "noCalls": "[À TRADUIRE] No scheduled calls",
-        "youHave": "[À TRADUIRE] You have {count} upcoming call(s)"
+        "noCalls": "Aucun appel planifié",
+        "youHave": "Vous avez {count} appel(s) à venir"
       },
       "fees": {
         "backToDashboard": "Retour au dashboard",
@@ -655,18 +656,18 @@
           "payouts": "Pour transférer les fonds vers votre compte bancaire, consultez la page",
           "payoutLink": "Payouts"
         },
-        "calculationExample": "[À TRADUIRE] Calculation example",
-        "description": "[À TRADUIRE] Callastar takes a commission on each call",
-        "forACallOf": "[À TRADUIRE] For a call of",
-        "initialAmount": "[À TRADUIRE] Initial amount",
-        "netAmount": "[À TRADUIRE] Net amount received",
-        "paymentFees": "[À TRADUIRE] Payment fees (Stripe)",
-        "paymentFeesDesc": "[À TRADUIRE] Credit card payment processing fees",
-        "percentOf": "[À TRADUIRE] % of total amount",
-        "percentageNote": "[À TRADUIRE] Approximately",
-        "platformCommission": "[À TRADUIRE] Platform commission",
-        "platformCommissionDesc": "[À TRADUIRE] Call a Star takes a commission of",
-        "stripeFee": "[À TRADUIRE] Stripe fees (2.9% + 0.30)"
+        "calculationExample": "Exemple de calcul",
+        "description": "Callastar prélève une commission sur chaque appel",
+        "forACallOf": "Pour un appel de",
+        "initialAmount": "Montant initial",
+        "netAmount": "Montant net reçu",
+        "paymentFees": "Frais de paiement (Stripe)",
+        "paymentFeesDesc": "Frais de traitement du paiement par carte bancaire",
+        "percentOf": "% du montant total",
+        "percentageNote": "Environ",
+        "platformCommission": "Commission de la plateforme",
+        "platformCommissionDesc": "Callastar prélève une commission de",
+        "stripeFee": "Frais Stripe (2,9 % + 0,30 €)"
       },
       "notifications": {
         "backToDashboard": "Retour au dashboard",
@@ -710,8 +711,8 @@
           "next": "Suivant"
         },
         "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette notification ?",
-        "markAllRead": "[À TRADUIRE] Mark all as read",
-        "noNotifications": "[À TRADUIRE] No notifications"
+        "markAllRead": "Tout marquer comme lu",
+        "noNotifications": "Aucune notification"
       },
       "cards": {
         "offers": {
@@ -896,8 +897,8 @@
           "held": "⏳ En attente",
           "pending": "⏳ En attente",
           "processing": "⏳ En cours",
-          "available": "[À TRADUIRE] ✓ Available",
-          "transferred": "[À TRADUIRE] ✓ Transferred"
+          "available": "✓ Disponible",
+          "transferred": "✓ Transferrer"
         },
         "info": {
           "title": "📋 Information",
@@ -1146,7 +1147,10 @@
           "preview": "Aperçu",
           "previewTime": "Il est actuellement {time} ({abbr}) dans votre fuseau horaire",
           "save": "Enregistrer",
-          "saving": "Enregistrement..."
+          "saving": "Enregistrement...",
+          "timezoneDetected": "Fuseau horaire détecté automatiquement",
+          "timePreviewTitle": "Aperçu de l’heure :",
+          "timePreviewText": "Il est actuellement {time} ({abbr}) dans votre fuseau horaire"
         },
         "publicProfile": {
           "title": "Images du profil",

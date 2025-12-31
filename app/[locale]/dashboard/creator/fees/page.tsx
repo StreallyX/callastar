@@ -83,21 +83,21 @@ export default function FeesPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="w-5 h-5 text-purple-600" />
-              {t('platformFee.title')}
+              {t('title')}
             </CardTitle>
             <CardDescription>
-              {t('platformFee.description', { fee: platformFee })}
+              {t('description', { fee: platformFee })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 mb-4">
-              {t('platformFee.details')}
+              {t('platformCommissionDesc')}
             </p>
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="w-4 h-4 text-purple-600" />
                 <span className="font-semibold text-purple-900">
-                  {t('platformFee.current')}
+                  {t('platformFee')}
                 </span>
               </div>
               <p className="text-2xl font-bold text-purple-600">{platformFee}%</p>
