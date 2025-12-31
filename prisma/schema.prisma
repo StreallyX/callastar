@@ -130,6 +130,35 @@ enum LogActor {
   GUEST
 }
 
+// ✅ NEW: Logging system for emails and crons
+enum LogType {
+  EMAIL_SENT
+  EMAIL_ERROR
+  CRON_RUN
+  CRON_ERROR
+  DAILY_ROOM_DELETED
+  DAILY_ROOM_ERROR
+  BOOKING_CREATED
+  BOOKING_ERROR
+  PAYMENT_SUCCESS
+  PAYMENT_ERROR
+  PAYMENT_REFUND
+  PAYOUT_SUCCESS
+  PAYOUT_ERROR
+  STRIPE_WEBHOOK
+  STRIPE_WEBHOOK_ERROR
+  DAILY_ROOM_CREATED
+  NOTIFICATION_SENT
+  NOTIFICATION_ERROR
+  SYSTEM_ERROR
+  API_ERROR
+}
+
+enum LogStatus {
+  SUCCESS
+  ERROR
+}
+
 enum EntityType {
   PAYMENT
   PAYOUT
@@ -618,23 +647,22 @@ model PayoutScheduleNew {
   @@index([isActive])
 }
 
-// System-wide activity logs (distinct from TransactionLog)
-// Tracks all user, creator, admin actions and system events
+// ✅ IMPROVED: System-wide activity logs for emails, crons, and system events
+// This model provides complete audit trail for all emails and cron jobs
 model Log {
-  id        String   @id @default(cuid())
-  level     LogLevel @default(INFO)
-  type      String // e.g., "USER_LOGIN", "BOOKING_CREATED", "PAYOUT_REQUESTED", "ADMIN_ACTION", "SYSTEM_ERROR"
-  actor     LogActor // Who performed the action: USER, CREATOR, ADMIN, SYSTEM, GUEST
-  actorId   String? // User/Creator/Admin ID (null for SYSTEM/GUEST)
-  message   String   @db.Text // Human-readable message
-  metadata  Json? // Additional structured data (bookingId, paymentId, ipAddress, userAgent, etc.)
-  createdAt DateTime @default(now())
+  id        String    @id @default(cuid())
+  type      LogType // Email, cron, booking, payment, etc.
+  status    LogStatus // SUCCESS or ERROR
+  message   String    @db.Text // Human-readable message for admin
+  context   Json? // bookingId, userId, offerId, roomId, emailType, cronType, etc.
+  error     String?   @db.Text // Stack trace or detailed error message (only if status = ERROR)
+  createdAt DateTime  @default(now())
 
-  // Performance indexes
-  @@index([createdAt])
-  @@index([level])
+  // Performance indexes for frequent queries
   @@index([type])
-  @@index([actor])
-  @@index([actorId])
-  @@index([level, createdAt]) // Composite index for retention queries
+  @@index([status])
+  @@index([createdAt])
+  @@index([type, status]) // Composite index for filtering by type and status
+  @@index([type, createdAt]) // Composite index for type-based time queries
+  @@index([status, createdAt]) // Composite index for error monitoring
 }
