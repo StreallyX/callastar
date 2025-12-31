@@ -11,10 +11,12 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { useToast } from '@/hooks/use-toast';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 import { useTranslations, useLocale } from 'next-intl';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle } from 'lucide-react';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
-function CheckoutForm({ bookingId, onSuccess }: { bookingId: string; onSuccess: () => void }) {
+function CheckoutForm({ bookingId, onSuccess, disabled = false }: { bookingId: string; onSuccess: () => void; disabled?: boolean }) {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -62,12 +64,12 @@ function CheckoutForm({ bookingId, onSuccess }: { bookingId: string; onSuccess: 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className={`space-y-6 ${disabled ? 'opacity-50 pointer-events-none cursor-not-allowed' : ''}`}>
       <PaymentElement />
       <Button
         type="submit"
         className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-        disabled={!stripe || loading}
+        disabled={!stripe || loading || disabled}
       >
         {loading ? (
           <>
@@ -125,8 +127,11 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
       const offerData = await offerResponse.json();
       setOffer(offerData?.callOffer);
 
-      // Check if offer is already booked
-      if (offerData?.callOffer?.booking) {
+      // Check if offer is already booked (by status or by existing booking)
+      const isOfferBooked = offerData?.callOffer?.status === 'BOOKED' || 
+                            offerData?.callOffer?.booking;
+      
+      if (isOfferBooked) {
         setExistingBooking(offerData.callOffer.booking);
         setLoading(false);
         return;
@@ -211,6 +216,11 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
         <div className="container mx-auto max-w-4xl px-4 py-12">
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
+              <div className="flex justify-center mb-4">
+                <Badge variant="destructive" className="text-lg px-6 py-2 bg-red-600 hover:bg-red-700">
+                  {isUserBooking ? t('yourBookingBadge') : t('alreadyBooked')}
+                </Badge>
+              </div>
               <CardTitle className="text-center">
                 {isUserBooking ? t('yourBooking') : t('offerUnavailable')}
               </CardTitle>
@@ -276,10 +286,16 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800">
-                      {t('offerNotAvailable')}
-                    </p>
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-red-900 mb-1">
+                        {t('offerNotAvailable')}
+                      </p>
+                      <p className="text-xs text-red-700">
+                        {t('offerBookedExplanation')}
+                      </p>
+                    </div>
                   </div>
                   
                   <div className="flex gap-3">
