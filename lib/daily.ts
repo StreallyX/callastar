@@ -101,6 +101,41 @@ export async function createMeetingToken(
 }
 
 /**
+ * Check if a Daily.co room exists
+ */
+export async function checkDailyRoomExists(roomName: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${DAILY_API_URL}/rooms/${roomName}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${DAILY_API_KEY}`,
+      },
+    });
+
+    // If the response is 200 OK, the room exists
+    if (response.ok) {
+      return true;
+    }
+
+    // If the response is 404, the room doesn't exist
+    if (response.status === 404) {
+      return false;
+    }
+
+    // For other error codes, throw an error
+    const error = await response.json();
+    throw new Error(`Daily API error: ${error?.error || response.statusText}`);
+  } catch (error) {
+    // If it's a 404 error (room not found), return false
+    if (error instanceof Error && error.message.includes('404')) {
+      return false;
+    }
+    console.error('Error checking Daily room:', error);
+    throw error;
+  }
+}
+
+/**
  * Delete a Daily.co room
  */
 export async function deleteDailyRoom(roomName: string): Promise<void> {

@@ -333,6 +333,7 @@ model Booking {
   dailyRoomUrl          String?
   dailyRoomName         String?
   isTestBooking         Boolean       @default(false) // Flag for test/development bookings
+  reminderSent          Boolean       @default(false) // Flag to track if reminder email was sent
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
@@ -345,6 +346,7 @@ model Booking {
   @@index([userId])
   @@index([status])
   @@index([isTestBooking])
+  @@index([reminderSent])
 }
 
 model Payment {
