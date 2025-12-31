@@ -3,6 +3,10 @@ import { deleteLogsByRetention } from '@/lib/system-logger';
 import { logSystem } from '@/lib/system-logger';
 import { LogLevel } from '@prisma/client';
 
+// Force dynamic rendering for cron routes (prevents static rendering errors)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * POST /api/cron/cleanup-logs
  * Automatic log cleanup based on retention policy

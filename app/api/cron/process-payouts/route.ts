@@ -12,6 +12,10 @@ import {
 import { createNotification } from '@/lib/notifications';
 import { logSystem, logError as logSystemError, logInfo } from '@/lib/system-logger';
 
+// Force dynamic rendering for cron routes (prevents static rendering errors)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * GET /api/cron/process-payouts
  * 
