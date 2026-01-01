@@ -208,7 +208,8 @@
       "reviews": "Avis des utilisateurs",
       "anonymous": "Anonyme",
       "rating": "avis",
-      "other": "Site web"
+      "other": "Site web",
+      "alreadyBooked": "Déjà réservé"
     }
   },
   "booking": {
