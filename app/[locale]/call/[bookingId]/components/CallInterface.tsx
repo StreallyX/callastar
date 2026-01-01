@@ -512,6 +512,7 @@ useEffect(() => {
           style={{ zIndex: 50 }}
         >
           <div className="mt-2 ml-2 flex items-center gap-2 pointer-events-none">
+            {/*
             <div className="flex items-center gap-3">
               {callId && (
                 <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-md text-[10px] sm:text-xs">
@@ -524,7 +525,9 @@ useEffect(() => {
 
               {booking?.isTestBooking && <Badge className="bg-blue-500 text-white">{t('testMode')}</Badge>}
             </div>
+            */}
 
+            {/*
             <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-md text-[10px] sm:text-xs">
               <div className="w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-[9px] sm:text-[10px]">
                 C
@@ -533,6 +536,7 @@ useEffect(() => {
                 {t('callastar')}
               </span>
             </div>
+            */}
           </div>
         </div>
 
