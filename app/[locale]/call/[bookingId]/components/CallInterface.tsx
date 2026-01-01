@@ -508,13 +508,13 @@ useEffect(() => {
         />
 
         <div
-          className="absolute top-[env(safe-area-inset-top)] left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-10 pointer-events-none"
+          className="absolute top-[env(safe-area-inset-top)] left-0 right-0 bg-transparent p-10 pointer-events-none"
           style={{ zIndex: 50 }}
         >
-          <div className="mt-5 flex items-center justify-between pointer-events-none">
+          <div className="mt-2 ml-2 flex items-center gap-2 pointer-events-none">
             <div className="flex items-center gap-3">
               {callId && (
-                <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-md text-[10px] sm:text-xs">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                   <span className="text-white text-sm font-mono">
                     {t('callIdLabel')} {callId.substring(0, 8)}
@@ -525,11 +525,13 @@ useEffect(() => {
               {booking?.isTestBooking && <Badge className="bg-blue-500 text-white">{t('testMode')}</Badge>}
             </div>
 
-            <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full">
-              <div className="w-6 h-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+            <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-md text-[10px] sm:text-xs">
+              <div className="w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-[9px] sm:text-[10px]">
                 C
               </div>
-              <span className="font-semibold text-white text-sm">{t('callastar')}</span>
+              <span className="text-[10px] sm:text-xs text-white/80">
+                {t('callastar')}
+              </span>
             </div>
           </div>
         </div>
