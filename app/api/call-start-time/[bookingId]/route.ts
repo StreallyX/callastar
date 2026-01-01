@@ -60,28 +60,23 @@ export async function GET(
     }
 
     // Get the first CALL_JOIN or CALL_START event from logs
-    const firstJoinLog = await db.log.findFirst({
+    const allCallLogs = await db.log.findMany({
       where: {
-        OR: [
-          {
-            type: 'CALL_CALL_JOIN',
-            metadata: {
-              path: ['bookingId'],
-              equals: bookingId,
-            },
-          },
-          {
-            type: 'CALL_CALL_START',
-            metadata: {
-              path: ['bookingId'],
-              equals: bookingId,
-            },
-          },
-        ],
+        type: 'CALL_EVENT',
+        context: {
+          path: ['bookingId'],
+          equals: bookingId,
+        },
       },
       orderBy: {
         createdAt: 'asc',
       },
+    });
+
+    // Filter for CALL_JOIN or CALL_START events
+    const firstJoinLog = allCallLogs.find((log: any) => {
+      const event = log.context?.event;
+      return event === 'CALL_JOIN' || event === 'CALL_START';
     });
 
     const scheduledStartTime = new Date(booking.callOffer.dateTime);

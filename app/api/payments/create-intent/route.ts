@@ -244,9 +244,9 @@ export async function POST(request: NextRequest) {
     await logApiError(
       '/api/payments/create-intent',
       error instanceof Error ? error : 'Unknown error',
-      LogActor.USER,
-      user?.userId,
       {
+        actor: LogActor.USER,
+        actorId: user?.userId,
         action: 'CREATE_PAYMENT_INTENT',
         errorType: error instanceof z.ZodError ? 'validation' : 'unknown',
         processingTimeMs: Date.now() - startTime,

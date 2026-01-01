@@ -55,8 +55,7 @@ export async function POST(request: NextRequest) {
     const duration = Date.now() - startTime;
 
     console.log('[Cleanup Logs] Cleanup completed:', {
-      infoDeleted: result.infoDeleted,
-      warningDeleted: result.warningDeleted,
+      successDeleted: result.successDeleted,
       errorDeleted: result.errorDeleted,
       totalDeleted: result.totalDeleted,
       durationMs: duration,
@@ -70,14 +69,11 @@ export async function POST(request: NextRequest) {
       {
         startTime: new Date(startTime).toISOString(),
         endTime: new Date().toISOString(),
-        infoDeleted: result.infoDeleted,
-        warningDeleted: result.warningDeleted,
+        successDeleted: result.successDeleted,
         errorDeleted: result.errorDeleted,
         retentionPolicy: {
-          INFO: '30 days',
-          WARNING: '60 days',
+          SUCCESS: '30 days',
           ERROR: '90 days',
-          CRITICAL: 'Unlimited',
         },
       }
     );
@@ -86,8 +82,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Log cleanup completed successfully',
       stats: {
-        infoDeleted: result.infoDeleted,
-        warningDeleted: result.warningDeleted,
+        successDeleted: result.successDeleted,
         errorDeleted: result.errorDeleted,
         totalDeleted: result.totalDeleted,
         durationMs: duration,

@@ -181,9 +181,12 @@ export async function POST(request: NextRequest) {
         await logApiError(
           '/api/bookings',
           error,
-          LogActor.USER,
-          user?.userId,
-          { action: 'CREATE_BOOKING', reason: 'OFFER_NOT_FOUND' }
+          {
+            actor: LogActor.USER,
+            actorId: user?.userId,
+            action: 'CREATE_BOOKING',
+            reason: 'OFFER_NOT_FOUND'
+          }
         );
         return NextResponse.json(
           { error: 'Offre introuvable' },
@@ -195,9 +198,12 @@ export async function POST(request: NextRequest) {
         await logApiError(
           '/api/bookings',
           error,
-          LogActor.USER,
-          user?.userId,
-          { action: 'CREATE_BOOKING', reason: 'OFFER_NOT_AVAILABLE' }
+          {
+            actor: LogActor.USER,
+            actorId: user?.userId,
+            action: 'CREATE_BOOKING',
+            reason: 'OFFER_NOT_AVAILABLE'
+          }
         );
         return NextResponse.json(
           { error: 'Cette offre n\'est plus disponible' },
@@ -210,9 +216,12 @@ export async function POST(request: NextRequest) {
         await logApiError(
           '/api/bookings',
           error,
-          LogActor.USER,
-          user?.userId,
-          { action: 'CREATE_BOOKING', reason: 'OFFER_ALREADY_BOOKED' }
+          {
+            actor: LogActor.USER,
+            actorId: user?.userId,
+            action: 'CREATE_BOOKING',
+            reason: 'OFFER_ALREADY_BOOKED'
+          }
         );
         return NextResponse.json(
           { error: 'This time slot is already booked. Please choose another time.' },
@@ -224,9 +233,12 @@ export async function POST(request: NextRequest) {
         await logApiError(
           '/api/bookings',
           error,
-          LogActor.USER,
-          user?.userId,
-          { action: 'CREATE_BOOKING', reason: 'OFFER_EXPIRED' }
+          {
+            actor: LogActor.USER,
+            actorId: user?.userId,
+            action: 'CREATE_BOOKING',
+            reason: 'OFFER_EXPIRED'
+          }
         );
         return NextResponse.json(
           { error: 'Cette offre est expirée' },
@@ -241,9 +253,12 @@ export async function POST(request: NextRequest) {
       await logApiError(
         '/api/bookings',
         error instanceof Error ? error : new Error('Unique constraint violation'),
-        LogActor.USER,
-        user?.userId,
-        { action: 'CREATE_BOOKING', reason: 'UNIQUE_CONSTRAINT_VIOLATION' }
+        {
+          actor: LogActor.USER,
+          actorId: user?.userId,
+          action: 'CREATE_BOOKING',
+          reason: 'UNIQUE_CONSTRAINT_VIOLATION'
+        }
       );
       return NextResponse.json(
         { error: 'This time slot is already booked. Please choose another time.' },
@@ -256,9 +271,12 @@ export async function POST(request: NextRequest) {
       await logApiError(
         '/api/bookings',
         error,
-        LogActor.USER,
-        user?.userId,
-        { action: 'CREATE_BOOKING', reason: 'VALIDATION_ERROR' }
+        {
+          actor: LogActor.USER,
+          actorId: user?.userId,
+          action: 'CREATE_BOOKING',
+          reason: 'VALIDATION_ERROR'
+        }
       );
       return NextResponse.json(
         { error: 'Données invalides', details: error.issues },
@@ -270,9 +288,12 @@ export async function POST(request: NextRequest) {
     await logApiError(
       '/api/bookings',
       error instanceof Error ? error : new Error('Unknown error'),
-      LogActor.USER,
-      user?.userId,
-      { action: 'CREATE_BOOKING', reason: 'UNKNOWN_ERROR' }
+      {
+        actor: LogActor.USER,
+        actorId: user?.userId,
+        action: 'CREATE_BOOKING',
+        reason: 'UNKNOWN_ERROR'
+      }
     );
 
     return NextResponse.json(

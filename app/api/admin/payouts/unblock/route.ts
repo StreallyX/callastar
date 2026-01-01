@@ -182,9 +182,9 @@ export async function POST(request: NextRequest) {
     await logApiError(
       '/api/admin/payouts/unblock',
       error instanceof Error ? error : 'Unknown error',
-      LogActor.ADMIN,
-      jwtUser?.userId,
       {
+        actor: LogActor.ADMIN,
+        actorId: jwtUser?.userId,
         action: 'UNBLOCK_PAYOUT',
         processingTimeMs: Date.now() - startTime,
       }
