@@ -208,7 +208,8 @@
       "reviews": "Avis des utilisateurs",
       "anonymous": "Anonyme",
       "rating": "avis",
-      "other": "Site web"
+      "other": "Site web",
+      "alreadyBooked": "Déjà réservé"
     }
   },
   "booking": {
@@ -242,10 +243,14 @@
     "offerNotAvailable": "Cette offre n'est plus disponible. Explorez d'autres opportunités !",
     "viewCreatorProfile": "Voir le profil du créateur",
     "exploreCreators": "Explorer d'autres créateurs",
-    "minutes": "minutes"
+    "minutes": "minutes",
+    "alreadyBooked": "❌ Déjà réservé",
+    "yourBookingBadge": "✅ Votre réservation",
+    "offerBookedExplanation": "Ce créneau horaire a déjà été réservé par un autre utilisateur. Veuillez choisir un autre moment."
   },
   "call": {
     "room": {
+      "youCanJoinNow":"Tu peux rejoindre",
       "title": "Appel vidéo",
       "waitingRoom": "Salle d'attente - Prêt à rejoindre",
       "testMode": "🧪 Mode Test",
@@ -314,7 +319,27 @@
       "connectionLostDesc": "Tentative de reconnexion...",
       "aParticipant": "Un participant",
       "cannotAccessCall": "Impossible d'accéder à l'appel",
-      "cannotJoinCall": "Impossible de rejoindre l'appel"
+      "cannotJoinCall": "Impossible de rejoindre l'appel",
+      "unknownError": "Erreur inconnue",
+      "callCrashed": "Une erreur est survenue pendant l’appel",
+      "callCrashedTitle": "Connexion interrompue",
+      "callCrashedDesc": "La session vidéo a rencontré un problème technique. Veuillez recharger la page pour reprendre l’appel.",
+      "refreshPage": "Recharger la page",
+
+      "callIdLabel": "ID :",
+
+      "accessOpensIn": "Accès dans",
+      "callStartsIn": "L’appel commence dans",
+
+      "tooEarlyTitle": "Trop tôt pour rejoindre",
+      "tooEarlyDesc": "Tu peux rejoindre {minutes} minutes avant l’heure de début.",
+      "earlyAccessTitle": "Accès anticipé",
+      "earlyAccessDesc": "Tu peux rejoindre jusqu’à {minutes} minutes avant le début.",
+      "callReadyTitle": "L’appel est prêt",
+      "callReadyDesc": "Tu peux rejoindre l’appel maintenant.",
+
+      "joining": "Connexion…",
+      "joinHint": "Astuce : autorise l’accès au micro et à la caméra si le navigateur le demande."
     },
     "summary": {
       "title": "Résumé de l'appel",
@@ -1456,7 +1481,6 @@
         "platformFee": "Frais de plateforme",
         "backToDashboard": "Retour au dashboard",
         "loading": "Chargement des paramètres…"
-
       },
       "testing": {
         "title": "Tests & Outils",
@@ -1764,7 +1788,4 @@
       "required": "Ce champ est requis"
     }
   }
-
-    
-  
 }

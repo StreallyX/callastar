@@ -452,7 +452,7 @@ export default function CallSummaryPage({
               {t('viewHistory')}
             </Button>
           </Link>
-          <Link href="/dashboard/user">
+          <Link href="/">
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
               {t('backToDashboard')}
             </Button>

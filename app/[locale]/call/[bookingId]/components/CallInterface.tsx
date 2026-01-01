@@ -1,16 +1,14 @@
+// ==============================
+// app/[locale]/call/[bookingId]/components/CallInterface.tsx
+// ==============================
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useRouter } from '@/navigation';
-import { Button } from '@/components/ui/button';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Video, VideoOff, Mic, MicOff, LogOut, 
-  Maximize, Minimize, Clock, AlertTriangle 
-} from 'lucide-react';
+import { Clock, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import DailyIframe, { DailyCall } from '@daily-co/daily-js';
+import DailyIframe from '@daily-co/daily-js';
 import { logCallEvent } from '@/lib/call-types';
 import { useTranslations } from 'next-intl';
 
@@ -23,54 +21,317 @@ interface CallInterfaceProps {
   startTime: Date;
 }
 
-export function CallInterface({ 
-  booking, 
-  bookingId, 
-  roomUrl, 
-  token, 
-  onCallEnd,
-  startTime 
-}: CallInterfaceProps) {
-  const router = useRouter();
+type ConnectionState = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+
+export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, startTime }: CallInterfaceProps) {
   const { toast } = useToast();
   const t = useTranslations('call.room');
-  
-  // State
+
+  // ⚠️ Typage Daily variable selon version => ref "any" pour éviter les erreurs TS bloquantes
+  const callFrameRef = useRef<any>(null);
+  const callContainerRef = useRef<HTMLDivElement>(null);
+  const hasLoggedJoinRef = useRef(false);
+
+  const [callId, setCallId] = useState<string | null>(null);
+  const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
+  const [isReconnecting, setIsReconnecting] = useState(false);
+
+  const [nowTs, setNowTs] = useState<number>(() => Date.now());
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [isCameraOn, setIsCameraOn] = useState(true);
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [connectionState, setConnectionState] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
-  const [isReconnecting, setIsReconnecting] = useState(false);
-  const [callId, setCallId] = useState<string | null>(null);
-  
-  // Refs
-  const callFrameRef = useRef<DailyCall | null>(null);
-  const callContainerRef = useRef<HTMLDivElement>(null);
-  const hasLoggedStartRef = useRef(false);
+  const hasStartedRef = useRef(false);
+  const hasAutoEndedRef = useRef(false);
+  const earlyAccessMinutes = 15;
+  const [hasJoined, setHasJoined] = useState(false);
+  const cleanupDoneRef = useRef(false);
+  const joinInProgressRef = useRef(false);
+  const [fatalError, setFatalError] = useState<string | null>(null);
 
-  // Initialize Daily.co call
+  const callStartTs = useMemo(() => {
+    const ts = new Date(booking?.callOffer?.dateTime).getTime();
+    return Number.isFinite(ts) ? ts : 0;
+  }, [booking?.callOffer?.dateTime]);
+
+  const scheduledDurationSec = useMemo(() => {
+    const minutes = Number(booking?.callOffer?.duration ?? 0);
+    return Math.max(0, minutes) * 60;
+  }, [booking?.callOffer?.duration]);
+
+  const accessOpenTs = useMemo(() => callStartTs - earlyAccessMinutes * 60 * 1000, [callStartTs]);
+
+  const isTooEarly = nowTs < accessOpenTs;
+  const isWithinEarlyAccess = nowTs >= accessOpenTs && nowTs < callStartTs;
+  const hasOfficiallyStarted = nowTs >= callStartTs;
+  const canShowNetworkError = hasOfficiallyStarted && (connectionState === 'disconnected' || connectionState === 'reconnecting');
+
+
+  const countdownToStartSec = Math.max(0, Math.floor((callStartTs - nowTs) / 1000));
+  const countdownToAccessSec = Math.max(0, Math.floor((accessOpenTs - nowTs) / 1000));
+
+  const formatTime = useCallback((seconds: number) => {
+    const s = Math.max(0, Math.floor(seconds));
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
   useEffect(() => {
-    const initCall = async () => {
-      if (!callContainerRef.current) return;
+    const id = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const dailyCallId = roomUrl?.split('/').filter(Boolean).pop() || null;
+    setCallId(dailyCallId);
+  }, [roomUrl]);
+
+  const handleJoinedMeeting = useCallback(async (event?: any) => {
+    setConnectionState('connected');
+    setIsReconnecting(false);
+    setHasJoined(true);
+
+    await logCallEvent(bookingId, 'SESSION_START', {
+      callId: callId || undefined,
+      participants: event?.participants ? Object.keys(event.participants).length : 1,
+    });
+  }, [bookingId, callId]);
+
+
+  const handleParticipantJoined = useCallback(
+    async (event?: any) => {
+      await logCallEvent(bookingId, 'PARTICIPANT_JOINED', {
+        callId: callId || undefined,
+        participantId: event?.participant?.user_id,
+      });
+
+      toast({
+        title: t('participantJoined'),
+        description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantJoinedDesc')}`,
+      });
+    },
+    [bookingId, callId, toast, t]
+  );
+
+  const handleParticipantLeft = useCallback(
+    async (event?: any) => {
+      await logCallEvent(bookingId, 'PARTICIPANT_LEFT', {
+        callId: callId || undefined,
+        participantId: event?.participant?.user_id,
+      });
+
+      toast({
+        title: t('participantLeft'),
+        description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantLeftDesc')}`,
+      });
+    },
+    [bookingId, callId, toast, t]
+  );
+
+  const safeCleanup = useCallback(async (reason: string) => {
+    if (cleanupDoneRef.current) return;
+    cleanupDoneRef.current = true;
+
+    const frame = callFrameRef.current;
+    callFrameRef.current = null;
+
+    if (!frame) return;
+
+    try {
+      // 1) Coupe caméra / micro immédiatement
+      frame.setLocalVideo?.(false);
+      frame.setLocalAudio?.(false);
+
+      // 2) Stop tracks (sécurité navigateur)
+      const tracks = frame.getMediaStreamTracks?.();
+      if (Array.isArray(tracks)) {
+        tracks.forEach((track: MediaStreamTrack) => {
+          try { track.stop(); } catch {}
+        });
+      }
+
+      // 3) Leave si possible
+      try {
+        await frame.leave?.();
+      } catch {}
+
+      // 4) Destroy APRES un petit délai (évite postMessage null)
+      //    (Daily peut encore poster des messages juste après leave)
+      await new Promise((r) => setTimeout(r, 150));
 
       try {
-        console.log('[CallInterface] Initializing call...');
-        
-        // Create Daily.co call frame with Prebuilt UI
-        const callFrame = DailyIframe.createFrame(callContainerRef.current, {
+        frame.destroy?.();
+      } catch {}
+    } catch (e) {
+      console.warn('[CallInterface] safeCleanup error', reason, e);
+    }
+  }, []);
+
+  const triggerFatalError = useCallback((reason: string) => {
+    console.warn('[CallInterface] Fatal call error:', reason);
+    setFatalError(reason);
+
+    // Optionnel : on nettoie immédiatement Daily
+    safeCleanup('fatal-error');
+  }, [safeCleanup]);
+
+  const forceEndCall = useCallback(async (reason: string) => {
+    if (hasAutoEndedRef.current) return;
+    hasAutoEndedRef.current = true;
+
+    console.warn('[CallInterface] Force end call:', reason);
+
+    try {
+      if (callFrameRef.current) {
+        await callFrameRef.current.leave?.();
+      }
+    } catch {}
+
+    await safeCleanup('time-ended');
+
+    onCallEnd();
+  }, [onCallEnd, safeCleanup]);
+
+  useEffect(() => {
+    if (!callStartTs) return;
+
+    if (hasOfficiallyStarted) {
+      const elapsed = Math.floor((nowTs - callStartTs) / 1000);
+      setElapsedTime(elapsed);
+
+      const remaining = Math.max(0, scheduledDurationSec - elapsed);
+      setTimeRemaining(remaining);
+
+      if (
+        !booking?.isTestBooking &&
+        elapsed >= scheduledDurationSec
+      ) {
+        forceEndCall('duration-reached');
+      }
+
+    } else {
+      setElapsedTime(0);
+      setTimeRemaining(scheduledDurationSec);
+    }
+  }, [
+    nowTs,
+    callStartTs,
+    scheduledDurationSec,
+    hasOfficiallyStarted,
+    booking?.isTestBooking,
+    forceEndCall,
+  ]);
+
+  const handleLeftMeeting = useCallback(async () => {
+    const duration = hasOfficiallyStarted
+      ? elapsedTime
+      : Math.floor((Date.now() - startTime.getTime()) / 1000);
+
+    await logCallEvent(bookingId, 'SESSION_END', { callId: callId || undefined, duration });
+    await logCallEvent(bookingId, 'CALL_LEAVE', { callId: callId || undefined, duration });
+
+    await safeCleanup('left-meeting');
+    onCallEnd();
+  }, [
+    bookingId,
+    callId,
+    elapsedTime,
+    hasOfficiallyStarted,
+    onCallEnd,
+    startTime,
+    safeCleanup
+  ]);
+
+
+
+  const handleCallError = useCallback(
+    async (event?: any) => {
+      setConnectionState('disconnected');
+
+      const errorMsg =
+        event?.errorMsg || event?.error || t('unknownError');
+
+      await logCallEvent(bookingId, 'CALL_ERROR', {
+        callId: callId || undefined,
+        error: errorMsg,
+      });
+
+      toast({
+        variant: 'destructive',
+        title: t('callErrorDuring'),
+        description: errorMsg,
+      });
+
+      // ✅ déclenche l’overlay Refresh
+      triggerFatalError('call-error');
+    },
+    [bookingId, callId, toast, t, triggerFatalError]
+  );
+
+
+  const handleNetworkConnection = useCallback(
+    async (event?: any) => {
+      const status = event?.action || event?.type || event?.state;
+      if (!status) return;
+
+      if (status === 'disconnected') {
+        setConnectionState('reconnecting');
+        setIsReconnecting(true);
+
+        toast({
+          title: t('connectionLost'),
+          description: t('connectionLostDesc'),
+          variant: 'destructive',
+        });
+
+        // 👉 si tu considères ça comme bloquant
+        triggerFatalError('network-disconnected');
+      } else if (status === 'connected') {
+        setConnectionState('connected');
+        setIsReconnecting(false);
+
+        await logCallEvent(bookingId, 'CALL_RECONNECT', {
+          callId: callId || undefined,
+          reason: 'network-reconnected',
+        });
+
+        toast({ title: t('reconnected'), description: t('reconnectedDesc') });
+      }
+
+    },
+    [bookingId, callId, toast, t]
+  );
+
+  useEffect(() => {
+    if (isTooEarly) return;
+    if (!callContainerRef.current) return;
+    if (!roomUrl) return;
+    if (!token) return;
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
+    let cancelled = false;
+
+    const start = async () => {
+      try {
+        setConnectionState('connecting');
+
+        if (callFrameRef.current) {
+          console.warn('[CallInterface] Daily frame already exists, skipping create');
+          return;
+        }
+
+        const frame = DailyIframe.createFrame(callContainerRef.current!, {
           iframeStyle: {
             width: '100%',
             height: '100%',
             border: '0',
             borderRadius: '12px',
           },
-          showLeaveButton: false,
-          showFullscreenButton: false,
+          showLeaveButton: true,
+          showFullscreenButton: true,
           theme: {
             colors: {
-              accent: '#9333ea', // Purple
+              accent: '#9333ea',
               accentText: '#ffffff',
               background: '#1f2937',
               backgroundAccent: '#374151',
@@ -84,297 +345,112 @@ export function CallInterface({
           },
         });
 
-        callFrameRef.current = callFrame;
+        callFrameRef.current = frame;
 
-        // Set up event listeners
-        callFrame
+        frame
           .on('joined-meeting', handleJoinedMeeting)
           .on('participant-joined', handleParticipantJoined)
           .on('participant-left', handleParticipantLeft)
           .on('left-meeting', handleLeftMeeting)
           .on('error', handleCallError)
-          .on('network-quality-change', handleNetworkQualityChange)
           .on('network-connection', handleNetworkConnection);
 
-        // Join the call
-        await callFrame.join({
+        joinInProgressRef.current = true;
+
+        await frame.join({
           url: roomUrl,
-          token: token,
+          token,
+          startVideoOff: false,
+          startAudioOff: false,
         });
 
-        // Get call ID
-        const dailyCallId = roomUrl?.split('/').pop() || 'unknown';
-        setCallId(dailyCallId);
+        joinInProgressRef.current = false;
 
-        console.log('[CallInterface] Call joined successfully');
-        
-        if (!hasLoggedStartRef.current) {
-          await logCallEvent(bookingId, 'CALL_JOIN', { 
-            callId: dailyCallId,
-            roomUrl: roomUrl,
-          });
-          hasLoggedStartRef.current = true;
+
+        if (!cancelled && !hasLoggedJoinRef.current) {
+          await logCallEvent(bookingId, 'CALL_JOIN', { callId: callId || undefined, roomUrl });
+          hasLoggedJoinRef.current = true;
         }
+      } catch (err: any) {
+        if (cancelled) return;
+        joinInProgressRef.current = false;
 
-      } catch (error: any) {
-        console.error('[CallInterface] Init error:', error);
+        setConnectionState('disconnected');
+
         toast({
           variant: 'destructive',
           title: t('error'),
-          description: error?.message ?? t('callError'),
+          description: err?.message ?? t('callError'),
         });
-        
+
         await logCallEvent(bookingId, 'CALL_ERROR', {
-          error: error?.message,
-          stage: 'init',
+          error: err?.message,
+          stage: 'auto-join',
         });
+
+        // ✅ affiche le bouton Refresh
+        triggerFatalError('join-failed');
       }
     };
 
-    initCall();
+    start();
 
     return () => {
-      if (callFrameRef.current) {
-        callFrameRef.current.destroy();
-        callFrameRef.current = null;
-      }
+      cancelled = true;
     };
-  }, [roomUrl, token, bookingId, toast, t]);
+  }, [
+    isTooEarly,
+    roomUrl,
+    token,
+    bookingId,
+    callId,
+    toast,
+    t,
+    handleJoinedMeeting,
+    handleParticipantJoined,
+    handleParticipantLeft,
+    handleLeftMeeting,
+    handleCallError,
+    handleNetworkConnection,
+  ]);
 
-  // Timer update - Only start when official time is reached
   useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const callStartTime = new Date(booking.callOffer.dateTime).getTime();
-      
-      // Only count time if we've reached the official start time
-      if (now >= callStartTime) {
-        const elapsed = Math.floor((now - callStartTime) / 1000);
-        setElapsedTime(elapsed);
-        
-        const scheduledDuration = booking.callOffer.duration * 60;
-        const remaining = Math.max(0, scheduledDuration - elapsed);
-        setTimeRemaining(remaining);
-        
-        // Auto-end call when time is up (except for test bookings)
-        if (!booking?.isTestBooking && remaining === 0 && callFrameRef.current) {
-          endCall('time-limit-reached');
-        }
-      } else {
-        // Before official start time, show time elapsed since user joined
-        const elapsed = Math.floor((now - startTime.getTime()) / 1000);
-        setElapsedTime(elapsed);
-        setTimeRemaining(booking.callOffer.duration * 60);
+    return () => {
+      if (joinInProgressRef.current) {
+        // ⚠️ En dev / strict mode, on évite destroy pendant join
+        setTimeout(() => {
+          safeCleanup('unmount-during-join');
+        }, 300);
+        return;
       }
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, [booking, startTime]);
 
-  // Event handlers
-  const handleJoinedMeeting = async (event?: any) => {
-    console.log('[CallInterface] Joined meeting:', event);
-    await logCallEvent(bookingId, 'SESSION_START', {
-      callId: callId || undefined,
-      participants: event?.participants ? Object.keys(event.participants).length : 1,
-    });
-  };
-
-  const handleParticipantJoined = async (event?: any) => {
-    console.log('[CallInterface] Participant joined:', event);
-    await logCallEvent(bookingId, 'PARTICIPANT_JOINED', {
-      callId: callId || undefined,
-      participantId: event?.participant?.user_id,
-    });
-    
-    toast({
-      title: t('participantJoined'),
-      description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantJoinedDesc')}`,
-    });
-  };
-
-  const handleParticipantLeft = async (event?: any) => {
-    console.log('[CallInterface] Participant left:', event);
-    await logCallEvent(bookingId, 'PARTICIPANT_LEFT', {
-      callId: callId || undefined,
-      participantId: event?.participant?.user_id,
-    });
-    
-    toast({
-      title: t('participantLeft'),
-      description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantLeftDesc')}`,
-      variant: 'default',
-    });
-  };
-
-  const handleLeftMeeting = async () => {
-    console.log('[CallInterface] Left meeting');
-    
-    await logCallEvent(bookingId, 'SESSION_END', {
-      callId: callId || undefined,
-      duration: elapsedTime,
-    });
-    
-    await logCallEvent(bookingId, 'CALL_LEAVE', {
-      callId: callId || undefined,
-      duration: elapsedTime,
-    });
-    
-    onCallEnd();
-  };
-
-  const handleCallError = async (event?: any) => {
-    console.error('[CallInterface] Call error:', event);
-    setConnectionState('disconnected');
-    
-    await logCallEvent(bookingId, 'CALL_ERROR', {
-      callId: callId || undefined,
-      error: event?.errorMsg || event?.error || 'Unknown error',
-    });
-    
-    toast({
-      variant: 'destructive',
-      title: t('callErrorDuring'),
-      description: event?.errorMsg || t('callError'),
-    });
-  };
-
-  const handleNetworkQualityChange = (event?: any) => {
-    console.log('[CallInterface] Network quality change:', event);
-    if (event?.threshold === 'low') {
-      toast({
-        title: t('weakConnection'),
-        description: t('weakConnectionDesc'),
-        variant: 'default',
-      });
-    }
-  };
-
-  const handleNetworkConnection = async (event?: any) => {
-    console.log('[CallInterface] Network connection change:', event);
-    
-    if (event?.type === 'disconnected') {
-      setConnectionState('disconnected');
-      setIsReconnecting(true);
-      
-      await logCallEvent(bookingId, 'DISCONNECTION_INVOLUNTARY', {
-        callId: callId || undefined,
-        reason: 'network-disconnected',
-      });
-      
-      toast({
-        title: t('connectionLost'),
-        description: t('connectionLostDesc'),
-        variant: 'destructive',
-      });
-    } else if (event?.type === 'connected') {
-      setConnectionState('connected');
-      setIsReconnecting(false);
-      
-      await logCallEvent(bookingId, 'CALL_RECONNECT', {
-        callId: callId || undefined,
-        reason: 'network-reconnected',
-      });
-      
-      toast({
-        title: t('reconnected'),
-        description: t('reconnectedDesc'),
-      });
-    }
-  };
-
-  // Control handlers
-  const toggleCamera = async () => {
-    if (callFrameRef.current) {
-      try {
-        await callFrameRef.current.setLocalVideo(!isCameraOn);
-        setIsCameraOn(!isCameraOn);
-        await logCallEvent(bookingId, 'CAMERA_TOGGLED', {
-          callId: callId || undefined,
-          enabled: !isCameraOn,
-        });
-      } catch (error) {
-        console.error('[CallInterface] Toggle camera error:', error);
-      }
-    }
-  };
-
-  const toggleMic = async () => {
-    if (callFrameRef.current) {
-      try {
-        await callFrameRef.current.setLocalAudio(!isMicOn);
-        setIsMicOn(!isMicOn);
-        await logCallEvent(bookingId, 'MIC_TOGGLED', {
-          callId: callId || undefined,
-          enabled: !isMicOn,
-        });
-      } catch (error) {
-        console.error('[CallInterface] Toggle mic error:', error);
-      }
-    }
-  };
-
-  const toggleFullscreen = async () => {
-    if (!callContainerRef.current) return;
-
-    try {
-      if (!isFullscreen) {
-        await callContainerRef.current.parentElement?.requestFullscreen();
-        setIsFullscreen(true);
-        await logCallEvent(bookingId, 'FULLSCREEN_ENTERED', { callId: callId || undefined });
-      } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
-        await logCallEvent(bookingId, 'FULLSCREEN_EXITED', { callId: callId || undefined });
-      }
-    } catch (error) {
-      console.error('[CallInterface] Toggle fullscreen error:', error);
-    }
-  };
-
-  const endCall = async (reason: string = 'user-action') => {
-    if (callFrameRef.current) {
-      console.log('[CallInterface] Ending call, reason:', reason);
-      
-      await logCallEvent(bookingId, 'DISCONNECTION_VOLUNTARY', {
-        callId: callId || undefined,
-        reason,
-        duration: elapsedTime,
-      });
-      
-      await callFrameRef.current.leave();
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+      safeCleanup('unmount');
+    };
+  }, [safeCleanup]);
 
   return (
-    <div className="h-screen bg-gray-900 flex flex-col">
-      {/* Call container - Full screen */}
-      <div className="flex-1 relative">
+    <div className="h-[100svh] bg-gray-900 flex flex-col">
+      <div className="flex-1 relative overflow-hidden">
         <div ref={callContainerRef} className="w-full h-full" style={{ zIndex: 1 }} />
-        
-        {/* Top bar overlay - IMPORTANT: z-index élevé pour être au-dessus de l'iframe */}
-        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-4 pointer-events-none" style={{ zIndex: 50 }}>
-          <div className="flex items-center justify-between pointer-events-auto">
-            {/* Call ID */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-white text-sm font-mono">ID: {callId?.substring(0, 8)}</span>
-              </div>
-              {booking?.isTestBooking && (
-                <Badge className="bg-blue-500 text-white">
-                  {t('testMode')}
-                </Badge>
+
+        <div
+          className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-10 pointer-events-none"
+          style={{ zIndex: 50 }}
+        >
+          <div className="mt-5 flex items-center justify-between pointer-events-none">
+            <div className="flex items-center gap-3">
+              {callId && (
+                <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-white text-sm font-mono">
+                    {t('callIdLabel')} {callId.substring(0, 8)}
+                  </span>
+                </div>
               )}
+
+              {booking?.isTestBooking && <Badge className="bg-blue-500 text-white">{t('testMode')}</Badge>}
             </div>
-            
-            {/* Branding */}
+
             <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full">
               <div className="w-6 h-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                 C
@@ -383,31 +459,45 @@ export function CallInterface({
             </div>
           </div>
         </div>
-        
-        {/* Timer overlay - IMPORTANT: z-index élevé */}
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-6 py-3 rounded-full pointer-events-none" style={{ zIndex: 50 }}>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span className="font-mono text-lg">{formatTime(elapsedTime)}</span>
-            </div>
-            {!booking?.isTestBooking && (
-              <div className="text-sm text-gray-300 border-l border-gray-500 pl-4">
-                {t('timeRemaining')}: {formatTime(timeRemaining)}
-              </div>
+
+        <div
+          className="absolute top-20 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-5 py-2.5 rounded-full pointer-events-none"
+          style={{ zIndex: 50 }}
+        >
+          <div className="flex items-center gap-3">
+            <Clock className="w-4 h-4" />
+
+            {isTooEarly && (
+              <span className="text-sm">
+                {t('accessOpensIn')} <span className="font-mono">{formatTime(countdownToAccessSec)}</span>
+              </span>
             )}
-            {booking?.isTestBooking && (
-              <div className="text-xs text-blue-300 border-l border-gray-500 pl-4">
-                {t('noTimeLimit')}
-              </div>
+
+            {isWithinEarlyAccess && (
+              <span className="text-sm">
+                {t('callStartsIn')} <span className="font-mono">{formatTime(countdownToStartSec)}</span>
+              </span>
+            )}
+
+            {hasOfficiallyStarted && (
+              <>
+                <span className="font-mono text-base">{formatTime(elapsedTime)}</span>
+
+                {!booking?.isTestBooking ? (
+                  <span className="text-sm text-gray-300 border-l border-gray-500 pl-3">
+                    {t('timeRemaining')}: <span className="font-mono">{formatTime(timeRemaining)}</span>
+                  </span>
+                ) : (
+                  <span className="text-xs text-blue-300 border-l border-gray-500 pl-3">{t('noTimeLimit')}</span>
+                )}
+              </>
             )}
           </div>
         </div>
-        
-        {/* Connection status alert - IMPORTANT: z-index élevé */}
-        {connectionState !== 'connected' && (
-          <div className="absolute top-32 left-1/2 transform -translate-x-1/2 pointer-events-none" style={{ zIndex: 50 }}>
-            <Alert className="bg-orange-500 text-white border-orange-600 pointer-events-auto">
+
+        {hasJoined && canShowNetworkError && (
+          <div className="absolute top-32 left-1/2 -translate-x-1/2" style={{ zIndex: 20 }}>
+            <Alert className="bg-orange-500 text-white border-orange-600">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 {isReconnecting ? t('reconnecting') : t('connectionLost')}
@@ -415,64 +505,48 @@ export function CallInterface({
             </Alert>
           </div>
         )}
-      </div>
 
-      {/* Controls bar - IMPORTANT: z-index élevé pour être cliquable */}
-      <div className="bg-gray-900 p-4 sm:p-6 border-t border-gray-800 relative" style={{ zIndex: 100 }}>
-        <div className="container mx-auto max-w-4xl">
-          <div className="flex items-center justify-between gap-2 sm:gap-4">
-            {/* Media controls */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Button
-                onClick={toggleCamera}
-                variant={isCameraOn ? "default" : "destructive"}
-                size="lg"
-                className="rounded-full w-12 h-12 sm:w-14 sm:h-14 shadow-lg hover:scale-105 transition-transform"
-                title={isCameraOn ? t('disableCamera') : t('enableCamera')}
-              >
-                {isCameraOn ? <Video className="w-5 h-5 sm:w-6 sm:h-6" /> : <VideoOff className="w-5 h-5 sm:w-6 sm:h-6" />}
-              </Button>
-              
-              <Button
-                onClick={toggleMic}
-                variant={isMicOn ? "default" : "destructive"}
-                size="lg"
-                className="rounded-full w-12 h-12 sm:w-14 sm:h-14 shadow-lg hover:scale-105 transition-transform"
-                title={isMicOn ? t('disableMic') : t('enableMic')}
-              >
-                {isMicOn ? <Mic className="w-5 h-5 sm:w-6 sm:h-6" /> : <MicOff className="w-5 h-5 sm:w-6 sm:h-6" />}
-              </Button>
-            </div>
-            
-            {/* Center - End call button - IMPORTANT: Bouton de sortie bien visible et cliquable */}
-            <Button
-              onClick={() => endCall('user-action')}
-              variant="destructive"
-              size="lg"
-              className="rounded-full px-4 sm:px-8 h-12 sm:h-14 font-semibold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform bg-red-600 hover:bg-red-700"
-            >
-              <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="hidden sm:inline">{t('leaveCall')}</span>
-              <span className="sm:hidden">Quitter</span>
-            </Button>
-            
-            {/* Right - Fullscreen with text */}
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={toggleFullscreen}
-                variant="outline"
-                size="lg"
-                className="rounded-full px-3 sm:px-4 h-12 sm:h-14 bg-gray-800 border-gray-700 text-white hover:bg-gray-700 shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
-                title={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
-              >
-                {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6" />}
-                <span className="hidden lg:inline text-sm">
-                  {isFullscreen ? 'Réduire' : 'Plein écran'}
-                </span>
-              </Button>
+        {isTooEarly && (
+          <div className="absolute inset-0 flex items-center justify-center p-4" style={{ zIndex: 20 }}>
+            <div className="w-full max-w-lg">
+              <div className="bg-black/50 backdrop-blur-md border border-gray-700 rounded-2xl p-6 text-center text-white pointer-events-auto">
+                <div className="text-lg font-semibold">{t('tooEarlyTitle')}</div>
+                <div className="mt-2 text-sm text-gray-300">{t('tooEarlyDesc', { minutes: earlyAccessMinutes })}</div>
+
+                <div className="mt-4 inline-flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full">
+                  <Clock className="w-4 h-4" />
+                  <span className="font-mono">{formatTime(countdownToAccessSec)}</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+        {fatalError && (
+          <div
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          >
+            <div className="max-w-md w-full bg-gray-900 border border-red-500 rounded-2xl p-6 text-center text-white">
+              <div className="flex justify-center mb-4">
+                <AlertTriangle className="w-10 h-10 text-red-500" />
+              </div>
+
+              <h2 className="text-lg font-semibold mb-2">
+                {t('callCrashedTitle')}
+              </h2>
+
+              <p className="text-sm text-gray-300 mb-6">
+                {t('callCrashedDesc')}
+              </p>
+
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full rounded-lg bg-red-600 hover:bg-red-700 text-white py-2 font-medium transition"
+              >
+                {t('refreshPage')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

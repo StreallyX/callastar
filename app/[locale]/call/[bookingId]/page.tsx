@@ -1,6 +1,9 @@
+// ==============================
+// app/[locale]/call/[bookingId]/page.tsx  (CallPage)
+// ==============================
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,13 +15,9 @@ import { useTranslations } from 'next-intl';
 import { WaitingRoom } from './components/WaitingRoom';
 import { CallInterface } from './components/CallInterface';
 
-// Debug flag
 const DEBUG_MODE = process.env.NODE_ENV === 'development';
-
 const debugLog = (...args: any[]) => {
-  if (DEBUG_MODE) {
-    console.log('[CallPage]', ...args);
-  }
+  if (DEBUG_MODE) console.log('[CallPage]', ...args);
 };
 
 type CallPhase = 'loading' | 'waiting' | 'in-call' | 'ended' | 'error';
@@ -28,49 +27,27 @@ interface CallState {
   error?: string;
 }
 
-export default function CallPage({ 
-  params 
-}: { 
-  params: Promise<{ bookingId: string; locale: string }> | { bookingId: string; locale: string } 
-}) {
+type PageProps = {
+  params: { bookingId: string; locale: string };
+};
+
+export default function CallPage({ params }: PageProps) {
   const router = useRouter();
   const { toast } = useToast();
   const t = useTranslations('call.room');
-  
-  // State
-  const [bookingId, setBookingId] = useState<string | null>(null);
+
+  const bookingId = params?.bookingId;
+
   const [booking, setBooking] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
   const [callState, setCallState] = useState<CallState>({ phase: 'loading' });
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
 
-  // Resolve params
-  useEffect(() => {
-    const resolveParams = async () => {
-      if (params instanceof Promise) {
-        const resolved = await params;
-        setBookingId(resolved.bookingId);
-      } else {
-        setBookingId(params.bookingId);
-      }
-    };
-    resolveParams();
-  }, [params]);
-
-  // Initialize call
-  useEffect(() => {
-    if (bookingId) {
-      initCall();
-    }
-  }, [bookingId]);
-
   // Prevent accidental page close during call
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (callState.phase === 'in-call') {
-        logCallEvent(bookingId!, 'DISCONNECTION_INVOLUNTARY', {
-          reason: 'page-unload',
-        });
+      if (callState.phase === 'in-call' && bookingId) {
+        logCallEvent(bookingId, 'DISCONNECTION_INVOLUNTARY', { reason: 'page-unload' });
         e.preventDefault();
         e.returnValue = '';
       }
@@ -80,135 +57,149 @@ export default function CallPage({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [callState.phase, bookingId]);
 
-  const initCall = async () => {
-    if (!bookingId) return;
+  const initCall = useCallback(async () => {
+    if (!bookingId) {
+      setCallState({ phase: 'error', error: t('bookingNotFound') });
+      return;
+    }
 
     try {
       debugLog('Initializing call for booking:', bookingId);
-      
+
       const bookingResponse = await fetch(`/api/bookings/${bookingId}`);
-      if (!bookingResponse.ok) {
-        throw new Error(t('bookingNotFound'));
-      }
-      
+      if (!bookingResponse.ok) throw new Error(t('bookingNotFound'));
+
       const bookingData = await bookingResponse.json();
       const fetchedBooking = bookingData?.booking;
-      setBooking(fetchedBooking);
-      
-      debugLog('Booking data:', fetchedBooking);
 
-      // Check if call is in the past
-      const callTime = new Date(fetchedBooking.callOffer.dateTime).getTime();
-      const now = Date.now();
-      const duration = fetchedBooking.callOffer.duration * 60 * 1000;
-      
-      if (now > callTime + duration && !fetchedBooking.isTestBooking) {
-        throw new Error(t('callEnded'));
+      if (!fetchedBooking?.callOffer?.dateTime || !fetchedBooking?.callOffer?.duration) {
+        throw new Error(t('bookingNotFound'));
       }
 
-      // Always allow access to waiting room
+      setBooking(fetchedBooking);
+      debugLog('Booking data:', fetchedBooking);
+
+      // Check if call is in the past (sauf test booking)
+      const callTime = new Date(fetchedBooking.callOffer.dateTime).getTime();
+      const now = Date.now();
+      const durationMs = Number(fetchedBooking.callOffer.duration) * 60 * 1000;
+
+      if (Number.isFinite(callTime) && Number.isFinite(durationMs)) {
+        if (now > callTime + durationMs && !fetchedBooking.isTestBooking) {
+          throw new Error(t('callEnded'));
+        }
+      }
+
       setCallState({ phase: 'waiting' });
-      await logCallEvent(bookingId, 'PRE_CALL_ENTERED', { 
-        timestamp: new Date().toISOString() 
-      });
-      
+
+      await logCallEvent(bookingId, 'PRE_CALL_ENTERED', { timestamp: new Date().toISOString() });
     } catch (error: any) {
       debugLog('Init call error:', error);
-      setCallState({ 
-        phase: 'error', 
-        error: error?.message ?? t('callError')
-      });
+
+      const msg = error?.message ?? t('callError');
+      setCallState({ phase: 'error', error: msg });
+
       toast({
         variant: 'destructive',
         title: t('error'),
-        description: error?.message ?? t('callError'),
+        description: msg,
       });
-      
-      await logCallEvent(bookingId, 'CALL_ERROR', {
-        error: error?.message,
-        stage: 'init',
-      });
-    }
-  };
 
-  const handleTestMedia = async () => {
+      if (bookingId) {
+        await logCallEvent(bookingId, 'CALL_ERROR', { error: msg, stage: 'init' });
+      }
+    }
+  }, [bookingId, t, toast]);
+
+  // Initialize call
+  useEffect(() => {
+    initCall();
+  }, [initCall]);
+
+  const handleTestMedia = useCallback(async () => {
     try {
       debugLog('Testing media devices...');
-      toast({
-        title: t('testSuccess'),
-        description: t('testSuccessDesc'),
-      });
+      toast({ title: t('testSuccess'), description: t('testSuccessDesc') });
     } catch (error) {
       debugLog('Media devices test error:', error);
+
       toast({
         variant: 'destructive',
         title: t('testError'),
         description: t('testErrorDesc'),
       });
-      
-      await logCallEvent(bookingId!, 'CALL_ERROR', {
-        error: 'media-devices-access-denied',
-        stage: 'pre-call',
-      });
-    }
-  };
 
-  const handleJoinCall = async () => {
+      if (bookingId) {
+        await logCallEvent(bookingId, 'CALL_ERROR', {
+          error: 'media-devices-access-denied',
+          stage: 'pre-call',
+        });
+      }
+    }
+  }, [bookingId, t, toast]);
+
+  const handleJoinCall = useCallback(async () => {
     if (!bookingId || !booking) return;
 
     try {
       debugLog('Joining call...');
       setCallState({ phase: 'loading' });
 
-      // Get meeting token
       const tokenResponse = await fetch('/api/daily/get-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId }),
       });
 
-      if (!tokenResponse.ok) {
-        const error = await tokenResponse.json();
-        throw new Error(error?.error ?? t('cannotAccessCall'));
+      let tokenPayload: any = null;
+      try {
+        tokenPayload = await tokenResponse.json();
+      } catch {
+        tokenPayload = null;
       }
 
-      const tokenData = await tokenResponse.json();
-      setToken(tokenData?.token);
+      if (!tokenResponse.ok) {
+        throw new Error(tokenPayload?.error ?? t('cannotAccessCall'));
+      }
+
+      if (!tokenPayload?.token) {
+        throw new Error(t('cannotJoinCall'));
+      }
+
+      setToken(tokenPayload.token);
       setSessionStartTime(new Date());
-      
-      debugLog('Token received, joining call...');
 
-      // Switch to in-call phase
+      debugLog('Token received, switching to in-call...');
       setCallState({ phase: 'in-call' });
-
     } catch (error: any) {
       debugLog('Join call error:', error);
-      setCallState({ 
-        phase: 'error', 
-        error: error?.message ?? t('cannotJoinCall')
-      });
+
+      const msg = error?.message ?? t('cannotJoinCall');
+      setCallState({ phase: 'error', error: msg });
+
       toast({
         variant: 'destructive',
         title: t('error'),
-        description: error?.message ?? t('callError'),
+        description: msg,
       });
-      
-      await logCallEvent(bookingId, 'CALL_ERROR', {
-        error: error?.message,
-        stage: 'join',
-      });
-    }
-  };
 
-  const handleCallEnd = () => {
+      if (bookingId) {
+        await logCallEvent(bookingId, 'CALL_ERROR', { error: msg, stage: 'join' });
+      }
+    }
+  }, [bookingId, booking, t, toast]);
+
+  const handleCallEnd = useCallback(() => {
     debugLog('Call ended');
     setCallState({ phase: 'ended' });
-    
+
     // Redirect to summary page
-    setTimeout(() => {
-      router.push(`/call/${bookingId}/summary`);
-    }, 2000);
-  };
+    if (bookingId) {
+      window.setTimeout(() => {
+        router.push(`/call/${bookingId}/summary`);
+      }, 2000);
+    }
+  }, [bookingId, router]);
 
   // ========== RENDER STATES ==========
 
@@ -224,20 +215,14 @@ export default function CallPage({
   }
 
   if (callState.phase === 'waiting' && booking) {
-    return (
-      <WaitingRoom 
-        booking={booking}
-        onJoinCall={handleJoinCall}
-        onTestMedia={handleTestMedia}
-      />
-    );
+    return <WaitingRoom booking={booking} onJoinCall={handleJoinCall} onTestMedia={handleTestMedia} />;
   }
 
-  if (callState.phase === 'in-call' && booking && token && sessionStartTime) {
+  if (callState.phase === 'in-call' && booking && token && sessionStartTime && bookingId) {
     return (
-      <CallInterface 
+      <CallInterface
         booking={booking}
-        bookingId={bookingId!}
+        bookingId={bookingId}
         roomUrl={booking.dailyRoomUrl}
         token={token}
         onCallEnd={handleCallEnd}
@@ -259,9 +244,7 @@ export default function CallPage({
                 </div>
               </div>
               <h2 className="text-2xl font-bold mb-2">{t('ended')}</h2>
-              <p className="text-gray-600 mb-6">
-                {t('redirecting')}
-              </p>
+              <p className="text-gray-600 mb-6">{t('redirecting')}</p>
               <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto" />
             </CardContent>
           </Card>
@@ -285,17 +268,10 @@ export default function CallPage({
             <CardContent className="space-y-4">
               <p className="text-gray-600">{callState.error}</p>
               <div className="flex gap-4 flex-col sm:flex-row">
-                <Button 
-                  onClick={() => router.push('/dashboard/user')} 
-                  variant="outline"
-                  className="flex-1"
-                >
+                <Button onClick={() => router.push('/dashboard/user')} variant="outline" className="flex-1">
                   {t('backToDashboard')}
                 </Button>
-                <Button 
-                  onClick={() => window.location.reload()}
-                  className="flex-1"
-                >
+                <Button onClick={() => window.location.reload()} className="flex-1">
                   {t('retry')}
                 </Button>
               </div>
