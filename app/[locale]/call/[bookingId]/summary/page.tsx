@@ -133,15 +133,32 @@ export default function CallSummaryPage({
     }
   };
 
-  const getCallEfficiency = () => {
+  const getCallEfficiency = (observedDuration: number) => {
     if (!summary) return null;
-    
-    const { actualDuration, scheduledDuration } = summary.callDetails;
-    const percentage = (actualDuration / scheduledDuration) * 100;
-    
+
+    const scheduledDurationSeconds =
+      summary.callOffer.scheduledDuration * 60;
+
+    if (scheduledDurationSeconds <= 0) return null;
+
+    const percentage =
+      (observedDuration / scheduledDurationSeconds) * 100;
+
+    let color = 'text-gray-600';
+
+    if (percentage < 20) {
+      color = 'text-red-600';        // très mauvais
+    } else if (percentage < 60) {
+      color = 'text-orange-600';     // faible
+    } else if (percentage < 100) {
+      color = 'text-green-600';      // bon
+    } else {
+      color = 'text-purple-600';     // 🔥 EXCELLENT / dépassement
+    }
+
     return {
       percentage: Math.round(percentage),
-      color: percentage >= 90 ? 'text-green-600' : percentage >= 60 ? 'text-orange-600' : 'text-red-600',
+      color,
     };
   };
 
@@ -180,7 +197,28 @@ export default function CallSummaryPage({
     );
   }
 
-  const efficiency = getCallEfficiency();
+  // ✅ Sessions réellement valides (terminées uniquement)
+  const validSessions = summary.callDetails.sessions.filter(
+    (s) => s.end && s.duration > 0
+  );
+
+  // ✅ Durée totale recalculée à partir des sessions valides uniquement
+  const totalValidDuration = validSessions.reduce(
+    (acc, s) => acc + s.duration,
+    0
+  );
+
+  const totalObservedDuration =
+  summary.callDetails.actualStartTime &&
+  summary.callDetails.actualEndTime
+    ? (new Date(summary.callDetails.actualEndTime).getTime() -
+       new Date(summary.callDetails.actualStartTime).getTime()) / 1000
+    : totalValidDuration;
+
+
+  // ✅ Efficacité basée UNIQUEMENT sur la durée réelle valide
+  const efficiency = getCallEfficiency(totalValidDuration);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -226,11 +264,11 @@ export default function CallSummaryPage({
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {formatDuration(summary.callDetails.actualDuration)}
+                {formatDuration(totalValidDuration)}
               </div>
               {summary.callDetails.sessionsCount > 1 && (
                 <p className="text-xs text-gray-500 mt-1">
-                  {t('onSessions').replace('{count}', summary.callDetails.sessionsCount.toString())}
+                  {t('onSessions', { count: validSessions.length })}
                 </p>
               )}
             </CardContent>
@@ -363,7 +401,7 @@ export default function CallSummaryPage({
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {summary.callDetails.sessions.map((session, index) => (
+                {validSessions.map((session, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-semibold text-sm">{t('session')} {index + 1}</p>
@@ -373,9 +411,15 @@ export default function CallSummaryPage({
                       </p>
                     </div>
                     <div className="text-right">
-                      <Badge variant="outline" className="font-mono">
-                        {formatDuration(session.duration)}
-                      </Badge>
+                      {session.end ? (
+                        <Badge variant="outline" className="font-mono">
+                          {formatDuration(session.duration)}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          {t('sessionIncomplete')}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -452,7 +496,7 @@ export default function CallSummaryPage({
               {t('viewHistory')}
             </Button>
           </Link>
-          <Link href="/dashboard/user">
+          <Link href="/">
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600">
               {t('backToDashboard')}
             </Button>
