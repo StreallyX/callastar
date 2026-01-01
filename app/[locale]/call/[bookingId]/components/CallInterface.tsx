@@ -81,16 +81,12 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
   }, []);
 
   useEffect(() => {
-    const id = window.setInterval(() => setNowTs(Date.now()), 1000);
-    // ⏳ Timer UNIQUEMENT avant le join (countdown)
-    if (hasJoined) return;
-
     const id = window.setInterval(() => {
       setNowTs(Date.now());
     }, 1000);
 
     return () => window.clearInterval(id);
-  }, [hasJoined]);
+  }, []);
 
   useEffect(() => {
     const dailyCallId = roomUrl?.split('/').filter(Boolean).pop() || null;
