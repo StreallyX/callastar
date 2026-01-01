@@ -20,6 +20,7 @@ import { CheckCircle, Loader2, Star, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { safeToNumberOrZero } from '@/lib/price-validation';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 
@@ -197,7 +198,7 @@ export default function HistoryPage() {
 
                             <div className="text-sm text-gray-500">
                               <CurrencyDisplay
-                                amount={Number(booking?.totalPrice)}
+                                amount={safeToNumberOrZero(booking?.totalPrice)}
                                 currency={booking?.callOffer?.currency || 'EUR'}
                               />
                             </div>

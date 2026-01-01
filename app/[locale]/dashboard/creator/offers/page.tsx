@@ -16,6 +16,7 @@ import { Calendar, Clock, DollarSign, Loader2, Plus, Trash2, ArrowLeft, List, Ca
 import { toast } from 'sonner';
 import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { safeToNumberOrZero } from '@/lib/price-validation';
 import dynamic from 'next/dynamic';
 
 // Import FullCalendar component dynamically
@@ -554,7 +555,7 @@ export default function OffersPage() {
                                   <div className="flex items-center gap-1 font-semibold text-purple-600">
                                     <DollarSign className="w-4 h-4" />
                                     <CurrencyDisplay 
-                                      amount={Number(offer?.price ?? 0)} 
+                                      amount={safeToNumberOrZero(offer?.price)} 
                                       currency={offer?.currency || creatorCurrency} 
                                     />
                                   </div>

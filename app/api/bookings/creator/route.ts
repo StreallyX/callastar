@@ -74,6 +74,19 @@ export async function GET(request: NextRequest) {
     // ✅ Convert Decimal to number to avoid React warnings
     const sanitizedBookings = sanitizeDecimals(bookings);
 
+    // 🐛 DEBUG: Log des prix pour identifier le problème NaN
+    if (sanitizedBookings.length > 0) {
+      const firstBooking = sanitizedBookings[0];
+      console.log('[DEBUG] First booking price details:', {
+        rawPrice: bookings[0]?.callOffer?.price,
+        rawPriceType: typeof bookings[0]?.callOffer?.price,
+        rawPriceConstructor: bookings[0]?.callOffer?.price?.constructor?.name,
+        sanitizedPrice: firstBooking?.callOffer?.price,
+        sanitizedPriceType: typeof firstBooking?.callOffer?.price,
+        isNaN: isNaN(Number(firstBooking?.callOffer?.price)),
+      });
+    }
+
     return NextResponse.json({ bookings: sanitizedBookings }, { status: 200 });
   } catch (error) {
     console.error('Get creator bookings error:', error);

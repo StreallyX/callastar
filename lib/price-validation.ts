@@ -47,6 +47,63 @@ export function safeToNumber(
 }
 
 /**
+ * Convertit une valeur en number de manière sécurisée, retourne 0 en cas d'erreur
+ * Version permissive pour le frontend qui ne lève pas d'exception
+ */
+export function safeToNumberOrZero(
+  value: Decimal | number | string | null | undefined
+): number {
+  // Cas null/undefined
+  if (value === null || value === undefined) {
+    console.warn('[safeToNumberOrZero] Value is null or undefined, returning 0');
+    return 0;
+  }
+
+  // Cas Decimal (de Prisma)
+  if (value instanceof Decimal) {
+    const num = value.toNumber();
+    if (isNaN(num) || !isFinite(num)) {
+      console.error('[safeToNumberOrZero] Decimal conversion resulted in', num, 'returning 0');
+      return 0;
+    }
+    return num;
+  }
+
+  // Cas string (métadonnées Stripe)
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed === '') {
+      console.warn('[safeToNumberOrZero] Empty string, returning 0');
+      return 0;
+    }
+    const num = Number(trimmed);
+    if (isNaN(num) || !isFinite(num)) {
+      console.error('[safeToNumberOrZero] String cannot be converted:', value, 'returning 0');
+      return 0;
+    }
+    return num;
+  }
+
+  // Cas number
+  if (typeof value === 'number') {
+    if (isNaN(value) || !isFinite(value)) {
+      console.error('[safeToNumberOrZero] Number is', value, 'returning 0');
+      return 0;
+    }
+    return value;
+  }
+
+  // Cas objet (peut-être un Decimal sérialisé)
+  if (typeof value === 'object') {
+    console.error('[safeToNumberOrZero] Unexpected object type:', value, 'returning 0');
+    return 0;
+  }
+
+  console.error('[safeToNumberOrZero] Unsupported type:', typeof value, 'returning 0');
+  return 0;
+}
+
+/**
  * Valide qu'un montant est positif
  */
 export function validatePositiveAmount(amount: number, fieldName: string): void {

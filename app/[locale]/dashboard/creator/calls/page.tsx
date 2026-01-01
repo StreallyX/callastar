@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
 import { DateTimeDisplay, LiveCountdown } from '@/components/ui/datetime-display';
+import { safeToNumberOrZero } from '@/lib/price-validation';
 
 export default function CallsPage() {
   const router = useRouter();
@@ -279,7 +280,7 @@ export default function CallsPage() {
                             <div className="flex items-center gap-2">
                               <DollarSign className="w-4 h-4" />
                               <CurrencyDisplay 
-                                amount={Number(booking?.callOffer?.price ?? 0)} 
+                                amount={safeToNumberOrZero(booking?.callOffer?.price)} 
                                 currency={booking?.callOffer?.currency || creatorCurrency} 
                               />
                             </div>

@@ -10,6 +10,7 @@ import { Calendar, Clock, Video, Loader2, Download, ArrowLeft } from 'lucide-rea
 import { toast } from 'sonner';
 import { Link } from '@/navigation';
 import { CurrencyDisplay } from '@/components/ui/currency-display';
+import { safeToNumberOrZero } from '@/lib/price-validation';
 import { DateTimeDisplay, LiveCountdown } from '@/components/ui/datetime-display';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
@@ -198,7 +199,7 @@ export default function CallsPage() {
 
                           <div className="text-sm text-gray-500">
                             <CurrencyDisplay
-                              amount={Number(booking?.totalPrice)}
+                              amount={safeToNumberOrZero(booking?.totalPrice)}
                               currency={booking?.callOffer?.currency || 'EUR'}
                             />
                           </div>
