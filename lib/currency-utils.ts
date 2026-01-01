@@ -47,8 +47,21 @@ export function unitsToStripeAmount(amount: number): number {
  * Usage: Displaying amounts from Payment, Payout, Booking models
  * Example: payment.amount, payout.amount, booking.totalPrice
  */
-export function formatDbAmount(amount: number | string, decimals: number = 2): string {
+export function formatDbAmount(amount: number | string | null | undefined, decimals: number = 2): string {
+  // ✅ Handle null/undefined
+  if (amount === null || amount === undefined) {
+    console.warn('formatDbAmount: amount is null/undefined');
+    return (0).toFixed(decimals);
+  }
+  
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  
+  // ✅ Check if amount is NaN
+  if (isNaN(numAmount)) {
+    console.error('formatDbAmount: amount is NaN', { originalAmount: amount });
+    return (0).toFixed(decimals);
+  }
+  
   return numAmount.toFixed(decimals);
 }
 
@@ -63,11 +76,23 @@ export function formatDbAmount(amount: number | string, decimals: number = 2): s
  * Note: Always displays as "amount CODE" format to avoid symbol confusion
  */
 export function formatCurrency(
-  amount: number | string, 
+  amount: number | string | null | undefined, 
   currency: string = 'EUR'
 ): string {
+  // ✅ Handle null/undefined
+  if (amount === null || amount === undefined) {
+    console.warn('formatCurrency: amount is null/undefined');
+    return `0.00 ${currency.toUpperCase()}`;
+  }
+  
   const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
   const currencyCode = currency.toUpperCase();
+  
+  // ✅ Check if amount is NaN
+  if (isNaN(numAmount)) {
+    console.error('formatCurrency: amount is NaN', { originalAmount: amount, currency });
+    return `0.00 ${currencyCode}`;
+  }
   
   return `${numAmount.toFixed(2)} ${currencyCode}`;
 }
