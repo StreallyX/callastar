@@ -56,7 +56,52 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// ✅ REFACTORED: POST route disabled - bookings are now created via payment webhook
+// This prevents the critical bug where users could reserve slots without paying
 export async function POST(request: NextRequest) {
+  try {
+    const user = await getUserFromRequest(request);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Non authentifié' },
+        { status: 401 }
+      );
+    }
+
+    // Log deprecated endpoint usage
+    await logApiError(
+      '/api/bookings',
+      new Error('Deprecated endpoint called'),
+      {
+        actor: LogActor.USER,
+        actorId: user.userId,
+        action: 'CREATE_BOOKING_DEPRECATED',
+        reason: 'DEPRECATED_ENDPOINT',
+      }
+    );
+
+    return NextResponse.json(
+      { 
+        error: 'Cette route est obsolète. Utilisez /api/payments/create-intent avec callOfferId pour initier un paiement.',
+        details: 'Le booking sera créé automatiquement après confirmation du paiement.',
+      },
+      { status: 410 } // 410 Gone - indicates deprecated endpoint
+    );
+  } catch (error) {
+    console.error('Deprecated booking route error:', error);
+    
+    return NextResponse.json(
+      { error: 'Endpoint obsolète' },
+      { status: 410 }
+    );
+  }
+}
+
+// ✅ LEGACY CODE PRESERVED FOR REFERENCE (Atomic transaction logic)
+// This code is now implemented in the webhook handler (payment_intent.succeeded)
+/*
+export async function POST_LEGACY(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
 
@@ -302,3 +347,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+*/

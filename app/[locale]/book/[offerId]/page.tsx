@@ -108,6 +108,8 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
     }
   }, [offerId]);
 
+  // ✅ REFACTORED: New payment-first flow
+  // No booking is created until payment succeeds (prevents slot blocking without payment)
   const initBooking = async () => {
     if (!offerId) return;
 
@@ -137,35 +139,32 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
         return;
       }
 
-      // Create booking
-      const bookingResponse = await fetch('/api/bookings', {
+      // ✅ NEW FLOW: Create payment intent directly with callOfferId (no booking yet)
+      // The booking will be created automatically after payment succeeds (webhook)
+      const intentResponse = await fetch('/api/payments/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ callOfferId: offerId }),
         credentials: 'include',
       });
 
-      if (!bookingResponse.ok) {
-        const error = await bookingResponse.json();
-        throw new Error(error?.error ?? t('bookingError'));
-      }
-
-      const bookingData = await bookingResponse.json();
-      setBooking(bookingData?.booking);
-
-      // Create payment intent
-      const intentResponse = await fetch('/api/payments/create-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingId: bookingData?.booking?.id }),
-      });
-
       if (!intentResponse.ok) {
-        throw new Error(t('paymentError'));
+        const error = await intentResponse.json();
+        throw new Error(error?.error ?? t('paymentError'));
       }
 
       const intentData = await intentResponse.json();
       setClientSecret(intentData?.clientSecret);
+      
+      // ✅ Set a temporary booking object for UI display (actual booking created after payment)
+      setBooking({
+        id: 'pending', // Temporary ID for UI
+        callOfferId: offerId,
+        totalPrice: offerData?.callOffer?.price,
+        status: 'PENDING_PAYMENT', // Indicates payment not yet completed
+      });
+      
+      console.log('✅ Payment intent created - booking will be created after payment succeeds');
     } catch (error: any) {
       toast({
         variant: 'destructive',

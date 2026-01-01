@@ -569,13 +569,316 @@ async function processWebhookEvent(event: Stripe.Event): Promise<void> {
 
 /**
  * Handle payment_intent.succeeded
+ * ✅ REFACTORED: Now creates booking if it doesn't exist (new payment-first flow)
  */
 async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> {
   const paymentIntent = event.data.object as Stripe.PaymentIntent;
-  const bookingId = paymentIntent.metadata?.bookingId;
+  const metadata = paymentIntent.metadata;
+
+  // ✅ DETECT FLOW: Check if this is the new payment-first flow
+  const isNewFlow = metadata?.bookingFlow === 'payment_first';
+
+  if (isNewFlow) {
+    // ✅ NEW FLOW: Create booking from Payment Intent metadata
+    console.log('[Webhook] New flow detected - creating booking from payment confirmation');
+    
+    const callOfferId = metadata?.callOfferId;
+    const userId = metadata?.userId;
+    const creatorId = metadata?.creatorId;
+    const totalPrice = metadata?.totalPrice;
+    const platformFee = metadata?.platformFee;
+    const creatorAmount = metadata?.creatorAmount;
+    const currency = metadata?.currency || 'EUR';
+
+    if (!callOfferId || !userId || !totalPrice) {
+      console.error('[Webhook] Missing required metadata for booking creation:', metadata);
+      throw new Error('MISSING_METADATA');
+    }
+
+    // ✅ CRITICAL: Create booking with atomic transaction (prevents race conditions)
+    let booking;
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        // Step 1: Check if call offer exists and is available
+        const callOffer = await tx.callOffer.findUnique({
+          where: { id: callOfferId },
+          include: {
+            booking: true,
+            creator: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        if (!callOffer) {
+          throw new Error('OFFER_NOT_FOUND');
+        }
+
+        if (callOffer.status !== 'AVAILABLE') {
+          throw new Error('OFFER_NOT_AVAILABLE');
+        }
+
+        // Step 2: CRITICAL - Check if booking already exists (race condition protection)
+        if (callOffer.booking) {
+          throw new Error('OFFER_ALREADY_BOOKED');
+        }
+
+        // Step 3: Check if call is in the future
+        if (new Date(callOffer.dateTime) < new Date()) {
+          throw new Error('OFFER_EXPIRED');
+        }
+
+        // Step 4: Create booking atomically
+        const newBooking = await tx.booking.create({
+          data: {
+            userId: userId,
+            callOfferId: callOfferId,
+            totalPrice: Number(totalPrice),
+            status: 'PENDING', // Will be updated to CONFIRMED below
+            stripePaymentIntentId: paymentIntent.id,
+          },
+          include: {
+            callOffer: {
+              include: {
+                creator: {
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        });
+
+        // Step 5: Update call offer status atomically
+        await tx.callOffer.update({
+          where: { id: callOfferId },
+          data: { status: 'BOOKED' },
+        });
+
+        return newBooking;
+      });
+
+      booking = result;
+
+      // Log booking creation
+      await logBooking(
+        'CREATED',
+        booking.id,
+        userId,
+        creatorId,
+        {
+          callOfferId,
+          price: totalPrice,
+          currency,
+          createdVia: 'payment_intent_succeeded_webhook',
+          paymentIntentId: paymentIntent.id,
+          flow: 'payment_first',
+        }
+      );
+
+      console.log('[Webhook] ✅ Booking created successfully:', booking.id);
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'OFFER_ALREADY_BOOKED') {
+          console.error('[Webhook] CRITICAL: Slot already booked by another user during payment');
+          // ✅ TODO: Implement automatic refund here
+          throw new Error('SLOT_TAKEN_REFUND_REQUIRED');
+        }
+      }
+      throw error;
+    }
+
+    // ✅ Continue with Daily room creation, payment record, emails, etc.
+    const paymentDate = new Date();
+    const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
+    const amount = Number(totalPrice);
+
+    // Create Daily.co room
+    const roomName = `call-${booking.id}`;
+    try {
+      const room = await createDailyRoom({
+        name: roomName,
+        properties: {
+          exp: Math.floor(new Date(booking.callOffer.dateTime).getTime() / 1000) + 60 * 60 * 24,
+          max_participants: 2,
+        },
+      });
+
+      // Update booking with room info and status
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: {
+          status: 'CONFIRMED',
+          dailyRoomUrl: room.url,
+          dailyRoomName: room.name,
+        },
+      });
+
+      // Log booking confirmation
+      await logBooking(
+        'CONFIRMED',
+        booking.id,
+        userId,
+        creatorId,
+        {
+          previousStatus: 'PENDING',
+          newStatus: 'CONFIRMED',
+          dailyRoomUrl: room.url,
+          dailyRoomName: room.name,
+          confirmedVia: 'payment_intent_succeeded_webhook',
+          paymentIntentId: paymentIntent.id,
+          amount,
+          currency,
+        }
+      );
+    } catch (error) {
+      console.error('[Webhook] Error creating Daily room:', error);
+    }
+
+    // Create payment record
+    const payment = await prisma.payment.create({
+      data: {
+        bookingId: booking.id,
+        amount,
+        currency,
+        stripePaymentIntentId: paymentIntent.id,
+        status: 'SUCCEEDED',
+        platformFee: Number(platformFee),
+        creatorAmount: Number(creatorAmount),
+        payoutStatus: 'REQUESTED',
+        payoutReleaseDate,
+      },
+    });
+
+    console.log('✅ Payment successful - Stripe will handle transfer automatically via Destination Charges');
+
+    // ✅ Notify creator about received payment
+    try {
+      await createNotification({
+        userId: booking.callOffer.creator.userId,
+        type: 'PAYMENT_RECEIVED',
+        title: 'Paiement reçu',
+        message: `Vous avez reçu un paiement de ${amount.toFixed(2)} ${currency}.`,
+        link: '/dashboard/creator/payments',
+        metadata: {
+          paymentId: payment.id,
+          bookingId: booking.id,
+          amount,
+          currency,
+        },
+      });
+    } catch (notifError) {
+      console.error('[Webhook] Error sending payment received notification:', notifError);
+    }
+
+    // Log payment success
+    await logPayment(TransactionEventType.PAYMENT_SUCCEEDED, {
+      paymentId: payment.id,
+      amount,
+      currency,
+      status: 'SUCCEEDED',
+      stripePaymentIntentId: paymentIntent.id,
+      metadata: {
+        bookingId: booking.id,
+        creatorId,
+        flow: 'payment_first',
+      },
+    });
+
+    // Log webhook received
+    await logWebhook({
+      stripeEventId: event.id,
+      eventType: event.type,
+      entityType: EntityType.PAYMENT,
+      entityId: payment.id,
+      metadata: { paymentIntentId: paymentIntent.id, flow: 'payment_first' },
+    });
+
+    // Send payment confirmation email
+    try {
+      const bookingUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'}/call/${booking.id}`;
+      
+      const emailHtml = generatePaymentConfirmationEmail({
+        userName: booking.user.name,
+        creatorName: booking.callOffer.creator.user.name,
+        callTitle: booking.callOffer.title,
+        callDateTime: booking.callOffer.dateTime,
+        callDuration: booking.callOffer.duration,
+        totalPrice: amount,
+        bookingUrl,
+        currency,
+      });
+
+      const emailResult = await sendEmail({
+        to: booking.user.email,
+        subject: '✅ Payment Confirmed - Your Call is Booked!',
+        html: emailHtml,
+        bookingId: booking.id,
+        userId: booking.userId,
+        emailType: 'payment_confirmation',
+      });
+
+      if (emailResult.success) {
+        console.log(`[Webhook] Payment confirmation email sent successfully to ${booking.user.email}`);
+      } else {
+        console.error(`[Webhook] Failed to send payment confirmation email: ${emailResult.error}`);
+      }
+    } catch (error) {
+      console.error('[Webhook] Unexpected error sending payment confirmation email:', error);
+    }
+
+    // Send notification to creator
+    try {
+      await createNotification({
+        userId: booking.callOffer.creator.userId,
+        type: 'BOOKING_CONFIRMED',
+        title: 'Nouvelle réservation !',
+        message: `${booking.user.name} a réservé votre appel "${booking.callOffer.title}".`,
+        link: `/dashboard/creator`,
+      });
+
+      const creatorEmailHtml = generateCreatorNotificationEmail(booking, Number(creatorAmount), payoutReleaseDate, currency);
+      await sendEmail({
+        to: booking.callOffer.creator.user.email,
+        subject: '🎉 Nouvelle réservation - Call a Star',
+        html: creatorEmailHtml,
+      });
+    } catch (error) {
+      console.error('[Webhook] Error sending notifications to creator:', error);
+    }
+
+    return;
+  }
+
+  // ✅ LEGACY FLOW: Handle old flow where booking was created before payment
+  console.log('[Webhook] Legacy flow detected - booking should already exist');
+  
+  const bookingId = metadata?.bookingId;
 
   if (!bookingId) {
-    console.error('[Webhook] No bookingId in payment intent metadata');
+    console.error('[Webhook] No bookingId in payment intent metadata (legacy flow)');
     return;
   }
 
@@ -589,7 +892,7 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
             select: {
               id: true,
               userId: true,
-              currency: true, // ✅ Include creator's currency
+              currency: true,
               user: true,
             },
           },
@@ -606,9 +909,9 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
 
   // ✅ Declare variables before usage
   const amount = Number(booking.totalPrice);
-  const platformFee = Number(paymentIntent.metadata?.platformFee || 0);
-  const creatorAmount = Number(paymentIntent.metadata?.creatorAmount || 0);
-  const currency = paymentIntent.metadata?.currency || booking.callOffer.creator.currency || 'EUR';
+  const platformFee = Number(metadata?.platformFee || 0);
+  const creatorAmount = Number(metadata?.creatorAmount || 0);
+  const currency = metadata?.currency || booking.callOffer.creator.currency || 'EUR';
   
   const paymentDate = new Date();
   const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
@@ -657,14 +960,12 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
   }
 
   // Create or update payment record
-
-  // ✅ FIX: Always set payoutReleaseDate, even when updating existing payment
   const payment = await prisma.payment.upsert({
     where: { bookingId: booking.id },
     update: {
       status: 'SUCCEEDED',
       currency: currency,
-      payoutReleaseDate, // <-- Ensure payoutReleaseDate is set on update too
+      payoutReleaseDate,
       payoutStatus: 'REQUESTED',
     },
     create: {
@@ -680,10 +981,6 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     },
   });
 
-  // ✅ DESTINATION CHARGES: No need to create Transfer manually
-  // Stripe handles the transfer automatically via transfer_data in PaymentIntent
-  // transferId and transferStatus remain null (Stripe manages the transfer internally)
-  
   console.log('✅ Payment successful - Stripe will handle transfer automatically via Destination Charges');
   
   // ✅ Notify creator about received payment
@@ -711,12 +1008,13 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
   await logPayment(TransactionEventType.PAYMENT_SUCCEEDED, {
     paymentId: payment.id,
     amount,
-    currency: 'EUR',
+    currency,
     status: 'SUCCEEDED',
     stripePaymentIntentId: paymentIntent.id,
     metadata: {
       bookingId: booking.id,
       creatorId: booking.callOffer.creatorId,
+      flow: 'legacy',
     },
   });
 
@@ -726,11 +1024,10 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     eventType: event.type,
     entityType: EntityType.PAYMENT,
     entityId: payment.id,
-    metadata: { paymentIntentId: paymentIntent.id },
+    metadata: { paymentIntentId: paymentIntent.id, flow: 'legacy' },
   });
 
-  // Send payment confirmation email (English only, with logging)
-  // This email should be sent even if other operations fail
+  // Send payment confirmation email
   try {
     const bookingUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'}/call/${booking.id}`;
     
@@ -745,7 +1042,6 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
       currency,
     });
 
-    // Send email with automatic logging
     const emailResult = await sendEmail({
       to: booking.user.email,
       subject: '✅ Payment Confirmed - Your Call is Booked!',
@@ -761,7 +1057,6 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
       console.error(`[Webhook] Failed to send payment confirmation email: ${emailResult.error}`);
     }
   } catch (error) {
-    // Email errors should never block the webhook processing
     console.error('[Webhook] Unexpected error sending payment confirmation email:', error);
   }
 
@@ -775,7 +1070,6 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
       link: `/dashboard/creator`,
     });
 
-    const currency = booking.callOffer.creator.currency || 'EUR';
     const creatorEmailHtml = generateCreatorNotificationEmail(booking, creatorAmount, payoutReleaseDate, currency);
     await sendEmail({
       to: booking.callOffer.creator.user.email,
