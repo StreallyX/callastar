@@ -47,6 +47,8 @@ export default function OffersPage() {
     dateTime: '',
     duration: '30',
   });
+  const [creatorTimezone, setCreatorTimezone] = useState<string>('UTC');
+
 
   // Load view preference from localStorage
   useEffect(() => {
@@ -81,6 +83,13 @@ export default function OffersPage() {
         return;
       }
       const userData = await userResponse.json();
+
+      const creatorTz =
+        userData?.user?.creator?.timezone ||
+        userData?.user?.timezone ||
+        'UTC';
+
+      setCreatorTimezone(creatorTz);
       
       if (userData?.user?.role !== 'CREATOR') {
         router.push('/dashboard/user');
@@ -130,18 +139,77 @@ export default function OffersPage() {
     }
   };
 
+  const getUtcOffsetFromTimeZone = (timeZone: string) => {
+    try {
+      const now = new Date();
+
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).formatToParts(now);
+
+      const values = Object.fromEntries(
+        parts.map(p => [p.type, p.value])
+      );
+
+      const tzTime = Date.UTC(
+        Number(values.year),
+        Number(values.month) - 1,
+        Number(values.day),
+        Number(values.hour),
+        Number(values.minute),
+        Number(values.second)
+      );
+
+      const diffMinutes = Math.round((tzTime - now.getTime()) / 60000);
+      const sign = diffMinutes >= 0 ? '+' : '-';
+      const abs = Math.abs(diffMinutes);
+
+      return `UTC${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+    } catch {
+      return 'UTC';
+    }
+  };
+
+
   const handleCreateOffer = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreatingOffer(true);
+
+    if (newOffer.title.trim().length < 1) {
+      toast.error(t('errors.titleMin'));
+      setCreatingOffer(false);
+      return;
+    }
+
+    if (!newOffer.price || isNaN(Number(newOffer.price)) || Number(newOffer.price) <= 0) {
+      toast.error(t('errors.priceInvalid'));
+      setCreatingOffer(false);
+      return;
+    }
+
+    if (!newOffer.dateTime) {
+      toast.error(t('errors.dateRequired'));
+      setCreatingOffer(false);
+      return;
+    }
 
     try {
       const response = await fetch('/api/call-offers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newOffer,
-          price: parseFloat(newOffer.price),
-          duration: parseInt(newOffer.duration),
+          title: newOffer.title.trim(),
+          description: newOffer.description?.trim() || '',
+          price: Number(newOffer.price),
+          duration: Number(newOffer.duration),
+          dateTime: new Date(newOffer.dateTime).toISOString(), // 🔥 IMPORTANT
         }),
       });
 
@@ -156,10 +224,20 @@ export default function OffersPage() {
           duration: '30',
         });
         fetchData();
-      } else {
-        const error = await response.json();
-        throw new Error(error?.error ?? t('createError'));
+        return;
       }
+
+      const errorData = await response.json();
+
+      if (errorData?.fieldErrors?.length) {
+        errorData.fieldErrors.forEach((err: any) => {
+          toast.error(`${err.field}: ${err.message}`);
+        });
+        return;
+      }
+
+      throw new Error(errorData?.error ?? t('createError'));
+
     } catch (error: any) {
       toast.error(error?.message ?? t('genericError'));
     } finally {
@@ -324,8 +402,11 @@ export default function OffersPage() {
                         value={newOffer.description}
                         onChange={(e) => setNewOffer({ ...newOffer, description: e.target.value })}
                         rows={3}
-                        required
+                        placeholder={t('descriptionOptional')}
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {t('optional')}
+                      </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -360,6 +441,15 @@ export default function OffersPage() {
                         required
                       />
                     </div>
+                    {creatorTimezone && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                        <Clock className="w-3 h-3" />
+                        {t('timezoneInfo', {
+                          timezone: creatorTimezone,
+                          offset: getUtcOffsetFromTimeZone(creatorTimezone),
+                        })}
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button type="submit" disabled={creatingOffer}>
@@ -552,7 +642,6 @@ export default function OffersPage() {
                                 </td>
                                 <td className="py-4 px-4">
                                   <div className="flex items-center gap-1 font-semibold text-purple-600">
-                                    <DollarSign className="w-4 h-4" />
                                     <CurrencyDisplay 
                                       amount={Number(offer?.price ?? 0)} 
                                       currency={offer?.currency || creatorCurrency} 

@@ -7,8 +7,8 @@ import { sanitizeDecimals } from '@/lib/decimal-utils';
 export const dynamic = 'force-dynamic';
 
 const createOfferSchema = z.object({
-  title: z.string().min(3, 'Le titre doit contenir au moins 3 caractères'),
-  description: z.string().min(10, 'La description doit contenir au moins 10 caractères'),
+  title: z.string().min(1, 'Le titre doit contenir au moins 1 caractères'),
+  description: z.string().optional().or(z.literal('')),
   price: z.number().positive('Le prix doit être positif'),
   dateTime: z.coerce.date(),
   duration: z.number().positive('La durée doit être positive'),
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       data: {
         creatorId: creator.id,
         title: validatedData.title,
-        description: validatedData.description,
+        description: validatedData.description ?? '',
         price: validatedData.price,
         currency: currency, // ✅ NEW: Store currency with offer
         dateTime: validatedData.dateTime,
@@ -171,7 +171,13 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Données invalides', details: error.issues },
+        {
+          error: 'Validation failed',
+          fieldErrors: error.issues.map(issue => ({
+            field: issue.path[0],
+            message: issue.message,
+          })),
+        },
         { status: 400 }
       );
     }

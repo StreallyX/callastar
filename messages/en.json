@@ -872,6 +872,14 @@
         }
       },
       "offers": {
+        "descriptionOptional": "Décrivez votre offre (optionnel)",
+        "optional": "Champ optionnel",
+        "errors": {
+          "titleRequired": "Le titre est obligatoire",
+          "priceInvalid": "Le prix doit être supérieur à 0",
+          "titleMin": "Le titre doit contenir au moins 3 caractères"
+        },
+        "timezoneInfo": "Cette offre sera créée dans le fuseau horaire : {timezone} ({offset})",
         "title": "Mes Offres",
         "subtitle": "Gérez vos offres d'appels",
         "create": "Créer une offre",
