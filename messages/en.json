@@ -378,7 +378,9 @@
       "amount": "Montant",
       "backToHome": "Retour à l'accueil",
       "cannotFetchSummary": "Impossible de récupérer le résumé",
-      "errorOccurred": "Une erreur est survenue"
+      "errorOccurred": "Une erreur est survenue",
+      "sessionIncomplete": "Session incomplète (non comptabilisée)"
+
     }
   },
   "legal": {
