@@ -250,6 +250,11 @@
   },
   "call": {
     "room": {
+      "enableCameraButton": "Activer la caméra et le micro",
+      "cameraEnabledTitle": "Caméra activée",
+      "cameraEnabledDesc": "Votre caméra et votre micro sont maintenant actifs.",
+      "cameraBlockedTitle": "Autorisation requise",
+      "cameraBlockedDesc": "Veuillez autoriser l’accès à la caméra et au micro dans les paramètres de votre navigateur.",
       "youCanJoinNow":"Tu peux rejoindre",
       "title": "Appel vidéo",
       "waitingRoom": "Salle d'attente - Prêt à rejoindre",

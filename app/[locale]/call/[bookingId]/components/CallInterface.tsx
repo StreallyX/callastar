@@ -48,6 +48,8 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
   const [fatalError, setFatalError] = useState<string | null>(null);
   const isConnecting = connectionState === 'connecting';
   const [mobileLogs, setMobileLogs] = useState<string[]>([]);
+  const [isCameraEnabled, setIsCameraEnabled] = useState(false);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
 
   const mobileLog = useCallback((...args: any[]) => {
     const msg = args
@@ -105,6 +107,12 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
       callId: callId || undefined,
       participants: event?.participants ? Object.keys(event.participants).length : 1,
     });
+    const local = callFrameRef.current?.participants()?.local;
+    if (local) {
+      setIsCameraEnabled(!!local.video);
+      setIsAudioEnabled(!!local.audio);
+    }
+
   }, [bookingId, callId]);
 
   const safeCleanup = useCallback(async (reason: string) => {
@@ -266,13 +274,30 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
   const enableCamera = async () => {
     try {
       mobileLog('ENABLE_CAMERA_CLICK');
+
       await callFrameRef.current?.setLocalVideo(true);
       await callFrameRef.current?.setLocalAudio(true);
+
+      setIsCameraEnabled(true);
+      setIsAudioEnabled(true);
+
       mobileLog('CAMERA_ENABLED');
+
+      toast({
+        title: t('cameraEnabledTitle'),
+        description: t('cameraEnabledDesc'),
+      });
     } catch (e) {
       mobileLog('CAMERA_ENABLE_FAILED', e);
+
+      toast({
+        variant: 'destructive',
+        title: t('cameraBlockedTitle'),
+        description: t('cameraBlockedDesc'),
+      });
     }
   };
+
 
   const handleJoinCall = useCallback(async () => {
   mobileLog('JOIN_CLICKED');
@@ -312,6 +337,12 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
     });
     mobileLog('DAILY_FRAME_CREATED');
 
+    frame.on('participant-updated', (e: any) => {
+      if (e?.participant?.local) {
+        setIsCameraEnabled(!!e.participant.video);
+        setIsAudioEnabled(!!e.participant.audio);
+      }
+    });
 
     callFrameRef.current = frame;
 
@@ -565,14 +596,15 @@ useEffect(() => {
             </button>
           </div>
         )}
-        {hasJoined && (
+        {hasJoined && (!isCameraEnabled || !isAudioEnabled) && (
           <button
             onClick={enableCamera}
             className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-green-600 text-white rounded-xl"
           >
-            Activer caméra & micro
+            {t('enableCameraButton')}
           </button>
         )}
+        {/*
         {mobileLogs.length > 0 && (
           <div className="fixed bottom-0 left-0 right-0 z-[9999] max-h-48 overflow-auto bg-black/90 text-green-400 text-[10px] font-mono p-2 space-y-1">
             {mobileLogs.map((l, i) => (
@@ -580,6 +612,7 @@ useEffect(() => {
             ))}
           </div>
         )}
+        */}
         {fatalError && (
           <div
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
