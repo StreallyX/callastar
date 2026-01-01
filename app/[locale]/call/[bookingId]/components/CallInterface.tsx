@@ -47,17 +47,9 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
   const joinInProgressRef = useRef(false);
   const [fatalError, setFatalError] = useState<string | null>(null);
   const isConnecting = connectionState === 'connecting';
-  const [mobileLogs, setMobileLogs] = useState<string[]>([]);
   const [isCameraEnabled, setIsCameraEnabled] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
 
-  const mobileLog = useCallback((...args: any[]) => {
-    const msg = args
-      .map(a => (typeof a === 'string' ? a : JSON.stringify(a)))
-      .join(' ');
-    setMobileLogs(prev => [...prev.slice(-50), `[${new Date().toLocaleTimeString()}] ${msg}`]);
-    console.log('[MOBILE]', ...args);
-  }, []);
 
 
   const callStartTs = useMemo(() => {
@@ -90,8 +82,15 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
 
   useEffect(() => {
     const id = window.setInterval(() => setNowTs(Date.now()), 1000);
+    // ⏳ Timer UNIQUEMENT avant le join (countdown)
+    if (hasJoined) return;
+
+    const id = window.setInterval(() => {
+      setNowTs(Date.now());
+    }, 1000);
+
     return () => window.clearInterval(id);
-  }, []);
+  }, [hasJoined]);
 
   useEffect(() => {
     const dailyCallId = roomUrl?.split('/').filter(Boolean).pop() || null;
@@ -273,23 +272,17 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
 
   const enableCamera = async () => {
     try {
-      mobileLog('ENABLE_CAMERA_CLICK');
 
       await callFrameRef.current?.setLocalVideo(true);
       await callFrameRef.current?.setLocalAudio(true);
 
       setIsCameraEnabled(true);
       setIsAudioEnabled(true);
-
-      mobileLog('CAMERA_ENABLED');
-
       toast({
         title: t('cameraEnabledTitle'),
         description: t('cameraEnabledDesc'),
       });
     } catch (e) {
-      mobileLog('CAMERA_ENABLE_FAILED', e);
-
       toast({
         variant: 'destructive',
         title: t('cameraBlockedTitle'),
@@ -300,8 +293,6 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
 
 
   const handleJoinCall = useCallback(async () => {
-  mobileLog('JOIN_CLICKED');
-
   if (!callContainerRef.current) return;
   if (callFrameRef.current) return;
   if (joinInProgressRef.current) return;
@@ -335,7 +326,6 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
         },
       },
     });
-    mobileLog('DAILY_FRAME_CREATED');
 
     frame.on('participant-updated', (e: any) => {
       if (e?.participant?.local) {
@@ -348,35 +338,23 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
 
     frame
       .on('joined-meeting', (e:any) => {
-        mobileLog('EVENT joined-meeting');
         handleJoinedMeeting(e);
       })
       .on('participant-joined', (e:any) => {
-        mobileLog('EVENT participant-joined', e?.participant?.user_id);
         handleParticipantJoined(e);
       })
       .on('participant-left', (e:any) => {
-        mobileLog('EVENT participant-left', e?.participant?.user_id);
         handleParticipantLeft(e);
       })
       .on('left-meeting', () => {
-        mobileLog('EVENT left-meeting');
         handleLeftMeeting();
       })
       .on('network-connection', (e:any) => {
-        mobileLog('EVENT network', e);
         handleNetworkConnection(e);
       })
       .on('error', (e:any) => {
-        mobileLog('EVENT error', e);
         handleCallError(e);
       });
-    mobileLog('JOIN_REQUEST', { roomUrl });
-    mobileLog('JOIN_PARAMS', {
-      hasToken: !!token,
-      tokenLength: token?.length,
-      roomUrl,
-    });
 
     await frame.join({
       url: roomUrl,
@@ -384,9 +362,6 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
       startVideoOff: true,
       startAudioOff: true,
     });
-
-    mobileLog('JOIN_SUCCESS');
-
 
     if (!hasLoggedJoinRef.current) {
       await logCallEvent(bookingId, 'CALL_JOIN', {
@@ -398,7 +373,6 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
 
   } catch (err) {
     console.error('[CallInterface] join failed', err);
-    mobileLog('JOIN_FAILED', err);
     triggerFatalError('join-failed');
   } finally {
     joinInProgressRef.current = false;
@@ -541,7 +515,7 @@ useEffect(() => {
         </div>
 
         <div className="absolute top-[calc(env(safe-area-inset-top)+6px)] left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-mono shadow-md">
+          <div className="flex items-center gap-2 bg-black/60 bg-black/40 text-white px-3 py-1 rounded-full text-xs font-mono shadow-md">
             <Clock className="w-3 h-3 opacity-80" />
 
             {isTooEarly && (
@@ -577,7 +551,7 @@ useEffect(() => {
         {isTooEarly && (
           <div className="absolute inset-0 flex items-center justify-center p-4" style={{ zIndex: 20 }}>
             <div className="w-full max-w-lg">
-              <div className="bg-black/50 backdrop-blur-md border border-gray-700 rounded-2xl p-6 text-center text-white pointer-events-auto">
+              <div className="bg-black/50 bg-black/40 border border-gray-700 rounded-2xl p-6 text-center text-white pointer-events-auto">
                 <div className="text-lg font-semibold">{t('tooEarlyTitle')}</div>
                 <div className="mt-2 text-sm text-gray-300">{t('tooEarlyDesc', { minutes: earlyAccessMinutes })}</div>
 
@@ -621,7 +595,7 @@ useEffect(() => {
         */}
         {fatalError && (
           <div
-            className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 bg-black/40"
           >
             <div className="max-w-md w-full bg-gray-900 border border-red-500 rounded-2xl p-6 text-center text-white">
               <div className="flex justify-center mb-4">
