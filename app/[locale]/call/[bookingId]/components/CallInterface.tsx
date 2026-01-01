@@ -263,6 +263,16 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
     [bookingId, callId, toast, t, triggerFatalError]
   );
 
+  const enableCamera = async () => {
+    try {
+      mobileLog('ENABLE_CAMERA_CLICK');
+      await callFrameRef.current?.setLocalVideo(true);
+      await callFrameRef.current?.setLocalAudio(true);
+      mobileLog('CAMERA_ENABLED');
+    } catch (e) {
+      mobileLog('CAMERA_ENABLE_FAILED', e);
+    }
+  };
 
   const handleJoinCall = useCallback(async () => {
   mobileLog('JOIN_CLICKED');
@@ -340,9 +350,10 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
     await frame.join({
       url: roomUrl,
       token,
-      startVideoOff: false,
-      startAudioOff: false,
+      startVideoOff: true,
+      startAudioOff: true,
     });
+
     mobileLog('JOIN_SUCCESS');
 
 
@@ -553,6 +564,14 @@ useEffect(() => {
                 : t('joinCall')}
             </button>
           </div>
+        )}
+        {hasJoined && (
+          <button
+            onClick={enableCamera}
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-green-600 text-white rounded-xl"
+          >
+            Activer caméra & micro
+          </button>
         )}
         {mobileLogs.length > 0 && (
           <div className="fixed bottom-0 left-0 right-0 z-[9999] max-h-48 overflow-auto bg-black/90 text-green-400 text-[10px] font-mono p-2 space-y-1">
