@@ -688,3 +688,59 @@ export async function cleanupOldLogs(daysToKeep: number = 90): Promise<number> {
 
 // Export types for use in other modules
 export { LogType, LogStatus } from "@prisma/client";
+
+
+
+// ========================================
+// Stub functions for backward compatibility
+// ========================================
+
+/**
+ * @deprecated Stub function - not implemented
+ */
+export async function logTransaction(...args: any[]): Promise<void> {
+  console.log('[logTransaction] Not implemented - stub called with:', args.length, 'arguments');
+}
+
+/**
+ * @deprecated Stub function - not implemented
+ */
+export async function getTransactionLogs(...args: any[]): Promise<any> {
+  console.log('[getTransactionLogs] Not implemented - stub called');
+  return { logs: [], total: 0, hasMore: false, limit: 50, offset: 0 };
+}
+
+/**
+ * @deprecated Stub function - not implemented
+ */
+export async function logPayout(...args: any[]): Promise<void> {
+  console.log('[logPayout] Not implemented - stub called with:', args.length, 'arguments');
+}
+
+/**
+ * @deprecated Stub function - not implemented
+ */
+export async function logRefund(...args: any[]): Promise<void> {
+  console.log('[logRefund] Not implemented - stub called with:', args.length, 'arguments');
+}
+
+/**
+ * @deprecated Stub function - not implemented
+ */
+export async function logPayment(...args: any[]): Promise<void> {
+  console.log('[logPayment] Not implemented - stub called with:', args.length, 'arguments');
+}
+
+/**
+ * @deprecated Stub function - not implemented
+ */
+export async function logWebhook(...args: any[]): Promise<void> {
+  console.log('[logWebhook] Not implemented - stub called with:', args.length, 'arguments');
+}
+
+/**
+ * @deprecated Stub function - not implemented
+ */
+export async function logDispute(...args: any[]): Promise<void> {
+  console.log('[logDispute] Not implemented - stub called with:', args.length, 'arguments');
+}

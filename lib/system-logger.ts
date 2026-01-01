@@ -1,4 +1,4 @@
-import { LogLevel, LogActor, Prisma } from "@prisma/client";
+import { LogType, LogStatus, Prisma } from "@prisma/client";
 import prisma from "@/lib/db";
 
 /**
@@ -7,12 +7,11 @@ import prisma from "@/lib/db";
  */
 
 export interface SystemLogData {
-  level: LogLevel;
-  type: string;
-  actor: LogActor;
-  actorId?: string;
+  type: LogType | string;
+  status: LogStatus;
   message: string;
-  metadata?: Record<string, any>;
+  context?: Record<string, any>;
+  error?: string;
 }
 
 /**
@@ -22,12 +21,11 @@ export interface SystemLogData {
 export async function createLog(data: SystemLogData): Promise<void> {
   try {
     const logEntry: Prisma.LogCreateInput = {
-      level: data.level,
-      type: data.type,
-      actor: data.actor,
-      actorId: data.actorId,
+      type: data.type as LogType,
+      status: data.status,
       message: data.message,
-      metadata: data.metadata ? JSON.parse(JSON.stringify(data.metadata)) : undefined,
+      context: data.context ? (data.context as any) : undefined,
+      error: data.error || null,
     };
 
     await prisma.log.create({ data: logEntry });
@@ -35,11 +33,10 @@ export async function createLog(data: SystemLogData): Promise<void> {
     // Also log to console in development
     if (process.env.NODE_ENV === 'development') {
       console.log('[SystemLog]', {
-        level: data.level,
         type: data.type,
-        actor: data.actor,
-        actorId: data.actorId,
+        status: data.status,
         message: data.message,
+        context: data.context,
       });
     }
   } catch (error) {
@@ -50,22 +47,18 @@ export async function createLog(data: SystemLogData): Promise<void> {
 }
 
 /**
- * Log an INFO level event
+ * Log a success event
  */
 export async function logInfo(
   type: string,
-  actor: LogActor,
   message: string,
-  actorId?: string,
-  metadata?: Record<string, any>
+  context?: Record<string, any>
 ): Promise<void> {
   await createLog({
-    level: LogLevel.INFO,
     type,
-    actor,
-    actorId,
+    status: LogStatus.SUCCESS,
     message,
-    metadata,
+    context,
   });
 }
 
@@ -74,18 +67,14 @@ export async function logInfo(
  */
 export async function logWarning(
   type: string,
-  actor: LogActor,
   message: string,
-  actorId?: string,
-  metadata?: Record<string, any>
+  context?: Record<string, any>
 ): Promise<void> {
   await createLog({
-    level: LogLevel.WARNING,
     type,
-    actor,
-    actorId,
+    status: LogStatus.SUCCESS,
     message,
-    metadata,
+    context: { ...context, warning: true },
   });
 }
 
@@ -94,18 +83,17 @@ export async function logWarning(
  */
 export async function logError(
   type: string,
-  actor: LogActor,
   message: string,
-  actorId?: string,
-  metadata?: Record<string, any>
+  error?: Error | string,
+  context?: Record<string, any>
 ): Promise<void> {
+  const errorString = error instanceof Error ? `${error.message}\n\n${error.stack}` : error;
   await createLog({
-    level: LogLevel.ERROR,
     type,
-    actor,
-    actorId,
+    status: LogStatus.ERROR,
     message,
-    metadata,
+    context,
+    error: errorString,
   });
 }
 
@@ -114,18 +102,17 @@ export async function logError(
  */
 export async function logCritical(
   type: string,
-  actor: LogActor,
   message: string,
-  actorId?: string,
-  metadata?: Record<string, any>
+  error?: Error | string,
+  context?: Record<string, any>
 ): Promise<void> {
+  const errorString = error instanceof Error ? `${error.message}\n\n${error.stack}` : error;
   await createLog({
-    level: LogLevel.CRITICAL,
     type,
-    actor,
-    actorId,
-    message,
-    metadata,
+    status: LogStatus.ERROR,
+    message: `CRITICAL: ${message}`,
+    context: { ...context, critical: true },
+    error: errorString,
   });
 }
 
@@ -136,21 +123,20 @@ export async function logAuth(
   action: 'LOGIN' | 'LOGOUT' | 'REGISTER' | 'PASSWORD_RESET' | 'EMAIL_VERIFY',
   userId: string,
   success: boolean,
-  metadata?: Record<string, any>
+  context?: Record<string, any>
 ): Promise<void> {
-  const level = success ? LogLevel.INFO : LogLevel.WARNING;
+  const status = success ? LogStatus.SUCCESS : LogStatus.ERROR;
   const message = success 
     ? `User ${action.toLowerCase()} successful`
     : `User ${action.toLowerCase()} failed`;
 
   await createLog({
-    level,
-    type: `AUTH_${action}`,
-    actor: LogActor.USER,
-    actorId: userId,
+    type: `AUTH_${action}` as LogType,
+    status,
     message,
-    metadata: {
-      ...metadata,
+    context: {
+      ...context,
+      userId,
       success,
     },
   });
@@ -163,14 +149,12 @@ export async function logUserAction(
   action: string,
   userId: string,
   message: string,
-  metadata?: Record<string, any>
+  context?: Record<string, any>
 ): Promise<void> {
   await logInfo(
     `USER_${action}`,
-    LogActor.USER,
     message,
-    userId,
-    metadata
+    { ...context, userId }
   );
 }
 
@@ -181,14 +165,12 @@ export async function logCreatorAction(
   action: string,
   creatorId: string,
   message: string,
-  metadata?: Record<string, any>
+  context?: Record<string, any>
 ): Promise<void> {
   await logInfo(
     `CREATOR_${action}`,
-    LogActor.CREATOR,
     message,
-    creatorId,
-    metadata
+    { ...context, creatorId }
   );
 }
 
@@ -199,16 +181,14 @@ export async function logAdminAction(
   action: string,
   adminId: string,
   message: string,
-  level: LogLevel = LogLevel.INFO,
-  metadata?: Record<string, any>
+  status: LogStatus = LogStatus.SUCCESS,
+  context?: Record<string, any>
 ): Promise<void> {
   await createLog({
-    level,
-    type: `ADMIN_${action}`,
-    actor: LogActor.ADMIN,
-    actorId: adminId,
+    type: `ADMIN_${action}` as LogType,
+    status,
     message,
-    metadata,
+    context: { ...context, adminId },
   });
 }
 
@@ -218,15 +198,14 @@ export async function logAdminAction(
 export async function logSystem(
   action: string,
   message: string,
-  level: LogLevel = LogLevel.INFO,
-  metadata?: Record<string, any>
+  status: LogStatus = LogStatus.SUCCESS,
+  context?: Record<string, any>
 ): Promise<void> {
   await createLog({
-    level,
-    type: `SYSTEM_${action}`,
-    actor: LogActor.SYSTEM,
+    type: `SYSTEM_${action}` as LogType,
+    status,
     message,
-    metadata,
+    context,
   });
 }
 
@@ -238,16 +217,15 @@ export async function logBooking(
   bookingId: string,
   userId: string,
   creatorId: string,
-  metadata?: Record<string, any>
+  context?: Record<string, any>
 ): Promise<void> {
   await logInfo(
-    `BOOKING_${action}`,
-    LogActor.USER,
+    LogType.BOOKING_CREATED,
     `Booking ${action.toLowerCase()}: ${bookingId}`,
-    userId,
     {
-      ...metadata,
+      ...context,
       bookingId,
+      userId,
       creatorId,
     }
   );
@@ -262,20 +240,20 @@ export async function logPaymentEvent(
   userId: string,
   amount: number,
   currency: string,
-  level?: LogLevel,
-  metadata?: Record<string, any>
+  status?: LogStatus,
+  context?: Record<string, any>
 ): Promise<void> {
-  const logLevel = level || (action === 'FAILED' ? LogLevel.ERROR : LogLevel.INFO);
+  const logStatus = status || (action === 'FAILED' ? LogStatus.ERROR : LogStatus.SUCCESS);
+  const logType = action === 'SUCCEEDED' ? LogType.PAYMENT_SUCCESS : LogType.PAYMENT_ERROR;
   
   await createLog({
-    level: logLevel,
-    type: `PAYMENT_${action}`,
-    actor: LogActor.USER,
-    actorId: userId,
+    type: logType,
+    status: logStatus,
     message: `Payment ${action.toLowerCase()}: ${amount} ${currency}`,
-    metadata: {
-      ...metadata,
+    context: {
+      ...context,
       paymentId,
+      userId,
       amount,
       currency,
     },
@@ -291,24 +269,24 @@ export async function logPayoutEvent(
   creatorId: string,
   amount: number,
   currency: string,
-  level?: LogLevel,
-  metadata?: Record<string, any>
+  status?: LogStatus,
+  context?: Record<string, any>
 ): Promise<void> {
-  const logLevel = level || (
+  const logStatus = status || (
     action === 'FAILED' || action === 'REJECTED' 
-      ? LogLevel.ERROR 
-      : LogLevel.INFO
+      ? LogStatus.ERROR 
+      : LogStatus.SUCCESS
   );
+  const logType = action === 'FAILED' ? LogType.PAYOUT_ERROR : LogType.PAYOUT_SUCCESS;
   
   await createLog({
-    level: logLevel,
-    type: `PAYOUT_${action}`,
-    actor: LogActor.CREATOR,
-    actorId: creatorId,
+    type: logType,
+    status: logStatus,
     message: `Payout ${action.toLowerCase()}: ${amount} ${currency}`,
-    metadata: {
-      ...metadata,
+    context: {
+      ...context,
       payoutId,
+      creatorId,
       amount,
       currency,
     },
@@ -322,20 +300,21 @@ export async function logWebhookEvent(
   source: string,
   eventType: string,
   success: boolean,
-  metadata?: Record<string, any>
+  context?: Record<string, any>
 ): Promise<void> {
-  const level = success ? LogLevel.INFO : LogLevel.ERROR;
+  const status = success ? LogStatus.SUCCESS : LogStatus.ERROR;
+  const logType = success ? LogType.STRIPE_WEBHOOK : LogType.STRIPE_WEBHOOK_ERROR;
   const message = success
     ? `Webhook ${source} processed: ${eventType}`
     : `Webhook ${source} failed: ${eventType}`;
 
   await createLog({
-    level,
-    type: `WEBHOOK_${source.toUpperCase()}`,
-    actor: LogActor.SYSTEM,
+    type: logType,
+    status,
     message,
-    metadata: {
-      ...metadata,
+    context: {
+      ...context,
+      source,
       eventType,
       success,
     },
@@ -348,25 +327,21 @@ export async function logWebhookEvent(
 export async function logApiError(
   endpoint: string,
   error: Error | string,
-  actorType: LogActor = LogActor.SYSTEM,
-  actorId?: string,
-  metadata?: Record<string, any>
+  context?: Record<string, any>
 ): Promise<void> {
   const errorMessage = error instanceof Error ? error.message : error;
   const errorStack = error instanceof Error ? error.stack : undefined;
 
   await createLog({
-    level: LogLevel.ERROR,
-    type: 'API_ERROR',
-    actor: actorType,
-    actorId,
+    type: LogType.API_ERROR,
+    status: LogStatus.ERROR,
     message: `API Error at ${endpoint}: ${errorMessage}`,
-    metadata: {
-      ...metadata,
+    context: {
+      ...context,
       endpoint,
       errorMessage,
-      errorStack,
     },
+    error: errorStack,
   });
 }
 
@@ -374,10 +349,8 @@ export async function logApiError(
  * Get system logs with filtering and pagination
  */
 export async function getSystemLogs(filters: {
-  level?: LogLevel;
-  type?: string;
-  actor?: LogActor;
-  actorId?: string;
+  status?: LogStatus;
+  type?: LogType | string;
   startDate?: Date;
   endDate?: Date;
   search?: string;
@@ -387,20 +360,12 @@ export async function getSystemLogs(filters: {
 }) {
   const where: Prisma.LogWhereInput = {};
 
-  if (filters.level) {
-    where.level = filters.level;
+  if (filters.status) {
+    where.status = filters.status;
   }
 
   if (filters.type) {
-    where.type = { contains: filters.type, mode: 'insensitive' };
-  }
-
-  if (filters.actor) {
-    where.actor = filters.actor;
-  }
-
-  if (filters.actorId) {
-    where.actorId = filters.actorId;
+    where.type = filters.type as LogType;
   }
 
   if (filters.startDate || filters.endDate) {
@@ -416,8 +381,6 @@ export async function getSystemLogs(filters: {
   if (filters.search) {
     where.OR = [
       { message: { contains: filters.search, mode: 'insensitive' } },
-      { type: { contains: filters.search, mode: 'insensitive' } },
-      { actorId: { contains: filters.search, mode: 'insensitive' } },
     ];
   }
 
@@ -450,21 +413,12 @@ export async function getSystemLogs(filters: {
 export async function deleteLogsByRetention() {
   const now = new Date();
   
-  // INFO logs: 30 days retention
-  const infoCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const infoDeleted = await prisma.log.deleteMany({
+  // SUCCESS logs: 30 days retention
+  const successCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const successDeleted = await prisma.log.deleteMany({
     where: {
-      level: LogLevel.INFO,
-      createdAt: { lt: infoCutoff },
-    },
-  });
-
-  // WARNING logs: 60 days retention
-  const warningCutoff = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-  const warningDeleted = await prisma.log.deleteMany({
-    where: {
-      level: LogLevel.WARNING,
-      createdAt: { lt: warningCutoff },
+      status: LogStatus.SUCCESS,
+      createdAt: { lt: successCutoff },
     },
   });
 
@@ -472,25 +426,22 @@ export async function deleteLogsByRetention() {
   const errorCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
   const errorDeleted = await prisma.log.deleteMany({
     where: {
-      level: LogLevel.ERROR,
+      status: LogStatus.ERROR,
       createdAt: { lt: errorCutoff },
     },
   });
 
-  // CRITICAL logs: never deleted (unlimited retention)
-
   return {
-    infoDeleted: infoDeleted.count,
-    warningDeleted: warningDeleted.count,
+    successDeleted: successDeleted.count,
     errorDeleted: errorDeleted.count,
-    totalDeleted: infoDeleted.count + warningDeleted.count + errorDeleted.count,
+    totalDeleted: successDeleted.count + errorDeleted.count,
   };
 }
 
 /**
  * Delete logs by date range
  */
-export async function deleteLogsByDateRange(startDate: Date, endDate: Date, level?: LogLevel) {
+export async function deleteLogsByDateRange(startDate: Date, endDate: Date, status?: LogStatus) {
   const where: Prisma.LogWhereInput = {
     createdAt: {
       gte: startDate,
@@ -498,8 +449,8 @@ export async function deleteLogsByDateRange(startDate: Date, endDate: Date, leve
     },
   };
 
-  if (level) {
-    where.level = level;
+  if (status) {
+    where.status = status;
   }
 
   const result = await prisma.log.deleteMany({ where });
@@ -510,29 +461,19 @@ export async function deleteLogsByDateRange(startDate: Date, endDate: Date, leve
  * Delete logs by filters
  */
 export async function deleteLogsByFilters(filters: {
-  level?: LogLevel;
-  type?: string;
-  actor?: LogActor;
-  actorId?: string;
+  status?: LogStatus;
+  type?: LogType | string;
   startDate?: Date;
   endDate?: Date;
 }) {
   const where: Prisma.LogWhereInput = {};
 
-  if (filters.level) {
-    where.level = filters.level;
+  if (filters.status) {
+    where.status = filters.status;
   }
 
   if (filters.type) {
-    where.type = { contains: filters.type, mode: 'insensitive' };
-  }
-
-  if (filters.actor) {
-    where.actor = filters.actor;
-  }
-
-  if (filters.actorId) {
-    where.actorId = filters.actorId;
+    where.type = filters.type as LogType;
   }
 
   if (filters.startDate || filters.endDate) {
@@ -567,39 +508,107 @@ export async function getLogStats(startDate?: Date, endDate?: Date) {
 
   const [
     totalLogs,
-    infoCount,
-    warningCount,
+    successCount,
     errorCount,
-    criticalCount,
-    userCount,
-    creatorCount,
-    adminCount,
-    systemCount,
   ] = await Promise.all([
     prisma.log.count({ where }),
-    prisma.log.count({ where: { ...where, level: LogLevel.INFO } }),
-    prisma.log.count({ where: { ...where, level: LogLevel.WARNING } }),
-    prisma.log.count({ where: { ...where, level: LogLevel.ERROR } }),
-    prisma.log.count({ where: { ...where, level: LogLevel.CRITICAL } }),
-    prisma.log.count({ where: { ...where, actor: LogActor.USER } }),
-    prisma.log.count({ where: { ...where, actor: LogActor.CREATOR } }),
-    prisma.log.count({ where: { ...where, actor: LogActor.ADMIN } }),
-    prisma.log.count({ where: { ...where, actor: LogActor.SYSTEM } }),
+    prisma.log.count({ where: { ...where, status: LogStatus.SUCCESS } }),
+    prisma.log.count({ where: { ...where, status: LogStatus.ERROR } }),
   ]);
 
   return {
     totalLogs,
-    byLevel: {
-      info: infoCount,
-      warning: warningCount,
+    byStatus: {
+      success: successCount,
       error: errorCount,
-      critical: criticalCount,
-    },
-    byActor: {
-      user: userCount,
-      creator: creatorCount,
-      admin: adminCount,
-      system: systemCount,
     },
   };
+}
+
+
+
+// ========================================
+// Backward compatibility types and functions
+// ========================================
+
+/**
+ * LogActor enum for backward compatibility (deprecated)
+ * @deprecated Use context fields instead
+ */
+export enum LogActor {
+  USER = 'USER',
+  CREATOR = 'CREATOR',
+  ADMIN = 'ADMIN',
+  SYSTEM = 'SYSTEM',
+  GUEST = 'GUEST',
+}
+
+/**
+ * Log a system error with actor info (backward compatibility)
+ */
+export async function logSystemError(
+  type: string,
+  actor: any, // Keeping for compatibility, will be ignored
+  message: string,
+  actorId?: string,
+  context?: Record<string, any>
+): Promise<void> {
+  await logError(
+    type,
+    message,
+    undefined,
+    { ...context, actorId, actor: actor?.toString() }
+  );
+}
+
+/**
+ * Overload of logInfo for backward compatibility with 5 arguments
+ */
+export async function logInfoOld(
+  type: string,
+  actor: any,
+  message: string,
+  actorId?: string,
+  context?: Record<string, any>
+): Promise<void> {
+  await logInfo(
+    type,
+    message,
+    { ...context, actorId, actor: actor?.toString() }
+  );
+}
+
+/**
+ * Overload of logError for backward compatibility with 5 arguments
+ */
+export async function logErrorOld(
+  type: string,
+  actor: any,
+  message: string,
+  actorId?: string,
+  context?: Record<string, any>
+): Promise<void> {
+  await logError(
+    type,
+    message,
+    undefined,
+    { ...context, actorId, actor: actor?.toString() }
+  );
+}
+
+/**
+ * Overload of logWarning for backward compatibility with 5 arguments
+ */
+export async function logWarningOld(
+  type: string,
+  actor: any,
+  message: string,
+  actorId?: string,
+  context?: Record<string, any>
+): Promise<void> {
+  await logWarning(
+    type,
+    message,
+    { ...context, actorId, actor: actor?.toString() }
+  );
 }
