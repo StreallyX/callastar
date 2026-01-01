@@ -242,7 +242,10 @@
     "offerNotAvailable": "Cette offre n'est plus disponible. Explorez d'autres opportunités !",
     "viewCreatorProfile": "Voir le profil du créateur",
     "exploreCreators": "Explorer d'autres créateurs",
-    "minutes": "minutes"
+    "minutes": "minutes",
+    "alreadyBooked": "❌ Déjà réservé",
+    "yourBookingBadge": "✅ Votre réservation",
+    "offerBookedExplanation": "Ce créneau horaire a déjà été réservé par un autre utilisateur. Veuillez choisir un autre moment."
   },
   "call": {
     "room": {
@@ -1456,7 +1459,6 @@
         "platformFee": "Frais de plateforme",
         "backToDashboard": "Retour au dashboard",
         "loading": "Chargement des paramètres…"
-
       },
       "testing": {
         "title": "Tests & Outils",
@@ -1764,7 +1766,4 @@
       "required": "Ce champ est requis"
     }
   }
-
-    
-  
 }

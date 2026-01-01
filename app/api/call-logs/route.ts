@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { LogActor, LogLevel } from '@prisma/client';
+import { LogType, LogStatus } from '@prisma/client';
 
 // Événements d'appel enrichis pour tracking complet
 const callLogSchema = z.object({
@@ -104,24 +104,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine log level based on event
-    let level: LogLevel = LogLevel.INFO;
-    if (validatedData.event === 'CALL_ERROR') {
-      level = LogLevel.ERROR;
-    }
+    // Determine log status based on event
+    const status = validatedData.event === 'CALL_ERROR' ? LogStatus.ERROR : LogStatus.SUCCESS;
 
     // Create log entry
     const log = await db.log.create({
       data: {
-        level,
-        type: `CALL_${validatedData.event}`,
-        actor: isCreator ? LogActor.CREATOR : LogActor.USER,
-        actorId: user.userId,
+        type: LogType.CALL_EVENT,
+        status,
         message: validatedData.message || `Call event: ${validatedData.event}`,
-        metadata: {
+        context: {
           bookingId: validatedData.bookingId,
           callId: validatedData.callId || null,
           event: validatedData.event,
+          actor: isCreator ? 'CREATOR' : 'USER',
+          actorId: user.userId,
           userRole: isCreator ? 'CREATOR' : 'USER',
           userName: (user as any).name || 'Unknown',
           timestamp: new Date().toISOString(),
@@ -205,10 +202,8 @@ export async function GET(request: NextRequest) {
     // Get call logs
     const logs = await db.log.findMany({
       where: {
-        type: {
-          startsWith: 'CALL_',
-        },
-        metadata: {
+        type: LogType.CALL_EVENT,
+        context: {
           path: ['bookingId'],
           equals: bookingId,
         },

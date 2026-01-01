@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { stripe } from '@/lib/stripe';
 import { PayoutAction, PayoutStatus } from '@prisma/client';
+import { logCronRun, logCronError } from '@/lib/logger';
+
+// Force dynamic rendering for cron routes (prevents static rendering errors)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/cron/process-automatic-payouts
@@ -9,19 +14,29 @@ import { PayoutAction, PayoutStatus } from '@prisma/client';
  * Should be called by a cron job (e.g., Vercel Cron)
  */
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
   try {
     // Verify cron authorization (using secret token)
     const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET || 'default-cron-secret-change-in-production';
+    const cronSecret = process.env.CRON_SECRET;
+    
+    if (!cronSecret) {
+      console.error('CRON_SECRET not configured in environment variables');
+      return NextResponse.json(
+        { error: 'Cron secret not configured' },
+        { status: 500 }
+      );
+    }
     
     if (authHeader !== `Bearer ${cronSecret}`) {
+      console.error('Invalid cron secret provided');
       return NextResponse.json(
         { error: 'Non autorisé' },
         { status: 401 }
       );
     }
 
-    console.log('Starting automatic payout processing...');
+    console.log('🤖 [CRON] Starting automatic payout processing...');
 
     // Get all creators with automatic payout schedules (DAILY or WEEKLY)
     const creators = await db.creator.findMany({
@@ -247,8 +262,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('Automatic payout processing completed');
-    console.log(`Processed: ${results.processed.length}, Skipped: ${results.skipped.length}, Failed: ${results.failed.length}`);
+    const duration = Date.now() - startTime;
+    const totalProcessed = results.processed.length;
+    console.log(`🤖 [CRON] Automatic payout processing completed in ${duration}ms`);
+    console.log(`📊 [CRON] Summary: Processed: ${totalProcessed}, Skipped: ${results.skipped.length}, Failed: ${results.failed.length}`);
+
+    // ✅ Log successful cron execution with detailed info
+    await logCronRun(
+      'process-automatic-payouts',
+      totalProcessed,
+      duration,
+      {
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date().toISOString(),
+        totalCreators: creators.length,
+        skipped: results.skipped.length,
+        failed: results.failed.length,
+        totalAmount: results.processed.reduce((sum, p) => sum + p.amount, 0),
+        processedDetails: results.processed,
+      }
+    );
 
     return NextResponse.json({
       success: true,
@@ -258,11 +291,26 @@ export async function GET(request: NextRequest) {
         skipped: results.skipped.length,
         failed: results.failed.length,
         totalAmount: results.processed.reduce((sum, p) => sum + p.amount, 0),
+        duration,
+        timestamp: new Date().toISOString(),
       },
       results,
     });
-  } catch (error) {
-    console.error('Error in automatic payout processing:', error);
+  } catch (error: any) {
+    const duration = Date.now() - startTime;
+    console.error('❌ [CRON] Fatal error in automatic payout processing:', error);
+    
+    // ✅ Log cron error with detailed info
+    await logCronError(
+      'process-automatic-payouts',
+      error,
+      {
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date().toISOString(),
+        duration,
+      }
+    );
+    
     return NextResponse.json(
       { 
         error: 'Erreur lors du traitement des paiements automatiques',

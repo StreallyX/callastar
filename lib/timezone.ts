@@ -48,7 +48,7 @@ export function getTimezoneAbbreviation(
  * @returns Formatted date string with timezone
  */
 export function formatDateWithTimezone(
-  date: Date | string,
+  date: Date | string | null | undefined,
   timezone: string,
   options: Intl.DateTimeFormatOptions = {
     weekday: 'long',
@@ -60,7 +60,18 @@ export function formatDateWithTimezone(
   }
 ): string {
   try {
+    // ✅ Handle null/undefined
+    if (!date) {
+      return 'Date non disponible';
+    }
+    
     const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    // ✅ Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.error('Invalid date:', date);
+      return 'Date invalide';
+    }
     
     const formatter = new Intl.DateTimeFormat('fr-FR', {
       ...options,
@@ -72,8 +83,8 @@ export function formatDateWithTimezone(
     
     return `${formattedDate} (${tzAbbr})`;
   } catch (error) {
-    console.error('Error formatting date with timezone:', error);
-    return new Date(date).toLocaleString('fr-FR');
+    console.error('Error formatting date with timezone:', error, 'date:', date);
+    return 'Date invalide';
   }
 }
 
@@ -85,11 +96,22 @@ export function formatDateWithTimezone(
  * @returns Formatted time string with timezone abbreviation
  */
 export function formatTimeWithTimezone(
-  date: Date | string,
+  date: Date | string | null | undefined,
   timezone: string
 ): string {
   try {
+    // ✅ Handle null/undefined
+    if (!date) {
+      return 'Heure non disponible';
+    }
+    
     const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    // ✅ Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      console.error('Invalid date:', date);
+      return 'Heure invalide';
+    }
     
     const formatter = new Intl.DateTimeFormat('fr-FR', {
       hour: '2-digit',
@@ -102,11 +124,8 @@ export function formatTimeWithTimezone(
     
     return `${formattedTime} ${tzAbbr}`;
   } catch (error) {
-    console.error('Error formatting time with timezone:', error);
-    return new Date(date).toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    console.error('Error formatting time with timezone:', error, 'date:', date);
+    return 'Heure invalide';
   }
 }
 
@@ -214,11 +233,22 @@ export function getCommonTimezones(): Array<{ label: string; value: string }> {
  * @returns Object with hours, minutes, and seconds until date
  */
 export function getTimeUntil(
-  date: Date | string,
+  date: Date | string | null | undefined,
   timezone: string
 ): { hours: number; minutes: number; seconds: number; totalSeconds: number } {
+  // ✅ Handle null/undefined
+  if (!date) {
+    return { hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 };
+  }
+  
   const now = new Date();
   const target = typeof date === 'string' ? new Date(date) : date;
+  
+  // ✅ Check if date is valid
+  if (isNaN(target.getTime())) {
+    console.error('Invalid date in getTimeUntil:', date);
+    return { hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 };
+  }
   
   const diff = target.getTime() - now.getTime();
   const totalSeconds = Math.max(0, Math.floor(diff / 1000));
@@ -237,9 +267,14 @@ export function getTimeUntil(
  * @returns Human-readable string (e.g., "Commence dans 15 min", "Commence à 18:30 CET")
  */
 export function formatTimeUntil(
-  date: Date | string,
+  date: Date | string | null | undefined,
   timezone: string
 ): string {
+  // ✅ Handle null/undefined
+  if (!date) {
+    return 'Date non disponible';
+  }
+  
   const { hours, minutes, totalSeconds } = getTimeUntil(date, timezone);
   
   // If less than 1 hour away, show "Commence dans X min"

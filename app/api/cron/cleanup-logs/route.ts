@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteLogsByRetention } from '@/lib/system-logger';
-import { logSystem } from '@/lib/system-logger';
-import { LogLevel } from '@prisma/client';
+import { logCronRun, logCronError } from '@/lib/logger';
+
+// Force dynamic rendering for cron routes (prevents static rendering errors)
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * POST /api/cron/cleanup-logs
@@ -29,6 +32,8 @@ import { LogLevel } from '@prisma/client';
  * }
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     // Security: Verify cron authorization
     // Option 1: Check for Vercel cron secret header
@@ -46,34 +51,29 @@ export async function POST(request: NextRequest) {
     console.log('[Cleanup Logs] Starting automatic log cleanup...');
 
     // Execute retention cleanup
-    const startTime = Date.now();
     const result = await deleteLogsByRetention();
     const duration = Date.now() - startTime;
 
     console.log('[Cleanup Logs] Cleanup completed:', {
-      infoDeleted: result.infoDeleted,
-      warningDeleted: result.warningDeleted,
+      successDeleted: result.successDeleted,
       errorDeleted: result.errorDeleted,
       totalDeleted: result.totalDeleted,
       durationMs: duration,
     });
 
-    // Log the cleanup operation
-    await logSystem(
-      'LOG_CLEANUP',
-      `Automatic log cleanup completed: ${result.totalDeleted} logs deleted`,
-      LogLevel.INFO,
+    // ✅ Log successful cron execution with detailed info
+    await logCronRun(
+      'cleanup-logs',
+      result.totalDeleted,
+      duration,
       {
-        infoDeleted: result.infoDeleted,
-        warningDeleted: result.warningDeleted,
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date().toISOString(),
+        successDeleted: result.successDeleted,
         errorDeleted: result.errorDeleted,
-        totalDeleted: result.totalDeleted,
-        durationMs: duration,
         retentionPolicy: {
-          INFO: '30 days',
-          WARNING: '60 days',
+          SUCCESS: '30 days',
           ERROR: '90 days',
-          CRITICAL: 'Unlimited',
         },
       }
     );
@@ -82,24 +82,24 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Log cleanup completed successfully',
       stats: {
-        infoDeleted: result.infoDeleted,
-        warningDeleted: result.warningDeleted,
+        successDeleted: result.successDeleted,
         errorDeleted: result.errorDeleted,
         totalDeleted: result.totalDeleted,
         durationMs: duration,
       },
     });
   } catch (error) {
+    const duration = Date.now() - startTime;
     console.error('[Cleanup Logs] Error during cleanup:', error);
 
-    // Log the error
-    await logSystem(
-      'LOG_CLEANUP_ERROR',
-      `Log cleanup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      LogLevel.ERROR,
+    // ✅ Log cron error with detailed info
+    await logCronError(
+      'cleanup-logs',
+      error,
       {
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        errorStack: error instanceof Error ? error.stack : undefined,
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date().toISOString(),
+        duration,
       }
     );
 

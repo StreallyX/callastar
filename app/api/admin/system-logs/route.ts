@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyToken } from '@/lib/auth';
 import { getSystemLogs, deleteLogsByDateRange, deleteLogsByFilters } from '@/lib/system-logger';
-import { LogLevel, LogActor } from '@prisma/client';
+import { LogStatus, LogActor } from '@prisma/client';
 
 // Schema validation for query parameters (GET)
 const logsQuerySchema = z.object({
-  level: z.nativeEnum(LogLevel).optional(),
+  level: z.nativeEnum(LogStatus).optional(),
   type: z.string().optional(),
   actor: z.nativeEnum(LogActor).optional(),
   actorId: z.string().optional(),
@@ -24,7 +24,7 @@ const deleteLogsSchema = z.object({
   deleteType: z.enum(['dateRange', 'filters']),
   startDate: z.string().optional(), // ISO date string (required for dateRange)
   endDate: z.string().optional(), // ISO date string (required for dateRange)
-  level: z.nativeEnum(LogLevel).optional(),
+  level: z.nativeEnum(LogStatus).optional(),
   type: z.string().optional(),
   actor: z.nativeEnum(LogActor).optional(),
   actorId: z.string().optional(),

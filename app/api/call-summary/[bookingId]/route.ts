@@ -58,10 +58,8 @@ export async function GET(
     // Get call logs to calculate actual duration
     const logs = await db.log.findMany({
       where: {
-        type: {
-          startsWith: 'CALL_',
-        },
-        metadata: {
+        type: 'CALL_EVENT',
+        context: {
           path: ['bookingId'],
           equals: bookingId,
         },
@@ -90,15 +88,17 @@ export async function GET(
     
     // Parser les logs pour identifier les sessions
     for (const log of logs) {
-      const actorId = log.actorId || 'unknown';
+      const context = log.context as any;
+      const actorId = context?.actorId || 'unknown';
       const logTime = log.createdAt;
+      const event = context?.event;
       
       // Événements de début de session
       if (
-        log.type === 'CALL_CALL_JOIN' || 
-        log.type === 'CALL_SESSION_START' || 
-        log.type === 'CALL_CALL_JOINED' ||
-        log.type === 'CALL_CALL_STARTED'
+        event === 'CALL_JOIN' || 
+        event === 'SESSION_START' || 
+        event === 'CALL_JOINED' ||
+        event === 'CALL_STARTED'
       ) {
         if (!sessionMap.has(actorId)) {
           sessionMap.set(actorId, { start: logTime, actorId });
@@ -110,11 +110,11 @@ export async function GET(
       
       // Événements de fin de session
       if (
-        log.type === 'CALL_CALL_LEAVE' ||
-        log.type === 'CALL_SESSION_END' ||
-        log.type === 'CALL_DISCONNECTION_VOLUNTARY' ||
-        log.type === 'CALL_DISCONNECTION_INVOLUNTARY' ||
-        log.type === 'CALL_CALL_ENDED'
+        event === 'CALL_LEAVE' ||
+        event === 'SESSION_END' ||
+        event === 'DISCONNECTION_VOLUNTARY' ||
+        event === 'DISCONNECTION_INVOLUNTARY' ||
+        event === 'CALL_ENDED'
       ) {
         const sessionStart = sessionMap.get(actorId);
         if (sessionStart) {
@@ -197,13 +197,16 @@ export async function GET(
           actorId: s.actorId,
         })),
       },
-      logs: logs.map(log => ({
-        event: log.type,
-        timestamp: log.createdAt,
-        actor: log.actor,
-        actorId: log.actorId,
-        metadata: log.metadata,
-      })),
+      logs: logs.map(log => {
+        const context = log.context as any;
+        return {
+          event: context?.event || log.type,
+          timestamp: log.createdAt,
+          actor: context?.actor,
+          actorId: context?.actorId,
+          metadata: context,
+        };
+      }),
     };
 
     return NextResponse.json(

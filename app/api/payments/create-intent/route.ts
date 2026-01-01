@@ -6,10 +6,12 @@ import { createPaymentIntent } from '@/lib/stripe'; // ✅ CORRECTION #2: Suppre
 import { getPlatformSettings } from '@/lib/settings';
 import { logPayment } from '@/lib/logger';
 import { logInfo, logError, logPaymentEvent, logApiError } from '@/lib/system-logger';
-import { TransactionEventType, LogActor, LogLevel } from '@prisma/client';
+import { TransactionEventType, LogActor, LogStatus } from '@prisma/client';
 
+// ✅ REFACTORED: Accept callOfferId instead of bookingId
+// The booking will be created ONLY after payment confirmation (webhook)
 const createIntentSchema = z.object({
-  bookingId: z.string().cuid(),
+  callOfferId: z.string().cuid(),
 });
 
 export async function POST(request: NextRequest) {
@@ -40,36 +42,33 @@ export async function POST(request: NextRequest) {
     await logInfo(
       'PAYMENT_INTENT_CREATION_INITIATED',
       LogActor.USER,
-      'Création de payment intent initiée',
+      'Création de payment intent initiée (nouveau flux)',
       user.userId,
       {
-        bookingId: validatedData.bookingId,
+        callOfferId: validatedData.callOfferId,
       }
     );
 
     // Get platform settings
     const settings = await getPlatformSettings();
 
-    // Get booking with creator's Stripe Connect info
-    const booking = await db.booking.findUnique({
-      where: { id: validatedData.bookingId },
+    // ✅ CRITICAL: Check if CallOffer is available BEFORE creating payment intent
+    const callOffer = await db.callOffer.findUnique({
+      where: { id: validatedData.callOfferId },
       include: {
-        callOffer: {
-          include: {
-            creator: {
+        booking: true, // Check if already booked
+        creator: {
+          select: {
+            id: true,
+            userId: true,
+            stripeAccountId: true,
+            isStripeOnboarded: true,
+            currency: true,
+            user: {
               select: {
                 id: true,
-                userId: true,
-                stripeAccountId: true,
-                isStripeOnboarded: true,
-                currency: true, // ✅ NEW: Include creator's currency
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  },
-                },
+                name: true,
+                email: true,
               },
             },
           },
@@ -77,61 +76,80 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!booking) {
+    if (!callOffer) {
       await logError(
-        'PAYMENT_INTENT_BOOKING_NOT_FOUND',
+        'PAYMENT_INTENT_OFFER_NOT_FOUND',
         LogActor.USER,
-        'Tentative de paiement pour une réservation introuvable',
+        'Tentative de paiement pour une offre introuvable',
         user.userId,
-        { bookingId: validatedData.bookingId }
+        { callOfferId: validatedData.callOfferId }
       );
       
       return NextResponse.json(
-        { error: 'Réservation introuvable' },
+        { error: 'Offre introuvable' },
         { status: 404 }
       );
     }
 
-    // Check ownership
-    if (booking.userId !== user.userId) {
+    // ✅ CRITICAL: Verify CallOffer is AVAILABLE (not booked yet)
+    if (callOffer.status !== 'AVAILABLE') {
       await logError(
-        'PAYMENT_INTENT_ACCESS_DENIED',
+        'PAYMENT_INTENT_OFFER_NOT_AVAILABLE',
         LogActor.USER,
-        'Tentative de paiement pour une réservation non possédée',
+        'Tentative de paiement pour une offre déjà réservée',
         user.userId,
         {
-          bookingId: validatedData.bookingId,
-          bookingOwnerId: booking.userId,
+          callOfferId: validatedData.callOfferId,
+          offerStatus: callOffer.status,
         }
       );
       
       return NextResponse.json(
-        { error: 'Accès refusé' },
-        { status: 403 }
+        { error: 'Cette offre n\'est plus disponible' },
+        { status: 400 }
       );
     }
 
-    // Check if already paid
-    if (booking.status === 'CONFIRMED') {
+    // ✅ CRITICAL: Check if booking already exists
+    if (callOffer.booking) {
       await logError(
-        'PAYMENT_INTENT_ALREADY_PAID',
+        'PAYMENT_INTENT_OFFER_ALREADY_BOOKED',
         LogActor.USER,
-        'Tentative de paiement pour une réservation déjà payée',
+        'Tentative de paiement pour une offre déjà réservée (booking exists)',
         user.userId,
         {
-          bookingId: validatedData.bookingId,
-          bookingStatus: booking.status,
+          callOfferId: validatedData.callOfferId,
+          existingBookingId: callOffer.booking.id,
         }
       );
       
       return NextResponse.json(
-        { error: 'Cette réservation est déjà payée' },
+        { error: 'This time slot is already booked. Please choose another time.' },
+        { status: 409 }
+      );
+    }
+
+    // ✅ Check if call is in the future
+    if (new Date(callOffer.dateTime) < new Date()) {
+      await logError(
+        'PAYMENT_INTENT_OFFER_EXPIRED',
+        LogActor.USER,
+        'Tentative de paiement pour une offre expirée',
+        user.userId,
+        {
+          callOfferId: validatedData.callOfferId,
+          dateTime: callOffer.dateTime,
+        }
+      );
+      
+      return NextResponse.json(
+        { error: 'Cette offre est expirée' },
         { status: 400 }
       );
     }
 
     // Calculate fees using platform settings
-    const amount = Number(booking.totalPrice);
+    const amount = Number(callOffer.price);
     const platformFeePercentage = Number(settings.platformFeePercentage);
     const platformFeeFixed = settings.platformFeeFixed ? Number(settings.platformFeeFixed) : 0;
     
@@ -139,84 +157,45 @@ export async function POST(request: NextRequest) {
     const platformFee = (amount * platformFeePercentage / 100) + platformFeeFixed;
     const creatorAmount = amount - platformFee;
 
-    const creator = booking.callOffer.creator;
+    const creator = callOffer.creator;
     const useStripeConnect = creator.isStripeOnboarded && creator.stripeAccountId;
 
     // ✅ NEW: Use creator's currency instead of platform currency
     const creatorCurrency = (creator.currency || 'EUR').toUpperCase();
 
-    // ✅ PHASE 1.1: Create payment intent using Separate Charges and Transfers
-    // No destination charge, transfer will be created in webhook
+    // ✅ REFACTORED: Create payment intent with metadata for booking creation in webhook
     const paymentIntent = await createPaymentIntent({
       amount,
-      currency: creatorCurrency.toLowerCase(), // ✅ Use creator's currency
+      currency: creatorCurrency.toLowerCase(),
       metadata: {
-        bookingId: booking.id,
+        // ✅ CRITICAL: Store all data needed to create booking in webhook
+        callOfferId: callOffer.id,
         userId: user.userId,
-        creatorId: booking.callOffer.creatorId,
-        offerId: booking.callOfferId, // ✅ Required for webhook transfer
+        creatorId: callOffer.creatorId,
         currency: creatorCurrency,
         platformFee: platformFee.toFixed(2),
         creatorAmount: creatorAmount.toFixed(2),
         useStripeConnect: (useStripeConnect ?? false).toString(),
+        totalPrice: amount.toFixed(2),
+        // Flow indicator
+        bookingFlow: 'payment_first', // Indicates new flow
       },
       stripeAccountId: useStripeConnect ? creator.stripeAccountId : null,
-      platformFeePercentage: platformFeePercentage, // ✅ NEW: Pass percentage instead of amount
-    });
-
-    // Update booking with payment intent ID
-    await db.booking.update({
-      where: { id: booking.id },
-      data: {
-        stripePaymentIntentId: paymentIntent.id,
-      },
-    });
-
-    // Create payment record (for tracking)
-    const payment = await db.payment.create({
-      data: {
-        bookingId: booking.id,
-        amount,
-        currency: creatorCurrency, // ✅ NEW: Store currency
-        stripePaymentIntentId: paymentIntent.id,
-        status: 'PENDING',
-        platformFee,
-        creatorAmount,
-        payoutStatus: 'REQUESTED',
-      },
-    });
-
-    // Log payment creation (TransactionLog)
-    await logPayment(TransactionEventType.PAYMENT_CREATED, {
-      paymentId: payment.id,
-      amount,
-      currency: creatorCurrency, // ✅ MODIFIED: Use creator's currency
-      status: 'PENDING',
-      stripePaymentIntentId: paymentIntent.id,
-      metadata: {
-        bookingId: booking.id,
-        userId: user.userId,
-        creatorId: booking.callOffer.creatorId,
-        platformFee,
-        creatorAmount,
-        currency: creatorCurrency, // ✅ NEW: Include currency in metadata
-      },
+      platformFeePercentage: platformFeePercentage,
     });
 
     const processingTime = Date.now() - startTime;
 
-    // Log payment intent creation success (SystemLog)
-    await logPaymentEvent(
-      'INITIATED',
-      payment.id,
+    // ✅ DO NOT create booking or payment record yet - only after payment confirmation
+    // Log payment intent creation success
+    await logInfo(
+      'PAYMENT_INTENT_CREATED_SUCCESS',
+      LogActor.USER,
+      'Payment intent créé avec succès (booking sera créé après paiement)',
       user.userId,
-      amount,
-      creatorCurrency,
-      LogLevel.INFO,
       {
-        paymentId: payment.id,
-        bookingId: booking.id,
-        creatorId: booking.callOffer.creatorId,
+        callOfferId: callOffer.id,
+        creatorId: callOffer.creatorId,
         paymentIntentId: paymentIntent.id,
         amount,
         currency: creatorCurrency,
@@ -224,6 +203,7 @@ export async function POST(request: NextRequest) {
         creatorAmount,
         processingTimeMs: processingTime,
         useStripeConnect: useStripeConnect,
+        flow: 'payment_first',
       }
     );
 
@@ -231,7 +211,7 @@ export async function POST(request: NextRequest) {
       {
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
-        currency: creatorCurrency, // ✅ NEW: Return currency to frontend
+        currency: creatorCurrency,
         amount: amount,
       },
       { status: 200 }
@@ -244,9 +224,9 @@ export async function POST(request: NextRequest) {
     await logApiError(
       '/api/payments/create-intent',
       error instanceof Error ? error : 'Unknown error',
-      LogActor.USER,
-      user?.userId,
       {
+        actor: LogActor.USER,
+        actorId: user?.userId,
         action: 'CREATE_PAYMENT_INTENT',
         errorType: error instanceof z.ZodError ? 'validation' : 'unknown',
         processingTimeMs: Date.now() - startTime,

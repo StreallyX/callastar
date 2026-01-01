@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { sanitizeDecimals } from '@/lib/decimal-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +71,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ bookings }, { status: 200 });
+    // ✅ Convert Decimal to number to avoid React warnings
+    const sanitizedBookings = sanitizeDecimals(bookings);
+
+    return NextResponse.json({ bookings: sanitizedBookings }, { status: 200 });
   } catch (error) {
     console.error('Get creator bookings error:', error);
     return NextResponse.json(

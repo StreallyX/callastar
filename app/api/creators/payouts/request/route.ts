@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { stripe } from '@/lib/stripe';
-import { PayoutAction, PayoutStatus, LogLevel, LogActor } from '@prisma/client';
+import { PayoutAction, PayoutStatus, LogStatus, LogActor } from '@prisma/client';
 import { logPayoutEvent, logError as logSystemError, logInfo } from '@/lib/system-logger';
 
 /**
@@ -549,7 +549,7 @@ export async function POST(request: NextRequest) {
       creator.id,
       Number(amount),
       currency.toUpperCase(),
-      LogLevel.INFO,
+      LogStatus.SUCCESS,
       {
         creatorId: creator.id,
         creatorEmail: creator.user.email,
