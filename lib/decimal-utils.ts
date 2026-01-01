@@ -42,7 +42,7 @@ export function sanitizeDecimals<T>(obj: T): T {
   }
   
   // ✅ Convertir les Decimal en number
-  if (obj instanceof Decimal) {
+  if (Decimal.isDecimal(obj)) {
     return obj.toNumber() as any;
   }
   
