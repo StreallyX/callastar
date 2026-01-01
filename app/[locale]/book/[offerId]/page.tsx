@@ -101,6 +101,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
   const offerId = params.offerId;
   const initBookingRef = useRef(false);
 
+
   // ✅ FIX: Add proper dependency array to prevent infinite loops
   // Only run once when component mounts with offerId
   useEffect(() => {
@@ -200,16 +201,32 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
   // If offer is already booked, show booking details
   if (offer && existingBooking) {
     const isUserBooking = user && existingBooking.userId === user.id;
-    const offerDate = new Date(offer?.dateTime ?? new Date());
-    const formattedDate = offerDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+    const offerDate = new Date(offer.dateTime);
+    
+
+    const creatorTimezone = offer.creator?.timezone || 'UTC';
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const creatorDate = offerDate.toLocaleDateString(locale, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
+      timeZone: creatorTimezone,
     });
-    const formattedTime = offerDate.toLocaleTimeString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+
+    const creatorTime = offerDate.toLocaleTimeString(locale, {
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: creatorTimezone,
+      timeZoneName: 'short',
+    });
+
+    const userTime = offerDate.toLocaleTimeString(locale, {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: userTimezone,
+      timeZoneName: 'short',
     });
 
     return (
@@ -239,13 +256,27 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-purple-600" />
-                    <span className="font-medium">{formattedDate}</span>
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span>{creatorDate}</span>
                   </div>
+
                   <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-purple-600" />
-                    <span className="font-medium">{formattedTime} ({offer?.duration} {t('minutes')})</span>
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span>
+                      {creatorTime}
+                      <span className="ml-1 text-xs text-gray-500">
+                        ({creatorTimezone})
+                      </span>
+                      {' '}– {offer?.duration} {t('minutes')}
+                    </span>
                   </div>
+
+                  {userTimezone !== creatorTimezone && (
+                    <div className="ml-6 text-xs text-gray-500">
+                      🌍 {userTime} ({userTimezone})
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-medium">
                       <CurrencyDisplay 
@@ -338,7 +369,25 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
     );
   }
 
-  const offerDate = new Date(offer?.dateTime ?? new Date());
+  const offerDate = new Date(offer.dateTime);
+
+  const creatorTimezone = offer.creator?.timezone || 'UTC';
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  const creatorTime = offerDate.toLocaleTimeString(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: creatorTimezone,
+    timeZoneName: 'short',
+  });
+
+  const userTime = offerDate.toLocaleTimeString(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: userTimezone,
+    timeZoneName: 'short',
+  });
+
   const formattedDate = offerDate.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -349,6 +398,7 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
     hour: '2-digit',
     minute: '2-digit',
   });
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
@@ -378,7 +428,19 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
 
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="w-4 h-4 text-gray-400" />
-                  <span>{formattedTime} ({offer?.duration} {t('minutes')})</span>
+                    <span>
+                      {creatorTime}
+                      <span className="ml-1 text-xs text-gray-500">
+                        ({creatorTimezone})
+                      </span>
+                      {' '}– {offer?.duration} {t('minutes')}
+                    </span>
+
+                    {userTimezone !== creatorTimezone && (
+                      <div className="ml-6 text-xs text-gray-500">
+                        🌍 {userTime} ({userTimezone})
+                      </div>
+                    )}
                 </div>
               </div>
 

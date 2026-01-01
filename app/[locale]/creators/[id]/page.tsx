@@ -25,37 +25,28 @@ import { getCreatorCurrency } from '@/lib/stripe';
 import { CreatorProfileImage } from '@/components/creator-profile-image';
 import { CreatorBannerImage } from '@/components/creator-banner-image';
 import { getTranslations } from 'next-intl/server';
+import { LocalTime } from '@/components/local-time';
 
 async function getCreator(id: string) {
-  const creator = await db.creator.findUnique({
+  return db.creator.findUnique({
     where: { id },
     include: {
-      user: {
-        select: { id: true, name: true, email: true },
-      },
+      user: { select: { id: true, name: true, email: true } },
       callOffers: {
-        where: {
-          dateTime: { gte: new Date() },
-        },
+        where: { dateTime: { gte: new Date() } },
         orderBy: { dateTime: 'asc' },
         take: 10,
       },
     },
   });
-
-  return creator;
 }
 
 async function getCreatorReviews(id: string) {
   const reviews = await db.review.findMany({
     where: {
-      booking: {
-        callOffer: { creatorId: id },
-      },
+      booking: { callOffer: { creatorId: id } },
     },
-    include: {
-      user: { select: { name: true } },
-    },
+    include: { user: { select: { name: true } } },
     orderBy: { createdAt: 'desc' },
     take: 10,
   });
@@ -88,6 +79,7 @@ export default async function CreatorProfilePage({
 
   const creatorCurrency = await getCreatorCurrency(id);
   const offers = creator.callOffers ?? [];
+  const creatorTimezone = creator.timezone || 'UTC';
 
   const socialLinks =
     creator.socialLinks as Record<string, string> | null;
@@ -148,51 +140,6 @@ export default async function CreatorProfilePage({
                   {creator.bio ?? t('noBio')}
                 </p>
 
-                {socialLinks && (
-                  <div className="flex flex-wrap gap-3 mb-4">
-                    {socialLinks.instagram && (
-                      <a
-                        href={socialLinks.instagram}
-                        target="_blank"
-                        className="social-pill instagram"
-                      >
-                        <Instagram className="w-4 h-4" />
-                        Instagram
-                      </a>
-                    )}
-                    {socialLinks.twitter && (
-                      <a
-                        href={socialLinks.twitter}
-                        target="_blank"
-                        className="social-pill twitter"
-                      >
-                        <Twitter className="w-4 h-4" />
-                        Twitter
-                      </a>
-                    )}
-                    {socialLinks.youtube && (
-                      <a
-                        href={socialLinks.youtube}
-                        target="_blank"
-                        className="social-pill youtube"
-                      >
-                        <Youtube className="w-4 h-4" />
-                        YouTube
-                      </a>
-                    )}
-                    {socialLinks.other && (
-                      <a
-                        href={socialLinks.other}
-                        target="_blank"
-                        className="social-pill other"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        {t('other')}
-                      </a>
-                    )}
-                  </div>
-                )}
-
                 <Badge className="bg-gradient-to-r from-purple-600 to-pink-600">
                   {offers.length} {t('offersAvailable')}
                 </Badge>
@@ -212,69 +159,54 @@ export default async function CreatorProfilePage({
             const date = new Date(offer.dateTime);
 
             return (
-              <Card
-                key={offer.id}
-                className={`relative transition-shadow hover:shadow-lg ${
-                  isBooked ? 'opacity-70' : ''
-                }`}
-              >
-                {isBooked && (
-                  <Badge className="absolute top-4 right-4 bg-gray-600">
-                    {t('alreadyBooked')}
-                  </Badge>
-                )}
-
+              <Card key={offer.id}>
                 <CardHeader>
                   <h3 className="text-xl font-semibold">
                     {offer.title}
                   </h3>
                 </CardHeader>
 
-                <CardContent className="space-y-3">
-                  <p className="text-gray-600 text-sm">
-                    {offer.description}
-                  </p>
+                <CardContent className="space-y-2 text-sm text-gray-600">
+                  <div className="flex gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {date.toLocaleDateString(locale, {
+                      timeZone: creatorTimezone,
+                    })}
+                  </div>
 
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex gap-2">
-                      <Calendar className="w-4 h-4" />
-                      {date.toLocaleDateString(locale)}
-                    </div>
+                  <div className="flex gap-2">
+                    <Clock className="w-4 h-4" />
+                    {date.toLocaleTimeString(locale, {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      timeZone: creatorTimezone,
+                    })}{' '}
+                    ({creatorTimezone})
+                  </div>
 
-                    <div className="flex gap-2">
-                      <Clock className="w-4 h-4" />
-                      {date.toLocaleTimeString(locale, {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}{' '}
-                      – {offer.duration} {t('minutes')}
-                    </div>
+                  {/* 👇 Heure locale visiteur */}
+                  <LocalTime
+                    utcDate={offer.dateTime.toISOString()}
+                    locale={locale}
+                    creatorTimezone={creatorTimezone}
+                  />
 
-                    <div className="flex gap-2 font-semibold text-purple-600">
-                      <DollarSign className="w-4 h-4" />
-                      <CurrencyDisplay
-                        amount={Number(offer.price)}
-                        currency={creatorCurrency}
-                      />
-                    </div>
+                  <div className="flex gap-2 font-semibold text-purple-600">
+                    <CurrencyDisplay
+                      amount={Number(offer.price)}
+                      currency={creatorCurrency}
+                    />
                   </div>
                 </CardContent>
 
                 <CardFooter>
                   {isBooked ? (
-                    <Button
-                      variant="secondary"
-                      className="w-full"
-                      disabled
-                    >
+                    <Button disabled className="w-full">
                       ⛔ {t('alreadyBooked')}
                     </Button>
                   ) : (
-                    <Link
-                      href={`/book/${offer.id}`}
-                      className="w-full"
-                    >
-                      <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                    <Link href={`/book/${offer.id}`} className="w-full">
+                      <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600">
                         {t('reserve')}
                       </Button>
                     </Link>
@@ -284,54 +216,6 @@ export default async function CreatorProfilePage({
             );
           })}
         </div>
-
-        {/* REVIEWS */}
-        {totalReviews > 0 && (
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">
-              {t('reviews')}
-            </h2>
-
-            <div className="grid gap-4">
-              {reviews.slice(0, 6).map((review) => (
-                <Card key={review.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex justify-between mb-2">
-                      <div>
-                        <p className="font-semibold">
-                          {review.user?.name ?? t('anonymous')}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(
-                            review.createdAt
-                          ).toLocaleDateString(locale)}
-                        </p>
-                      </div>
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className={`w-4 h-4 ${
-                              s <= review.rating
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {review.comment && (
-                      <p className="text-gray-600 text-sm">
-                        {review.comment}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
