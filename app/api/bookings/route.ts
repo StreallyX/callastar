@@ -4,6 +4,7 @@ import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { logBooking, logApiError } from '@/lib/system-logger';
 import { LogActor } from '@prisma/client';
+import { sanitizeDecimals } from '@/lib/decimal-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ bookings }, { status: 200 });
+    // ✅ Convert Decimal to number to avoid React warnings
+    const sanitizedBookings = sanitizeDecimals(bookings);
+
+    return NextResponse.json({ bookings: sanitizedBookings }, { status: 200 });
   } catch (error) {
     console.error('Get bookings error:', error);
     return NextResponse.json(

@@ -492,6 +492,12 @@ export async function POST(request: NextRequest) {
  */
 async function processWebhookEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
+    case 'payment_intent.created':
+      // ✅ Payment intent created - this is informational only
+      // The actual booking will be created when payment succeeds
+      console.log('[Webhook] Payment intent created - waiting for payment confirmation');
+      break;
+
     case 'payment_intent.succeeded':
       await handlePaymentIntentSucceeded(event);
       break;

@@ -101,12 +101,15 @@ export default function BookOfferPage({ params }: { params: { offerId: string; l
   const offerId = params.offerId;
   const initBookingRef = useRef(false);
 
+  // ✅ FIX: Add proper dependency array to prevent infinite loops
+  // Only run once when component mounts with offerId
   useEffect(() => {
     if (offerId && !initBookingRef.current) {
       initBookingRef.current = true;
       initBooking();
     }
-  }, [offerId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - run only once on mount
 
   // ✅ REFACTORED: New payment-first flow
   // No booking is created until payment succeeds (prevents slot blocking without payment)

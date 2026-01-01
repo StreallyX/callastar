@@ -4,6 +4,7 @@ import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { logCreatorAction, logBooking, logApiError } from '@/lib/system-logger';
 import { LogActor } from '@prisma/client';
+import { sanitizeDecimals } from '@/lib/decimal-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,7 +61,10 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ callOffer }, { status: 200 });
+    // ✅ Convert Decimal to number to avoid React warnings
+    const sanitizedCallOffer = sanitizeDecimals(callOffer);
+
+    return NextResponse.json({ callOffer: sanitizedCallOffer }, { status: 200 });
   } catch (error) {
     console.error('Get call offer error:', error);
 
@@ -241,8 +245,11 @@ export async function PUT(
       }
     }
 
+    // ✅ Convert Decimal to number to avoid React warnings
+    const sanitizedUpdated = sanitizeDecimals(updated);
+
     return NextResponse.json(
-      { callOffer: updated },
+      { callOffer: sanitizedUpdated },
       { status: 200 }
     );
   } catch (error) {

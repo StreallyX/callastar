@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { sanitizeDecimals } from '@/lib/decimal-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,9 +74,12 @@ export async function GET(request: NextRequest) {
 
     const total = await db.callOffer.count({ where });
 
+    // ✅ Convert Decimal to number to avoid React warnings
+    const sanitizedCallOffers = sanitizeDecimals(callOffers);
+
     return NextResponse.json(
       {
-        callOffers,
+        callOffers: sanitizedCallOffers,
         pagination: {
           page,
           limit,
@@ -155,8 +159,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // ✅ Convert Decimal to number to avoid React warnings
+    const sanitizedCallOffer = sanitizeDecimals(callOffer);
+
     return NextResponse.json(
-      { callOffer },
+      { callOffer: sanitizedCallOffer },
       { status: 201 }
     );
   } catch (error) {

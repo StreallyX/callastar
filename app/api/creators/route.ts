@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { sanitizeDecimals } from '@/lib/decimal-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,9 +41,12 @@ export async function GET(request: NextRequest) {
     // Get total count
     const total = await db.creator.count();
 
+    // ✅ Convert Decimal to number to avoid React warnings
+    const sanitizedCreators = sanitizeDecimals(creators);
+
     return NextResponse.json(
       {
-        creators,
+        creators: sanitizedCreators,
         pagination: {
           page,
           limit,
