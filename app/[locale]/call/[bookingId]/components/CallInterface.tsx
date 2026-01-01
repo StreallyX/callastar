@@ -47,6 +47,16 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
   const joinInProgressRef = useRef(false);
   const [fatalError, setFatalError] = useState<string | null>(null);
   const isConnecting = connectionState === 'connecting';
+  const [mobileLogs, setMobileLogs] = useState<string[]>([]);
+
+  const mobileLog = useCallback((...args: any[]) => {
+    const msg = args
+      .map(a => (typeof a === 'string' ? a : JSON.stringify(a)))
+      .join(' ');
+    setMobileLogs(prev => [...prev.slice(-50), `[${new Date().toLocaleTimeString()}] ${msg}`]);
+    console.log('[MOBILE]', ...args);
+  }, []);
+
 
   const callStartTs = useMemo(() => {
     const ts = new Date(booking?.callOffer?.dateTime).getTime();
@@ -253,13 +263,16 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
     [bookingId, callId, toast, t, triggerFatalError]
   );
 
+
   const handleJoinCall = useCallback(async () => {
+  mobileLog('JOIN_CLICKED');
+
   if (!callContainerRef.current) return;
   if (callFrameRef.current) return;
   if (joinInProgressRef.current) return;
+  setConnectionState('connecting');
 
   try {
-    setConnectionState('connecting');
     joinInProgressRef.current = true;
 
     const frame = DailyIframe.createFrame(callContainerRef.current, {
@@ -287,16 +300,42 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
         },
       },
     });
+    mobileLog('DAILY_FRAME_CREATED');
+
 
     callFrameRef.current = frame;
 
     frame
-      .on('joined-meeting', handleJoinedMeeting)
-      .on('participant-joined', handleParticipantJoined)
-      .on('participant-left', handleParticipantLeft)
-      .on('left-meeting', handleLeftMeeting)
-      .on('error', handleCallError)
-      .on('network-connection', handleNetworkConnection);
+      .on('joined-meeting', (e:any) => {
+        mobileLog('EVENT joined-meeting');
+        handleJoinedMeeting(e);
+      })
+      .on('participant-joined', (e:any) => {
+        mobileLog('EVENT participant-joined', e?.participant?.user_id);
+        handleParticipantJoined(e);
+      })
+      .on('participant-left', (e:any) => {
+        mobileLog('EVENT participant-left', e?.participant?.user_id);
+        handleParticipantLeft(e);
+      })
+      .on('left-meeting', () => {
+        mobileLog('EVENT left-meeting');
+        handleLeftMeeting();
+      })
+      .on('network-connection', (e:any) => {
+        mobileLog('EVENT network', e);
+        handleNetworkConnection(e);
+      })
+      .on('error', (e:any) => {
+        mobileLog('EVENT error', e);
+        handleCallError(e);
+      });
+    mobileLog('JOIN_REQUEST', { roomUrl });
+    mobileLog('JOIN_PARAMS', {
+      hasToken: !!token,
+      tokenLength: token?.length,
+      roomUrl,
+    });
 
     await frame.join({
       url: roomUrl,
@@ -304,6 +343,8 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
       startVideoOff: false,
       startAudioOff: false,
     });
+    mobileLog('JOIN_SUCCESS');
+
 
     if (!hasLoggedJoinRef.current) {
       await logCallEvent(bookingId, 'CALL_JOIN', {
@@ -315,6 +356,7 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
 
   } catch (err) {
     console.error('[CallInterface] join failed', err);
+    mobileLog('JOIN_FAILED', err);
     triggerFatalError('join-failed');
   } finally {
     joinInProgressRef.current = false;
@@ -451,28 +493,27 @@ useEffect(() => {
         </div>
 
         <div className="absolute top-[calc(env(safe-area-inset-top)+6px)] left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-  <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-mono shadow-md">
-    <Clock className="w-3 h-3 opacity-80" />
+          <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-mono shadow-md">
+            <Clock className="w-3 h-3 opacity-80" />
 
-    {isTooEarly && (
-      <span>{formatTime(countdownToAccessSec)}</span>
-    )}
+            {isTooEarly && (
+              <span>{formatTime(countdownToAccessSec)}</span>
+            )}
 
-    {isWithinEarlyAccess && (
-      <span>{formatTime(countdownToStartSec)}</span>
-    )}
+            {isWithinEarlyAccess && (
+              <span>{formatTime(countdownToStartSec)}</span>
+            )}
 
-    {hasOfficiallyStarted && (
-      <>
-        <span>{formatTime(elapsedTime)}</span>
-        {!booking?.isTestBooking && (
-          <span className="opacity-70"> / {formatTime(timeRemaining)}</span>
-        )}
-      </>
-    )}
-  </div>
-</div>
-
+            {hasOfficiallyStarted && (
+              <>
+                <span>{formatTime(elapsedTime)}</span>
+                {!booking?.isTestBooking && (
+                  <span className="opacity-70"> / {formatTime(timeRemaining)}</span>
+                )}
+              </>
+            )}
+          </div>
+        </div>
 
         {hasJoined && canShowNetworkError && (
           <div className="absolute top-32 left-1/2 -translate-x-1/2" style={{ zIndex: 20 }}>
@@ -511,6 +552,13 @@ useEffect(() => {
                 ? t('joining')
                 : t('joinCall')}
             </button>
+          </div>
+        )}
+        {mobileLogs.length > 0 && (
+          <div className="fixed bottom-0 left-0 right-0 z-[9999] max-h-48 overflow-auto bg-black/90 text-green-400 text-[10px] font-mono p-2 space-y-1">
+            {mobileLogs.map((l, i) => (
+              <div key={i}>{l}</div>
+            ))}
           </div>
         )}
         {fatalError && (
