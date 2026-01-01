@@ -148,14 +148,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate fees using platform settings
-    const amount = Number(callOffer.price);
-    const platformFeePercentage = Number(settings.platformFeePercentage);
-    const platformFeeFixed = settings.platformFeeFixed ? Number(settings.platformFeeFixed) : 0;
-    
-    // Calculate platform fee: percentage + fixed fee (if any)
-    const platformFee = (amount * platformFeePercentage / 100) + platformFeeFixed;
-    const creatorAmount = amount - platformFee;
+    // ✅ Calculate fees using platform settings with validation
+    const { 
+      safeToNumber, 
+      validatePositiveAmount,
+      calculatePlatformFee,
+      calculateCreatorAmount,
+      logPriceCalculation 
+    } = await import('@/lib/price-validation');
+
+    let amount: number;
+    let platformFeePercentage: number;
+    let platformFeeFixed: number;
+    let platformFee: number;
+    let creatorAmount: number;
+
+    try {
+      // Convert and validate all price values
+      amount = safeToNumber(callOffer.price, 'callOffer.price');
+      platformFeePercentage = safeToNumber(settings.platformFeePercentage, 'settings.platformFeePercentage');
+      platformFeeFixed = settings.platformFeeFixed ? safeToNumber(settings.platformFeeFixed, 'settings.platformFeeFixed') : 0;
+      
+      validatePositiveAmount(amount, 'amount');
+      
+      // Calculate fees safely
+      platformFee = calculatePlatformFee(amount, platformFeePercentage, platformFeeFixed);
+      creatorAmount = calculateCreatorAmount(amount, platformFee);
+
+      // Log for debugging
+      logPriceCalculation('create-intent', {
+        callOfferId: callOffer.id,
+        rawPrice: callOffer.price,
+        amount,
+        platformFeePercentage,
+        platformFeeFixed,
+        platformFee,
+        creatorAmount,
+      });
+    } catch (validationError) {
+      console.error('[create-intent] Price validation error:', validationError);
+      
+      await logError(
+        'PAYMENT_INTENT_PRICE_VALIDATION_ERROR',
+        LogActor.USER,
+        'Erreur de validation des prix',
+        user.userId,
+        {
+          callOfferId: callOffer.id,
+          rawPrice: callOffer.price,
+          platformFeePercentage: settings.platformFeePercentage,
+          platformFeeFixed: settings.platformFeeFixed,
+          error: validationError instanceof Error ? validationError.message : String(validationError),
+        }
+      );
+      
+      return NextResponse.json(
+        { error: 'Erreur de calcul du prix. Veuillez réessayer.' },
+        { status: 500 }
+      );
+    }
 
     const creator = callOffer.creator;
     const useStripeConnect = creator.isStripeOnboarded && creator.stripeAccountId;

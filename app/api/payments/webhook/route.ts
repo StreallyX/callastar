@@ -588,17 +588,57 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     // ✅ NEW FLOW: Create booking from Payment Intent metadata
     console.log('[Webhook] New flow detected - creating booking from payment confirmation');
     
+    // ✅ CRITICAL FIX: Import validation utilities
+    const { 
+      safeToNumber, 
+      validatePositiveAmount,
+      logPriceCalculation 
+    } = await import('@/lib/price-validation');
+
     const callOfferId = metadata?.callOfferId;
     const userId = metadata?.userId;
     const creatorId = metadata?.creatorId;
-    const totalPrice = metadata?.totalPrice;
-    const platformFee = metadata?.platformFee;
-    const creatorAmount = metadata?.creatorAmount;
     const currency = metadata?.currency || 'EUR';
 
-    if (!callOfferId || !userId || !totalPrice) {
+    // ✅ CRITICAL FIX: Validate metadata exists
+    if (!callOfferId || !userId || !metadata?.totalPrice) {
       console.error('[Webhook] Missing required metadata for booking creation:', metadata);
       throw new Error('MISSING_METADATA');
+    }
+
+    // ✅ CRITICAL FIX: Safely convert Stripe metadata (always strings) to numbers
+    let totalPrice: number;
+    let platformFee: number;
+    let creatorAmount: number;
+
+    try {
+      // Stripe metadata are ALWAYS strings, so we must convert them safely
+      totalPrice = safeToNumber(metadata.totalPrice, 'metadata.totalPrice');
+      platformFee = safeToNumber(metadata.platformFee || '0', 'metadata.platformFee');
+      creatorAmount = safeToNumber(metadata.creatorAmount || '0', 'metadata.creatorAmount');
+
+      // Validate amounts
+      validatePositiveAmount(totalPrice, 'totalPrice');
+
+      // Log for debugging
+      logPriceCalculation('webhook-new-flow', {
+        paymentIntentId: paymentIntent.id,
+        callOfferId,
+        rawMetadata: {
+          totalPrice: metadata.totalPrice,
+          platformFee: metadata.platformFee,
+          creatorAmount: metadata.creatorAmount,
+        },
+        converted: {
+          totalPrice,
+          platformFee,
+          creatorAmount,
+        },
+      });
+    } catch (validationError) {
+      console.error('[Webhook] Price validation error in new flow:', validationError);
+      console.error('[Webhook] Raw metadata:', metadata);
+      throw new Error(`PRICE_VALIDATION_ERROR: ${validationError instanceof Error ? validationError.message : String(validationError)}`);
     }
 
     // ✅ CRITICAL: Create booking with atomic transaction (prevents race conditions)
@@ -647,7 +687,7 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
           data: {
             userId: userId,
             callOfferId: callOfferId,
-            totalPrice: Number(totalPrice),
+            totalPrice: totalPrice, // ✅ Already validated as number
             status: 'PENDING', // Will be updated to CONFIRMED below
             stripePaymentIntentId: paymentIntent.id,
           },
@@ -719,7 +759,7 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     // ✅ Continue with Daily room creation, payment record, emails, etc.
     const paymentDate = new Date();
     const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
-    const amount = Number(totalPrice);
+    const amount = totalPrice; // ✅ Already validated as number
 
     // Create Daily.co room
     const roomName = `call-${booking.id}`;
@@ -771,8 +811,8 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
         currency,
         stripePaymentIntentId: paymentIntent.id,
         status: 'SUCCEEDED',
-        platformFee: Number(platformFee),
-        creatorAmount: Number(creatorAmount),
+        platformFee: platformFee, // ✅ Already validated as number
+        creatorAmount: creatorAmount, // ✅ Already validated as number
         payoutStatus: 'REQUESTED',
         payoutReleaseDate,
       },
@@ -865,7 +905,7 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
         link: `/dashboard/creator`,
       });
 
-      const creatorEmailHtml = generateCreatorNotificationEmail(booking, Number(creatorAmount), payoutReleaseDate, currency);
+      const creatorEmailHtml = generateCreatorNotificationEmail(booking, creatorAmount, payoutReleaseDate, currency);
       await sendEmail({
         to: booking.callOffer.creator.user.email,
         subject: '🎉 Nouvelle réservation - Call a Star',
@@ -880,6 +920,12 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
 
   // ✅ LEGACY FLOW: Handle old flow where booking was created before payment
   console.log('[Webhook] Legacy flow detected - booking should already exist');
+  
+  // ✅ CRITICAL FIX: Import validation utilities for legacy flow too
+  const { 
+    safeToNumber, 
+    logPriceCalculation 
+  } = await import('@/lib/price-validation');
   
   const bookingId = metadata?.bookingId;
 
@@ -913,11 +959,38 @@ async function handlePaymentIntentSucceeded(event: Stripe.Event): Promise<void> 
     return;
   }
 
-  // ✅ Declare variables before usage
-  const amount = Number(booking.totalPrice);
-  const platformFee = Number(metadata?.platformFee || 0);
-  const creatorAmount = Number(metadata?.creatorAmount || 0);
+  // ✅ CRITICAL FIX: Safely convert amounts (both Decimal from DB and string from metadata)
+  let amount: number;
+  let platformFee: number;
+  let creatorAmount: number;
   const currency = metadata?.currency || booking.callOffer.creator.currency || 'EUR';
+
+  try {
+    amount = safeToNumber(booking.totalPrice, 'booking.totalPrice');
+    platformFee = safeToNumber(metadata?.platformFee || '0', 'metadata.platformFee');
+    creatorAmount = safeToNumber(metadata?.creatorAmount || '0', 'metadata.creatorAmount');
+
+    // Log for debugging
+    logPriceCalculation('webhook-legacy-flow', {
+      paymentIntentId: paymentIntent.id,
+      bookingId,
+      rawValues: {
+        totalPrice: booking.totalPrice,
+        platformFee: metadata?.platformFee,
+        creatorAmount: metadata?.creatorAmount,
+      },
+      converted: {
+        amount,
+        platformFee,
+        creatorAmount,
+      },
+    });
+  } catch (validationError) {
+    console.error('[Webhook] Price validation error in legacy flow:', validationError);
+    console.error('[Webhook] Raw booking.totalPrice:', booking.totalPrice);
+    console.error('[Webhook] Raw metadata:', metadata);
+    throw new Error(`PRICE_VALIDATION_ERROR: ${validationError instanceof Error ? validationError.message : String(validationError)}`);
+  }
   
   const paymentDate = new Date();
   const payoutReleaseDate = calculatePayoutReleaseDate(paymentDate);
@@ -1215,9 +1288,12 @@ async function handleChargeRefunded(event: Stripe.Event): Promise<void> {
       });
     }
 
-    // Update payment refundedAmount
-    const newRefundedAmount = Number(payment.refundedAmount) + refundAmount;
-    const isFullyRefunded = newRefundedAmount >= Number(payment.amount);
+    // ✅ Update payment refundedAmount with safe conversion
+    const { safeToNumber: safeToNumberRefund } = await import('@/lib/price-validation');
+    const currentRefundedAmount = safeToNumberRefund(payment.refundedAmount || 0, 'payment.refundedAmount');
+    const paymentAmount = safeToNumberRefund(payment.amount, 'payment.amount');
+    const newRefundedAmount = currentRefundedAmount + refundAmount;
+    const isFullyRefunded = newRefundedAmount >= paymentAmount;
 
     await prisma.payment.update({
       where: { id: payment.id },
@@ -1538,9 +1614,13 @@ async function handleDisputeClosed(event: Stripe.Event): Promise<void> {
     let reversalId: string | undefined;
 
     if (existingDispute.payment.transferId) {
+      // ✅ Safely convert creatorDebt to cents
+      const { safeToNumber: safeToNumberDispute } = await import('@/lib/price-validation');
+      const creatorDebtAmount = safeToNumberDispute(existingDispute.creatorDebt, 'existingDispute.creatorDebt');
+      
       const reversalResult = await attemptTransferReversal(
         existingDispute.payment.transferId,
-        Math.round(Number(existingDispute.creatorDebt) * 100) // Convert to cents
+        Math.round(creatorDebtAmount * 100) // Convert to cents
       );
 
       if (reversalResult.success) {
