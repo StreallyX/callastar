@@ -144,7 +144,7 @@ export function WaitingRoom({ booking, onJoinCall, onTestMedia }: WaitingRoomPro
                   onClick={handleTestMedia}
                   disabled={isTestingMedia}
                   variant="outline"
-                  className="w-full"
+                  className="w-full hover:scale-105 transition-transform shadow-sm"
                 >
                   {isTestingMedia ? (
                     <>
@@ -180,13 +180,13 @@ export function WaitingRoom({ booking, onJoinCall, onTestMedia }: WaitingRoomPro
               <Button 
                 onClick={() => router.push('/dashboard/user')} 
                 variant="outline" 
-                className="flex-1"
+                className="flex-1 hover:scale-105 transition-transform shadow-sm"
               >
                 {t('backToDashboard')}
               </Button>
               <Button 
                 onClick={onJoinCall} 
-                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-transform shadow-lg"
               >
                 <Video className="w-4 h-4 mr-2" />
                 {t('joinCall')}

@@ -356,11 +356,11 @@ export function CallInterface({
     <div className="h-screen bg-gray-900 flex flex-col">
       {/* Call container - Full screen */}
       <div className="flex-1 relative">
-        <div ref={callContainerRef} className="w-full h-full" />
+        <div ref={callContainerRef} className="w-full h-full" style={{ zIndex: 1 }} />
         
-        {/* Top bar overlay */}
-        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-4 z-10">
-          <div className="flex items-center justify-between">
+        {/* Top bar overlay - IMPORTANT: z-index élevé pour être au-dessus de l'iframe */}
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-4 pointer-events-none" style={{ zIndex: 50 }}>
+          <div className="flex items-center justify-between pointer-events-auto">
             {/* Call ID */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full">
@@ -384,8 +384,8 @@ export function CallInterface({
           </div>
         </div>
         
-        {/* Timer overlay */}
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-6 py-3 rounded-full z-10">
+        {/* Timer overlay - IMPORTANT: z-index élevé */}
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-6 py-3 rounded-full pointer-events-none" style={{ zIndex: 50 }}>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
@@ -404,10 +404,10 @@ export function CallInterface({
           </div>
         </div>
         
-        {/* Connection status alert */}
+        {/* Connection status alert - IMPORTANT: z-index élevé */}
         {connectionState !== 'connected' && (
-          <div className="absolute top-32 left-1/2 transform -translate-x-1/2 z-10">
-            <Alert className="bg-orange-500 text-white border-orange-600">
+          <div className="absolute top-32 left-1/2 transform -translate-x-1/2 pointer-events-none" style={{ zIndex: 50 }}>
+            <Alert className="bg-orange-500 text-white border-orange-600 pointer-events-auto">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 {isReconnecting ? t('reconnecting') : t('connectionLost')}
@@ -417,8 +417,8 @@ export function CallInterface({
         )}
       </div>
 
-      {/* Controls bar */}
-      <div className="bg-gray-900 p-4 sm:p-6 border-t border-gray-800">
+      {/* Controls bar - IMPORTANT: z-index élevé pour être cliquable */}
+      <div className="bg-gray-900 p-4 sm:p-6 border-t border-gray-800 relative" style={{ zIndex: 100 }}>
         <div className="container mx-auto max-w-4xl">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Media controls */}
@@ -427,7 +427,7 @@ export function CallInterface({
                 onClick={toggleCamera}
                 variant={isCameraOn ? "default" : "destructive"}
                 size="lg"
-                className="rounded-full w-12 h-12 sm:w-14 sm:h-14"
+                className="rounded-full w-12 h-12 sm:w-14 sm:h-14 shadow-lg hover:scale-105 transition-transform"
                 title={isCameraOn ? t('disableCamera') : t('enableCamera')}
               >
                 {isCameraOn ? <Video className="w-5 h-5 sm:w-6 sm:h-6" /> : <VideoOff className="w-5 h-5 sm:w-6 sm:h-6" />}
@@ -437,34 +437,40 @@ export function CallInterface({
                 onClick={toggleMic}
                 variant={isMicOn ? "default" : "destructive"}
                 size="lg"
-                className="rounded-full w-12 h-12 sm:w-14 sm:h-14"
+                className="rounded-full w-12 h-12 sm:w-14 sm:h-14 shadow-lg hover:scale-105 transition-transform"
                 title={isMicOn ? t('disableMic') : t('enableMic')}
               >
                 {isMicOn ? <Mic className="w-5 h-5 sm:w-6 sm:h-6" /> : <MicOff className="w-5 h-5 sm:w-6 sm:h-6" />}
               </Button>
             </div>
             
-            {/* Center - End call button */}
+            {/* Center - End call button - IMPORTANT: Bouton de sortie bien visible et cliquable */}
             <Button
               onClick={() => endCall('user-action')}
               variant="destructive"
               size="lg"
-              className="rounded-full px-4 sm:px-8 h-12 sm:h-14 font-semibold flex items-center gap-2"
+              className="rounded-full px-4 sm:px-8 h-12 sm:h-14 font-semibold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform bg-red-600 hover:bg-red-700"
             >
               <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="hidden sm:inline">{t('leaveCall')}</span>
+              <span className="sm:hidden">Quitter</span>
             </Button>
             
-            {/* Right - Fullscreen */}
-            <Button
-              onClick={toggleFullscreen}
-              variant="outline"
-              size="lg"
-              className="rounded-full w-12 h-12 sm:w-14 sm:h-14 bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
-              title={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
-            >
-              {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6" />}
-            </Button>
+            {/* Right - Fullscreen with text */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={toggleFullscreen}
+                variant="outline"
+                size="lg"
+                className="rounded-full px-3 sm:px-4 h-12 sm:h-14 bg-gray-800 border-gray-700 text-white hover:bg-gray-700 shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
+                title={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
+              >
+                {isFullscreen ? <Minimize className="w-5 h-5 sm:w-6 sm:h-6" /> : <Maximize className="w-5 h-5 sm:w-6 sm:h-6" />}
+                <span className="hidden lg:inline text-sm">
+                  {isFullscreen ? 'Réduire' : 'Plein écran'}
+                </span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

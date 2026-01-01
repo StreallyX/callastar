@@ -41,10 +41,17 @@ export function CountdownTimer({ targetDateTime, onCountdownComplete }: Countdow
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     
+    // Format plus explicite en français
+    const parts = [];
     if (hours > 0) {
-      return `${hours}h ${mins}m ${secs}s`;
+      parts.push(`${hours} heure${hours > 1 ? 's' : ''}`);
     }
-    return `${mins}m ${secs}s`;
+    if (mins > 0 || hours > 0) {
+      parts.push(`${mins} minute${mins > 1 ? 's' : ''}`);
+    }
+    parts.push(`${secs} seconde${secs > 1 ? 's' : ''}`);
+    
+    return parts.join(' et ');
   };
 
   const getStatusColor = () => {
@@ -55,23 +62,23 @@ export function CountdownTimer({ targetDateTime, onCountdownComplete }: Countdow
 
   const getStatusText = () => {
     if (isCallTime) return t('canStartNow');
-    return `${t('startsIn')} ${formatCountdown(timeUntilCall)}`;
+    return `L'appel commence dans ${formatCountdown(timeUntilCall)}`;
   };
 
   return (
-    <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+    <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 shadow-md hover:shadow-lg transition-shadow">
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Clock className="w-5 h-5" />
+          <Clock className="w-5 h-5 text-purple-600" />
           {t('callStatusTitle')}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className={`text-lg font-bold ${getStatusColor()}`}>
+        <p className={`text-lg font-bold ${getStatusColor()} leading-relaxed`}>
           {getStatusText()}
         </p>
         {isCallTime && (
-          <p className="text-sm text-green-600 mt-2 font-medium">
+          <p className="text-sm text-green-600 mt-2 font-medium animate-pulse">
             {t('youCanJoinNow')}
           </p>
         )}
