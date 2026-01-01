@@ -46,6 +46,7 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
   const cleanupDoneRef = useRef(false);
   const joinInProgressRef = useRef(false);
   const [fatalError, setFatalError] = useState<string | null>(null);
+  const isConnecting = connectionState === 'connecting';
 
   const callStartTs = useMemo(() => {
     const ts = new Date(booking?.callOffer?.dateTime).getTime();
@@ -62,8 +63,8 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
   const isTooEarly = nowTs < accessOpenTs;
   const isWithinEarlyAccess = nowTs >= accessOpenTs && nowTs < callStartTs;
   const hasOfficiallyStarted = nowTs >= callStartTs;
+  const canJoin = !isTooEarly && !hasJoined && !isConnecting;
   const canShowNetworkError = hasOfficiallyStarted && (connectionState === 'disconnected' || connectionState === 'reconnecting');
-
 
   const countdownToStartSec = Math.max(0, Math.floor((callStartTs - nowTs) / 1000));
   const countdownToAccessSec = Math.max(0, Math.floor((accessOpenTs - nowTs) / 1000));
@@ -95,37 +96,6 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
       participants: event?.participants ? Object.keys(event.participants).length : 1,
     });
   }, [bookingId, callId]);
-
-
-  const handleParticipantJoined = useCallback(
-    async (event?: any) => {
-      await logCallEvent(bookingId, 'PARTICIPANT_JOINED', {
-        callId: callId || undefined,
-        participantId: event?.participant?.user_id,
-      });
-
-      toast({
-        title: t('participantJoined'),
-        description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantJoinedDesc')}`,
-      });
-    },
-    [bookingId, callId, toast, t]
-  );
-
-  const handleParticipantLeft = useCallback(
-    async (event?: any) => {
-      await logCallEvent(bookingId, 'PARTICIPANT_LEFT', {
-        callId: callId || undefined,
-        participantId: event?.participant?.user_id,
-      });
-
-      toast({
-        title: t('participantLeft'),
-        description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantLeftDesc')}`,
-      });
-    },
-    [bookingId, callId, toast, t]
-  );
 
   const safeCleanup = useCallback(async (reason: string) => {
     if (cleanupDoneRef.current) return;
@@ -166,6 +136,76 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
     }
   }, []);
 
+  const handleLeftMeeting = useCallback(async () => {
+    const duration = hasOfficiallyStarted
+      ? elapsedTime
+      : Math.floor((Date.now() - startTime.getTime()) / 1000);
+
+    await logCallEvent(bookingId, 'SESSION_END', { callId: callId || undefined, duration });
+    await logCallEvent(bookingId, 'CALL_LEAVE', { callId: callId || undefined, duration });
+
+    await safeCleanup('left-meeting');
+    onCallEnd();
+  }, [
+    bookingId,
+    callId,
+    elapsedTime,
+    hasOfficiallyStarted,
+    onCallEnd,
+    startTime,
+    safeCleanup
+  ]);
+
+  const handleNetworkConnection = useCallback(
+    async (event?: any) => {
+      const status = event?.action || event?.type || event?.state;
+      if (!status) return;
+
+      if (status === 'disconnected') {
+        setConnectionState('reconnecting');
+        setIsReconnecting(true);
+
+        toast({
+          title: t('connectionLost'),
+          description: t('connectionLostDesc'),
+          variant: 'destructive',
+        });
+
+        // 👉 si tu considères ça comme bloquant
+        triggerFatalError('network-disconnected');
+      } else if (status === 'connected') {
+        setConnectionState('connected');
+        setIsReconnecting(false);
+
+        await logCallEvent(bookingId, 'CALL_RECONNECT', {
+          callId: callId || undefined,
+          reason: 'network-reconnected',
+        });
+
+        toast({ title: t('reconnected'), description: t('reconnectedDesc') });
+      }
+
+    },
+    [bookingId, callId, toast, t]
+  );
+
+  const handleParticipantJoined = useCallback(
+    async (event?: any) => {
+      await logCallEvent(bookingId, 'PARTICIPANT_JOINED', {
+        callId: callId || undefined,
+        participantId: event?.participant?.user_id,
+      });
+
+      toast({
+        title: t('participantJoined'),
+        description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantJoinedDesc')}`,
+      });
+    },
+    [bookingId, callId, toast, t]
+  );
+
+  
+
   const triggerFatalError = useCallback((reason: string) => {
     console.warn('[CallInterface] Fatal call error:', reason);
     setFatalError(reason);
@@ -173,6 +213,138 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
     // Optionnel : on nettoie immédiatement Daily
     safeCleanup('fatal-error');
   }, [safeCleanup]);
+
+  const handleParticipantLeft = useCallback(
+    async (event?: any) => {
+      await logCallEvent(bookingId, 'PARTICIPANT_LEFT', {
+        callId: callId || undefined,
+        participantId: event?.participant?.user_id,
+      });
+
+      toast({
+        title: t('participantLeft'),
+        description: `${event?.participant?.user_name || t('aParticipant')} ${t('participantLeftDesc')}`,
+      });
+    },
+    [bookingId, callId, toast, t]
+  );
+
+  const handleCallError = useCallback(
+    async (event?: any) => {
+      setConnectionState('disconnected');
+
+      const errorMsg =
+        event?.errorMsg || event?.error || t('unknownError');
+
+      await logCallEvent(bookingId, 'CALL_ERROR', {
+        callId: callId || undefined,
+        error: errorMsg,
+      });
+
+      toast({
+        variant: 'destructive',
+        title: t('callErrorDuring'),
+        description: errorMsg,
+      });
+
+      // ✅ déclenche l’overlay Refresh
+      triggerFatalError('call-error');
+    },
+    [bookingId, callId, toast, t, triggerFatalError]
+  );
+
+  const handleJoinCall = useCallback(async () => {
+  if (!callContainerRef.current) return;
+  if (callFrameRef.current) return;
+  if (joinInProgressRef.current) return;
+
+  try {
+    setConnectionState('connecting');
+    joinInProgressRef.current = true;
+
+    const frame = DailyIframe.createFrame(callContainerRef.current, {
+      iframeStyle: {
+        width: '100%',
+        height: '100%',
+        border: '0',
+        position: 'absolute',
+        inset: '0',
+      },
+      showLeaveButton: true,
+      showFullscreenButton: true,
+      theme: {
+        colors: {
+          accent: '#9333ea',
+          accentText: '#ffffff',
+          background: '#1f2937',
+          backgroundAccent: '#374151',
+          baseText: '#ffffff',
+          border: '#4b5563',
+          mainAreaBg: '#111827',
+          mainAreaBgAccent: '#1f2937',
+          mainAreaText: '#ffffff',
+          supportiveText: '#9ca3af',
+        },
+      },
+    });
+
+    callFrameRef.current = frame;
+
+    frame
+      .on('joined-meeting', handleJoinedMeeting)
+      .on('participant-joined', handleParticipantJoined)
+      .on('participant-left', handleParticipantLeft)
+      .on('left-meeting', handleLeftMeeting)
+      .on('error', handleCallError)
+      .on('network-connection', handleNetworkConnection);
+
+    await frame.join({
+      url: roomUrl,
+      token,
+      startVideoOff: false,
+      startAudioOff: false,
+    });
+
+    if (!hasLoggedJoinRef.current) {
+      await logCallEvent(bookingId, 'CALL_JOIN', {
+        callId: callId ?? undefined,
+        roomUrl,
+      });
+      hasLoggedJoinRef.current = true;
+    }
+
+  } catch (err) {
+    console.error('[CallInterface] join failed', err);
+    triggerFatalError('join-failed');
+  } finally {
+    joinInProgressRef.current = false;
+  }
+}, [
+  roomUrl,
+  token,
+  bookingId,
+  callId,
+  handleJoinedMeeting,
+  handleParticipantJoined,
+  handleParticipantLeft,
+  handleLeftMeeting,
+  handleCallError,
+  handleNetworkConnection,
+]);
+
+useEffect(() => {
+  const setVH = () => {
+    document.documentElement.style.setProperty(
+      '--vh',
+      `${window.innerHeight * 0.01}px`
+    );
+  };
+
+  setVH();
+  window.addEventListener('resize', setVH);
+  return () => window.removeEventListener('resize', setVH);
+}, []);
+
 
   const forceEndCall = useCallback(async (reason: string) => {
     if (hasAutoEndedRef.current) return;
@@ -221,199 +393,6 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
     forceEndCall,
   ]);
 
-  const handleLeftMeeting = useCallback(async () => {
-    const duration = hasOfficiallyStarted
-      ? elapsedTime
-      : Math.floor((Date.now() - startTime.getTime()) / 1000);
-
-    await logCallEvent(bookingId, 'SESSION_END', { callId: callId || undefined, duration });
-    await logCallEvent(bookingId, 'CALL_LEAVE', { callId: callId || undefined, duration });
-
-    await safeCleanup('left-meeting');
-    onCallEnd();
-  }, [
-    bookingId,
-    callId,
-    elapsedTime,
-    hasOfficiallyStarted,
-    onCallEnd,
-    startTime,
-    safeCleanup
-  ]);
-
-
-
-  const handleCallError = useCallback(
-    async (event?: any) => {
-      setConnectionState('disconnected');
-
-      const errorMsg =
-        event?.errorMsg || event?.error || t('unknownError');
-
-      await logCallEvent(bookingId, 'CALL_ERROR', {
-        callId: callId || undefined,
-        error: errorMsg,
-      });
-
-      toast({
-        variant: 'destructive',
-        title: t('callErrorDuring'),
-        description: errorMsg,
-      });
-
-      // ✅ déclenche l’overlay Refresh
-      triggerFatalError('call-error');
-    },
-    [bookingId, callId, toast, t, triggerFatalError]
-  );
-
-
-  const handleNetworkConnection = useCallback(
-    async (event?: any) => {
-      const status = event?.action || event?.type || event?.state;
-      if (!status) return;
-
-      if (status === 'disconnected') {
-        setConnectionState('reconnecting');
-        setIsReconnecting(true);
-
-        toast({
-          title: t('connectionLost'),
-          description: t('connectionLostDesc'),
-          variant: 'destructive',
-        });
-
-        // 👉 si tu considères ça comme bloquant
-        triggerFatalError('network-disconnected');
-      } else if (status === 'connected') {
-        setConnectionState('connected');
-        setIsReconnecting(false);
-
-        await logCallEvent(bookingId, 'CALL_RECONNECT', {
-          callId: callId || undefined,
-          reason: 'network-reconnected',
-        });
-
-        toast({ title: t('reconnected'), description: t('reconnectedDesc') });
-      }
-
-    },
-    [bookingId, callId, toast, t]
-  );
-
-  useEffect(() => {
-    if (isTooEarly) return;
-    if (!callContainerRef.current) return;
-    if (!roomUrl) return;
-    if (!token) return;
-    if (hasStartedRef.current) return;
-    hasStartedRef.current = true;
-
-    let cancelled = false;
-
-    const start = async () => {
-      try {
-        setConnectionState('connecting');
-
-        if (callFrameRef.current) {
-          console.warn('[CallInterface] Daily frame already exists, skipping create');
-          return;
-        }
-
-        const frame = DailyIframe.createFrame(callContainerRef.current!, {
-          iframeStyle: {
-            width: '100%',
-            height: '100%',
-            border: '0',
-            borderRadius: '12px',
-          },
-          showLeaveButton: true,
-          showFullscreenButton: true,
-          theme: {
-            colors: {
-              accent: '#9333ea',
-              accentText: '#ffffff',
-              background: '#1f2937',
-              backgroundAccent: '#374151',
-              baseText: '#ffffff',
-              border: '#4b5563',
-              mainAreaBg: '#111827',
-              mainAreaBgAccent: '#1f2937',
-              mainAreaText: '#ffffff',
-              supportiveText: '#9ca3af',
-            },
-          },
-        });
-
-        callFrameRef.current = frame;
-
-        frame
-          .on('joined-meeting', handleJoinedMeeting)
-          .on('participant-joined', handleParticipantJoined)
-          .on('participant-left', handleParticipantLeft)
-          .on('left-meeting', handleLeftMeeting)
-          .on('error', handleCallError)
-          .on('network-connection', handleNetworkConnection);
-
-        joinInProgressRef.current = true;
-
-        await frame.join({
-          url: roomUrl,
-          token,
-          startVideoOff: false,
-          startAudioOff: false,
-        });
-
-        joinInProgressRef.current = false;
-
-
-        if (!cancelled && !hasLoggedJoinRef.current) {
-          await logCallEvent(bookingId, 'CALL_JOIN', { callId: callId || undefined, roomUrl });
-          hasLoggedJoinRef.current = true;
-        }
-      } catch (err: any) {
-        if (cancelled) return;
-        joinInProgressRef.current = false;
-
-        setConnectionState('disconnected');
-
-        toast({
-          variant: 'destructive',
-          title: t('error'),
-          description: err?.message ?? t('callError'),
-        });
-
-        await logCallEvent(bookingId, 'CALL_ERROR', {
-          error: err?.message,
-          stage: 'auto-join',
-        });
-
-        // ✅ affiche le bouton Refresh
-        triggerFatalError('join-failed');
-      }
-    };
-
-    start();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    isTooEarly,
-    roomUrl,
-    token,
-    bookingId,
-    callId,
-    toast,
-    t,
-    handleJoinedMeeting,
-    handleParticipantJoined,
-    handleParticipantLeft,
-    handleLeftMeeting,
-    handleCallError,
-    handleNetworkConnection,
-  ]);
-
   useEffect(() => {
     return () => {
       if (joinInProgressRef.current) {
@@ -429,12 +408,23 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
   }, [safeCleanup]);
 
   return (
-    <div className="h-[100svh] bg-gray-900 flex flex-col">
+    <div
+      className="bg-gray-900 flex flex-col"
+      style={{ height: '100dvh' }}
+    >
       <div className="flex-1 relative overflow-hidden">
-        <div ref={callContainerRef} className="w-full h-full" style={{ zIndex: 1 }} />
+        <div
+          ref={callContainerRef}
+          className="w-full h-full"
+          style={{
+            zIndex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        />
 
         <div
-          className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-10 pointer-events-none"
+          className="absolute top-[env(safe-area-inset-top)] left-0 right-0 bg-gradient-to-b from-black/80 to-transparent p-10 pointer-events-none"
           style={{ zIndex: 50 }}
         >
           <div className="mt-5 flex items-center justify-between pointer-events-none">
@@ -460,40 +450,29 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
           </div>
         </div>
 
-        <div
-          className="absolute top-20 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-5 py-2.5 rounded-full pointer-events-none"
-          style={{ zIndex: 50 }}
-        >
-          <div className="flex items-center gap-3">
-            <Clock className="w-4 h-4" />
+        <div className="absolute top-[calc(env(safe-area-inset-top)+6px)] left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+  <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-mono shadow-md">
+    <Clock className="w-3 h-3 opacity-80" />
 
-            {isTooEarly && (
-              <span className="text-sm">
-                {t('accessOpensIn')} <span className="font-mono">{formatTime(countdownToAccessSec)}</span>
-              </span>
-            )}
+    {isTooEarly && (
+      <span>{formatTime(countdownToAccessSec)}</span>
+    )}
 
-            {isWithinEarlyAccess && (
-              <span className="text-sm">
-                {t('callStartsIn')} <span className="font-mono">{formatTime(countdownToStartSec)}</span>
-              </span>
-            )}
+    {isWithinEarlyAccess && (
+      <span>{formatTime(countdownToStartSec)}</span>
+    )}
 
-            {hasOfficiallyStarted && (
-              <>
-                <span className="font-mono text-base">{formatTime(elapsedTime)}</span>
+    {hasOfficiallyStarted && (
+      <>
+        <span>{formatTime(elapsedTime)}</span>
+        {!booking?.isTestBooking && (
+          <span className="opacity-70"> / {formatTime(timeRemaining)}</span>
+        )}
+      </>
+    )}
+  </div>
+</div>
 
-                {!booking?.isTestBooking ? (
-                  <span className="text-sm text-gray-300 border-l border-gray-500 pl-3">
-                    {t('timeRemaining')}: <span className="font-mono">{formatTime(timeRemaining)}</span>
-                  </span>
-                ) : (
-                  <span className="text-xs text-blue-300 border-l border-gray-500 pl-3">{t('noTimeLimit')}</span>
-                )}
-              </>
-            )}
-          </div>
-        </div>
 
         {hasJoined && canShowNetworkError && (
           <div className="absolute top-32 left-1/2 -translate-x-1/2" style={{ zIndex: 20 }}>
@@ -519,6 +498,19 @@ export function CallInterface({ booking, bookingId, roomUrl, token, onCallEnd, s
                 </div>
               </div>
             </div>
+          </div>
+        )}
+        {canJoin && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70">
+            <button
+              onClick={handleJoinCall}
+              disabled={isConnecting}
+              className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white text-lg font-semibold transition"
+            >
+              {isConnecting
+                ? t('joining')
+                : t('joinCall')}
+            </button>
           </div>
         )}
         {fatalError && (
