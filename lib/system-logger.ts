@@ -48,53 +48,110 @@ export async function createLog(data: SystemLogData): Promise<void> {
 
 /**
  * Log a success event
+ * Supports both old (5 args) and new (3 args) signatures
  */
 export async function logInfo(
   type: string,
-  message: string,
-  context?: Record<string, any>
+  messageOrActor: string | any,
+  messageOrContext?: string | Record<string, any>,
+  actorIdOrUndefined?: string,
+  contextOrUndefined?: Record<string, any>
 ): Promise<void> {
-  await createLog({
-    type,
-    status: LogStatus.SUCCESS,
-    message,
-    context,
-  });
+  // Detect which signature is being used
+  if (typeof messageOrActor === 'string' && typeof messageOrContext !== 'string') {
+    // New signature: (type, message, context)
+    await createLog({
+      type,
+      status: LogStatus.SUCCESS,
+      message: messageOrActor,
+      context: messageOrContext as Record<string, any>,
+    });
+  } else {
+    // Old signature: (type, actor, message, actorId, context)
+    await createLog({
+      type,
+      status: LogStatus.SUCCESS,
+      message: messageOrContext as string,
+      context: {
+        ...contextOrUndefined,
+        actor: messageOrActor?.toString(),
+        actorId: actorIdOrUndefined,
+      },
+    });
+  }
 }
 
 /**
  * Log a WARNING level event
+ * Supports both old (5 args) and new (3 args) signatures
  */
 export async function logWarning(
   type: string,
-  message: string,
-  context?: Record<string, any>
+  messageOrActor: string | any,
+  messageOrContext?: string | Record<string, any>,
+  actorIdOrUndefined?: string,
+  contextOrUndefined?: Record<string, any>
 ): Promise<void> {
-  await createLog({
-    type,
-    status: LogStatus.SUCCESS,
-    message,
-    context: { ...context, warning: true },
-  });
+  // Detect which signature is being used
+  if (typeof messageOrActor === 'string' && typeof messageOrContext !== 'string') {
+    // New signature: (type, message, context)
+    await createLog({
+      type,
+      status: LogStatus.SUCCESS,
+      message: messageOrActor,
+      context: { ...messageOrContext as Record<string, any>, warning: true },
+    });
+  } else {
+    // Old signature: (type, actor, message, actorId, context)
+    await createLog({
+      type,
+      status: LogStatus.SUCCESS,
+      message: messageOrContext as string,
+      context: {
+        ...contextOrUndefined,
+        actor: messageOrActor?.toString(),
+        actorId: actorIdOrUndefined,
+        warning: true,
+      },
+    });
+  }
 }
 
 /**
  * Log an ERROR level event
+ * Supports both old (5 args) and new (4 args) signatures
  */
 export async function logError(
   type: string,
-  message: string,
-  error?: Error | string,
-  context?: Record<string, any>
+  messageOrActor: string | any,
+  errorOrMessage?: Error | string,
+  contextOrActorId?: Record<string, any> | string,
+  finalContext?: Record<string, any>
 ): Promise<void> {
-  const errorString = error instanceof Error ? `${error.message}\n\n${error.stack}` : error;
-  await createLog({
-    type,
-    status: LogStatus.ERROR,
-    message,
-    context,
-    error: errorString,
-  });
+  // Detect which signature is being used
+  if (typeof messageOrActor === 'string' && (errorOrMessage instanceof Error || typeof errorOrMessage === 'string' || errorOrMessage === undefined)) {
+    // New signature: (type, message, error?, context?)
+    const errorString = errorOrMessage instanceof Error ? `${errorOrMessage.message}\n\n${errorOrMessage.stack}` : errorOrMessage;
+    await createLog({
+      type,
+      status: LogStatus.ERROR,
+      message: messageOrActor,
+      context: contextOrActorId as Record<string, any>,
+      error: errorString,
+    });
+  } else {
+    // Old signature: (type, actor, message, actorId, context)
+    await createLog({
+      type,
+      status: LogStatus.ERROR,
+      message: errorOrMessage as string,
+      context: {
+        ...finalContext,
+        actor: messageOrActor?.toString(),
+        actorId: contextOrActorId as string,
+      },
+    });
+  }
 }
 
 /**

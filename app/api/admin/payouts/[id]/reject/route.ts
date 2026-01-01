@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { logPayout } from '@/lib/logger';
-import { TransactionEventType, PayoutStatus, LogLevel, LogActor } from '@prisma/client';
+import { TransactionEventType, PayoutStatus, LogStatus, LogActor } from '@prisma/client';
 import { createNotification } from '@/lib/notifications';
 import { sendEmail } from '@/lib/email';
 import { logAdminAction, logPayoutEvent, logError as logSystemError } from '@/lib/system-logger';
@@ -76,7 +76,7 @@ export async function POST(
       'PAYOUT_REJECTION_INITIATED',
       jwtUser.userId,
       `Rejet de payout initiée par l'administrateur`,
-      LogLevel.INFO,
+      LogStatus.SUCCESS,
       {
         payoutId: payoutId,
         adminId: jwtUser.userId,
@@ -161,7 +161,7 @@ export async function POST(
       payout.creatorId,
       payoutAmountEur,
       stripeCurrency,
-      LogLevel.WARNING,
+      LogStatus.SUCCESS,
       {
         payoutId: payout.id,
         adminId: jwtUser.userId,
@@ -271,7 +271,7 @@ export async function POST(
       'PAYOUT_REJECTION_SUCCESS',
       jwtUser.userId,
       `Payout rejeté avec succès par l'administrateur`,
-      LogLevel.INFO,
+      LogStatus.SUCCESS,
       {
         payoutId: payout.id,
         adminId: jwtUser.userId,

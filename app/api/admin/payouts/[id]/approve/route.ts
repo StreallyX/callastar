@@ -3,7 +3,7 @@ import { getUserFromRequest } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { createConnectPayout } from '@/lib/stripe';
 import { logPayout } from '@/lib/logger';
-import { TransactionEventType, PayoutStatus, LogLevel, LogActor } from '@prisma/client';
+import { TransactionEventType, PayoutStatus, LogStatus, LogActor } from '@prisma/client';
 import { createNotification } from '@/lib/notifications';
 import { sendEmail } from '@/lib/email';
 import { logAdminAction, logPayoutEvent, logError as logSystemError, logInfo } from '@/lib/system-logger';
@@ -55,7 +55,7 @@ export async function POST(
       'PAYOUT_APPROVAL_INITIATED',
       jwtUser.userId,
       `Approbation de payout initiée par l'administrateur`,
-      LogLevel.INFO,
+      LogStatus.SUCCESS,
       {
         payoutId: payoutId,
         adminId: jwtUser.userId,
@@ -153,7 +153,7 @@ export async function POST(
       'PAYOUT_APPROVAL_VALIDATED',
       jwtUser.userId,
       `Payout validé et prêt pour approbation`,
-      LogLevel.INFO,
+      LogStatus.SUCCESS,
       {
         payoutId: payout.id,
         adminId: jwtUser.userId,
@@ -182,7 +182,7 @@ export async function POST(
       payout.creatorId,
       payoutAmountEur,
       stripeCurrency,
-      LogLevel.INFO,
+      LogStatus.SUCCESS,
       {
         payoutId: payout.id,
         adminId: jwtUser.userId,

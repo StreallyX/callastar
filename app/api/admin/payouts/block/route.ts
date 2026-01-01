@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { logAdminAction, logError, logApiError, logWarning } from '@/lib/system-logger';
-import { PayoutAction, LogLevel, LogActor } from '@prisma/client';
+import { PayoutAction, LogStatus, LogActor } from '@prisma/client';
 
 /**
  * POST /api/admin/payouts/block
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       'PAYOUT_BLOCK_INITIATED',
       jwtUser.userId,
       'Blocage de payout initié par administrateur',
-      LogLevel.INFO,
+      LogStatus.SUCCESS,
       {
         adminId: jwtUser.userId,
         adminEmail: jwtUser.email,
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
       'CREATOR_PAYOUT_BLOCKED',
       jwtUser.userId,
       `Payouts bloqués avec succès pour le créateur ${creator.user.name || creator.user.email}`,
-      LogLevel.WARNING,
+      LogStatus.SUCCESS,
       {
         creatorId,
         creatorName: creator.user.name,
