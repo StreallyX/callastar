@@ -1034,6 +1034,54 @@
         }
       },
       "payouts": {
+        "balance": {
+          "available": {
+            "title": "Solde disponible",
+            "help": "Montant pouvant être versé immédiatement"
+          },
+          "pending": {
+            "title": "Solde en attente",
+            "help": "Paiements en cours de validation"
+          },
+          "inTransit": {
+            "title": "En cours de virement",
+            "help": "Montant déjà envoyé vers votre banque"
+          },
+          "lifetime": {
+            "title": "Total cumulé",
+            "help": "Volume total généré depuis la création du compte"
+          }
+        },
+
+        "info": {
+          "title": "Informations importantes",
+
+          "auto": {
+            "daily": {
+              "title": "Quotidien",
+              "body": "Les virements sont envoyés chaque jour automatiquement."
+            },
+            "weekly": {
+              "title": "Hebdomadaire",
+              "body": "Les virements sont envoyés une fois par semaine."
+            },
+            "manual": {
+              "title": "Manuel",
+              "body": "Les virements doivent être déclenchés manuellement."
+            }
+          },
+
+          "processing": {
+            "title": "Délais de traitement",
+            "body": "Les virements peuvent prendre plusieurs jours ouvrés selon votre banque."
+          },
+
+          "bank": {
+            "title": "Gestion bancaire",
+            "bodyStart": "Vous pouvez consulter plus de détails depuis votre",
+            "stripeDashboard": "tableau de bord Stripe"
+          }
+        },
         "title": "Paiements et virements",
         "subtitle": "Gérez vos virements et historique",
         "noPayouts": "Aucun payout demandé",
@@ -1072,7 +1120,6 @@
           "completeLink": "Complétez votre configuration",
           "requiredInfoCount": "Informations requises : {count}"
         },
-        "balance": "Solde disponible",
         "currencyAlert": {
           "title": "Devise du compte Stripe :",
           "body": "Votre compte Stripe est configuré en {stripeCurrency}. Les montants sont affichés dans votre devise Stripe. Les virements seront effectués dans cette devise. (Base de calcul : EUR)"
@@ -1178,33 +1225,6 @@
             "failed": "Échoué",
             "processing": "En cours",
             "unknown": "Inconnu"
-          }
-        },
-        "info": {
-          "title": "Comment fonctionnent les virements ?",
-          "auto": {
-            "title": "Virements automatiques :",
-            "daily": {
-              "title": "Quotidien :",
-              "body": "Virement automatique chaque jour si le solde disponible atteint le minimum configuré"
-            },
-            "weekly": {
-              "title": "Hebdomadaire :",
-              "body": "Virement automatique chaque lundi si le solde disponible atteint le minimum configuré"
-            },
-            "manual": {
-              "title": "Manuel :",
-              "body": "Vous devez demander manuellement chaque virement (sujet à approbation admin)"
-            }
-          },
-          "processing": {
-            "title": "Délais de traitement :",
-            "body": "Les virements Stripe sont généralement traités en 2-3 jours ouvrables. Une fois le virement traité par Stripe, les fonds sont envoyés vers votre compte bancaire selon vos paramètres Stripe (généralement 1-2 jours supplémentaires)."
-          },
-          "bank": {
-            "title": "Configuration bancaire :",
-            "bodyStart": "Pour configurer ou modifier votre compte bancaire, connectez-vous à votre",
-            "stripeDashboard": "tableau de bord Stripe"
           }
         },
         "common": {
@@ -1804,3 +1824,4 @@
     }
   }
 }
+
