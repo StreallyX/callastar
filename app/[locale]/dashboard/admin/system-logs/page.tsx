@@ -185,12 +185,12 @@ export default function SystemLogsPage() {
       ...(filters.search && { search: filters.search }),
       ...(filters.startDate && { startDate: filters.startDate }),
       ...(filters.endDate && { endDate: filters.endDate }),
-      // level/actor sont des filtres UI ; si ton API les supporte, on les passe.
-      ...(filters.level && { level: filters.level }),
-      ...(filters.actor && { actor: filters.actor }),
     });
+
+    // ⚠️ level / actor = UI ONLY → filtrage local
     return params;
   }, [filters, limit, page]);
+
 
   const fetchLogs = useCallback(async () => {
     // cancel previous in-flight
@@ -238,8 +238,13 @@ export default function SystemLogsPage() {
 
       const rawLogs: DbLog[] = Array.isArray(data.logs) ? data.logs : [];
       const uiLogs = rawLogs.map(toSystemLogUI);
+      const filteredLogs = uiLogs.filter((log) => {
+        if (filters.level && log.level !== filters.level) return false;
+        if (filters.actor && log.actor !== filters.actor) return false;
+        return true;
+      });
 
-      setLogs(uiLogs);
+      setLogs(filteredLogs);
       setTotalCount(Number(data.pagination?.totalCount ?? uiLogs.length) || 0);
       setTotalPages(Number(data.pagination?.totalPages ?? 1) || 1);
       setLastRefreshedAt(new Date());
@@ -343,11 +348,7 @@ export default function SystemLogsPage() {
           deleteType: 'dateRange',
           startDate: new Date(deleteDateRange.start).toISOString(),
           endDate: new Date(deleteDateRange.end).toISOString(),
-          // ⚠️ Ton API DELETE doit accepter ces champs. Sinon, retire-les côté backend.
-          level: filters.level || undefined,
-          actor: filters.actor || undefined,
-          type: filters.type || undefined,
-          search: filters.search || undefined,
+          ...(filters.type && { type: filters.type }),
         }),
       });
 
