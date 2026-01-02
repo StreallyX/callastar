@@ -19,7 +19,7 @@ const AMOUNT = 5000; // 50.00
    STRIPE INIT
 ================================ */
 
-const stripe = new Stripe("sk_test_51Sh4hEGrT4XgtbtLeaQl0BJNPjX32vWsyOEYYmaQ08g0DtGlAdhCQU3qJ1Xq9UpNn4AEOdgpVUWrW8BYXL0yfOVm00QYJePPXz", {
+const stripe = new Stripe("", {
   apiVersion: '2023-10-16',
 });
 
