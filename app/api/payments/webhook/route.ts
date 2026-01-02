@@ -198,231 +198,239 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Handle payout.created event
     if (event.type === 'payout.created') {
       const stripePayout = event.data.object as any;
-      const creatorId = stripePayout.metadata?.creatorId;
+      const stripeAccountId = event.account;
+      const start = Date.now();
 
-      if (creatorId) {
-        // ✅ FIX: stripePayout.amount comes from Stripe API (IN CENTS)
-        console.log('Payout created:', {
-          payoutId: stripePayout.id,
-          creatorId,
-          amount: stripeAmountToUnits(stripePayout.amount), // Convert cents to units
-          status: stripePayout.status,
-        });
+      // 🚨 SYSTEM LOG — Stripe mal formé
+      if (!stripeAccountId) {
+        await logWarning(
+          'STRIPE_PAYOUT_NO_ACCOUNT',
+          LogActor.SYSTEM,
+          'Payout Stripe reçu sans event.account',
+          undefined,
+          { payoutId: stripePayout.id }
+        );
+        return;
+      }
 
-        // Update audit log if exists
-        await prisma.payoutAuditLog.updateMany({
-          where: {
-            creatorId,
-            stripePayoutId: stripePayout.id,
-          },
+      // 🔍 findFirst car stripeAccountId PAS unique en Prisma
+      const creator = await prisma.creator.findFirst({
+        where: { stripeAccountId },
+        include: { user: true },
+      });
+
+      // 🚨 SYSTEM LOG — aucun creator trouvé
+      if (!creator) {
+        await logWarning(
+          'STRIPE_PAYOUT_UNMATCHED',
+          LogActor.SYSTEM,
+          'Payout Stripe reçu sans creator correspondant',
+          undefined,
+          {
+            stripeAccountId,
+            payoutId: stripePayout.id,
+            amount: stripePayout.amount,
+            currency: stripePayout.currency,
+          }
+        );
+        return;
+      }
+
+      const amountInUnits = stripeAmountToUnits(stripePayout.amount);
+
+      // 🔐 AUDIT LOG (idempotence manuelle)
+      const existingAudit = await prisma.payoutAuditLog.findFirst({
+        where: { stripePayoutId: stripePayout.id },
+      });
+
+      if (!existingAudit) {
+        await prisma.payoutAuditLog.create({
           data: {
+            creatorId: creator.id,
+            stripePayoutId: stripePayout.id,
+            action: 'TRIGGERED',
             status: 'PROCESSING',
+            amount: stripeAmountToUnits(stripePayout.amount),
+            reason: stripePayout.automatic
+              ? 'Stripe automatic payout'
+              : 'Stripe manual payout',
             metadata: JSON.stringify({
-              stripeStatus: stripePayout.status,
-              arrivalDate: new Date(stripePayout.arrival_date * 1000),
-              updatedAt: new Date().toISOString(),
+              currency: stripePayout.currency?.toUpperCase(),
+              stripeAccountId,
+              automatic: stripePayout.automatic,
+              arrivalDate: stripePayout.arrival_date
+                ? new Date(stripePayout.arrival_date * 1000)
+                : null,
             }),
           },
         });
+      } else {
+        // 🔁 webhook redelivered → update soft
+        await prisma.payoutAuditLog.update({
+          where: { id: existingAudit.id },
+          data: {
+            status: 'PROCESSING',
+          },
+        });
       }
+
+      await createNotification({
+        userId: creator.userId,
+        type: 'PAYOUT_REQUEST',
+        title: 'Paiement effectué',
+        message: `Votre paiement de ${amountInUnits.toFixed(2)}} ${creator.currency} est actuellement en cours de traitement par votre banque. Les fonds seront disponibles sous peu.`,
+        link: '/dashboard/creator',
+      });
     }
 
     // Handle payout.paid event
     if (event.type === 'payout.paid') {
       const stripePayout = event.data.object as any;
-      const creatorId = stripePayout.metadata?.creatorId;
+      const stripeAccountId = event.account; // 🔑 CLÉ CONNECT
+      const start = Date.now();
 
-      if (creatorId) {
-        // ✅ FIX: stripePayout.amount comes from Stripe API (IN CENTS)
-        console.log('Payout paid successfully:', {
-          payoutId: stripePayout.id,
-          creatorId,
-          amount: stripeAmountToUnits(stripePayout.amount), // Convert cents to units
-        });
-
-        // Update audit log status to COMPLETED
-        const updatedLogs = await prisma.payoutAuditLog.updateMany({
-          where: {
-            creatorId,
-            stripePayoutId: stripePayout.id,
-          },
-          data: {
-            status: 'PAID',
-            metadata: JSON.stringify({
-              stripeStatus: stripePayout.status,
-              arrivalDate: new Date(stripePayout.arrival_date * 1000),
-              paidAt: new Date().toISOString(),
-            }),
-          },
-        });
-
-        // Send notification to creator
-        try {
-          const creator = await prisma.creator.findUnique({
-            where: { id: creatorId },
-            include: { user: true },
-          });
-
-          if (creator) {
-            const currency = creator.currency || 'EUR';
-            // ✅ FIX: stripePayout.amount from Stripe API (IN CENTS) → convert to units
-            const amountInUnits = stripeAmountToUnits(stripePayout.amount);
-            
-            await createNotification({
-              userId: creator.userId,
-              type: 'PAYOUT_COMPLETED',
-              title: 'Paiement effectué',
-              message: `Un paiement de ${amountInUnits.toFixed(2)} ${currency} a été transféré sur votre compte bancaire.`,
-              link: '/dashboard/creator',
-            });
-
-            // Send email
-            const emailHtml = `
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <meta charset="utf-8">
-                  <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                    .amount { font-size: 32px; font-weight: bold; color: #10b981; text-align: center; margin: 20px 0; }
-                  </style>
-                </head>
-                <body>
-                  <div class="container">
-                    <div class="header">
-                      <h1>💰 Paiement effectué</h1>
-                    </div>
-                    <div class="content">
-                      <p>Bonjour ${creator.user.name},</p>
-                      <p>Votre paiement a été transféré avec succès sur votre compte bancaire.</p>
-                      <div class="amount">${amountInUnits.toFixed(2)} ${currency}</div>
-                      <p>Les fonds devraient apparaître sur votre compte dans les prochains jours ouvrables.</p>
-                      <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px;">
-                        Merci d'utiliser Call a Star !
-                      </p>
-                    </div>
-                  </div>
-                </body>
-              </html>
-            `;
-
-            await sendEmail({
-              to: creator.user.email,
-              subject: '💰 Paiement effectué - Call a Star',
-              html: emailHtml,
-            });
-          }
-        } catch (error) {
-          console.error('Error sending payout notification:', error);
-        }
+      if (!stripeAccountId) {
+        await logWarning(
+          'STRIPE_PAYOUT_NO_ACCOUNT',
+          LogActor.SYSTEM,
+          'payout.paid reçu sans event.account',
+          undefined,
+          { payoutId: stripePayout.id }
+        );
+        return;
       }
+
+      const creator = await prisma.creator.findFirst({
+        where: { stripeAccountId },
+        include: { user: true },
+      });
+
+      if (!creator) {
+        await logWarning(
+          'STRIPE_PAYOUT_UNMATCHED',
+          LogActor.SYSTEM,
+          'payout.paid reçu sans creator correspondant',
+          undefined,
+          {
+            stripeAccountId,
+            payoutId: stripePayout.id,
+          }
+        );
+        return;
+      }
+
+      const amountInUnits = stripeAmountToUnits(stripePayout.amount);
+
+      // 🔐 AUDIT LOG — idempotent & order-safe
+      await prisma.payoutAuditLog.upsert({
+        where: { stripePayoutId: stripePayout.id },
+        create: {
+          creatorId: creator.id,
+          stripePayoutId: stripePayout.id,
+          action: 'COMPLETED',
+          status: 'PAID',
+          amount: amountInUnits,
+          metadata: JSON.stringify({
+            stripeStatus: stripePayout.status,
+            arrivalDate: stripePayout.arrival_date
+              ? new Date(stripePayout.arrival_date * 1000)
+              : null,
+            paidAt: new Date().toISOString(),
+          }),
+        },
+        update: {
+          status: 'PAID',
+          metadata: JSON.stringify({
+            stripeStatus: stripePayout.status,
+            arrivalDate: stripePayout.arrival_date
+              ? new Date(stripePayout.arrival_date * 1000)
+              : null,
+            paidAt: new Date().toISOString(),
+          }),
+        },
+      });
+
+      // 🔔 Notification
+      await createNotification({
+        userId: creator.userId,
+        type: 'PAYOUT_COMPLETED',
+        title: 'Paiement effectué',
+        message: `Un paiement de ${amountInUnits.toFixed(2)} ${creator.currency} a été transféré sur votre compte bancaire.`,
+        link: '/dashboard/creator',
+      });
+
+      // 📧 Email
+      await sendEmail({
+        to: creator.user.email,
+        subject: '💰 Paiement effectué - Call a Star',
+        html: `<p>Bonjour ${creator.user.name},</p>
+              <p>Votre paiement de <strong>${amountInUnits.toFixed(2)} ${creator.currency}</strong> a été transféré avec succès.</p>`,
+      });
     }
+
 
     // Handle payout.failed event
     if (event.type === 'payout.failed') {
       const stripePayout = event.data.object as any;
-      const creatorId = stripePayout.metadata?.creatorId;
+      const stripeAccountId = event.account;
+      const start = Date.now();
 
-      if (creatorId) {
-        // ✅ FIX: stripePayout.amount comes from Stripe API (IN CENTS)
-        console.error('Payout failed:', {
+      if (!stripeAccountId) return;
+
+      const creator = await prisma.creator.findFirst({
+        where: { stripeAccountId },
+        include: { user: true },
+      });
+
+      if (!creator) return;
+
+      const amountInUnits = stripeAmountToUnits(stripePayout.amount);
+
+      await prisma.payoutAuditLog.upsert({
+        where: { stripePayoutId: stripePayout.id },
+        create: {
+          creatorId: creator.id,
+          stripePayoutId: stripePayout.id,
+          action: 'FAILED',
+          status: 'FAILED',
+          amount: amountInUnits,
+          reason: stripePayout.failure_message || stripePayout.failure_code,
+          metadata: JSON.stringify({
+            failureCode: stripePayout.failure_code,
+            failureMessage: stripePayout.failure_message,
+            failedAt: new Date().toISOString(),
+          }),
+        },
+        update: {
+          status: 'FAILED',
+          reason: stripePayout.failure_message || stripePayout.failure_code,
+        },
+      });
+
+      await createNotification({
+        userId: creator.userId,
+        type: 'SYSTEM',
+        title: 'Échec du paiement',
+        message: `Le paiement de ${amountInUnits.toFixed(2)} ${creator.currency} a échoué. Veuillez vérifier vos informations bancaires.`,
+        link: '/dashboard/creator',
+      });
+
+      await logInfo(
+        'WEBHOOK_PROCESSING_SUCCESS',
+        LogActor.SYSTEM,
+        'Webhook Stripe traité avec succès : payout.failed',
+        creator.userId,
+        {
+          eventId: event.id,
           payoutId: stripePayout.id,
-          creatorId,
-          amount: stripeAmountToUnits(stripePayout.amount), // Convert cents to units
-          failureCode: stripePayout.failure_code,
-          failureMessage: stripePayout.failure_message,
-        });
-
-        // Update audit log status to FAILED
-        await prisma.payoutAuditLog.updateMany({
-          where: {
-            creatorId,
-            stripePayoutId: stripePayout.id,
-          },
-          data: {
-            status: 'FAILED',
-            reason: `Échec du paiement: ${stripePayout.failure_message || stripePayout.failure_code || 'Raison inconnue'}`,
-            metadata: JSON.stringify({
-              stripeStatus: stripePayout.status,
-              failureCode: stripePayout.failure_code,
-              failureMessage: stripePayout.failure_message,
-              failedAt: new Date().toISOString(),
-            }),
-          },
-        });
-
-        // Send notification to creator
-        try {
-          const creator = await prisma.creator.findUnique({
-            where: { id: creatorId },
-            include: { user: true },
-          });
-
-          if (creator) {
-            const currency = creator.currency || 'EUR';
-            // ✅ FIX: stripePayout.amount from Stripe API (IN CENTS) → convert to units
-            const amountInUnits = stripeAmountToUnits(stripePayout.amount);
-            
-            await createNotification({
-              userId: creator.userId,
-              type: 'SYSTEM',
-              title: 'Échec du paiement',
-              message: `Le paiement de ${amountInUnits.toFixed(2)} ${currency} a échoué. Veuillez vérifier vos informations bancaires.`,
-              link: '/dashboard/creator',
-            });
-
-            // Send email
-            const emailHtml = `
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <meta charset="utf-8">
-                  <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                    .alert { background: #fee2e2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; }
-                  </style>
-                </head>
-                <body>
-                  <div class="container">
-                    <div class="header">
-                      <h1>⚠️ Échec du paiement</h1>
-                    </div>
-                    <div class="content">
-                      <p>Bonjour ${creator.user.name},</p>
-                      <p>Nous n'avons pas pu effectuer le transfert de <strong>${amountInUnits.toFixed(2)} ${currency}</strong> sur votre compte bancaire.</p>
-                      <div class="alert">
-                        <strong>Raison:</strong> ${stripePayout.failure_message || 'Veuillez vérifier vos informations bancaires'}
-                      </div>
-                      <p>Veuillez vérifier vos informations bancaires dans votre compte Stripe et réessayer.</p>
-                      <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 14px;">
-                        Si le problème persiste, contactez le support.
-                      </p>
-                    </div>
-                  </div>
-                </body>
-              </html>
-            `;
-
-            await sendEmail({
-              to: creator.user.email,
-              subject: '⚠️ Échec du paiement - Call a Star',
-              html: emailHtml,
-            });
-          }
-        } catch (error) {
-          console.error('Error sending payout failure notification:', error);
+          creatorId: creator.id,
+          processingTimeMs: Date.now() - start,
         }
-      }
+      );
     }
+
 
     // Handle account.updated event
     if (event.type === 'account.updated') {
@@ -2134,7 +2142,7 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
     data: {
       isStripeOnboarded: accountStatus.isFullyOnboarded,
       payoutBlocked: shouldBlockPayout,
-      payoutBlockedReason: blockReason,
+      payoutBlockReason: blockReason,
       currency: currency, // Update currency from Stripe account
     },
   });
@@ -2283,7 +2291,7 @@ async function handleAccountApplicationDeauthorized(event: Stripe.Event): Promis
       data: {
         isStripeOnboarded: false,
         payoutBlocked: true,
-        payoutBlockedReason: 'Application Stripe déconnectée',
+        payoutBlockReason: 'Application Stripe déconnectée',
       },
     });
 

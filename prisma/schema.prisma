@@ -132,6 +132,7 @@ enum LogActor {
 
 // ✅ NEW: Logging system for emails and crons
 enum LogType {
+  AUTH_LOGIN
   EMAIL_SENT
   EMAIL_ERROR
   CRON_RUN
@@ -274,45 +275,36 @@ model Creator {
   expertise         String?
   profileImage      String?
   bannerImage       String?
-  stripeAccountId   String?
+  stripeAccountId   String? @unique
   isStripeOnboarded Boolean @default(false)
 
-  // ✅ NEW: Creator's currency (automatically detected from Stripe Connect account)
-  currency String @default("EUR") // EUR, CHF, USD, GBP, etc.
-  
-  // ✅ NEW: Creator's timezone (IANA format, e.g., "Europe/Paris", "America/New_York")
+  currency String @default("EUR")
   timezone String @default("Europe/Paris")
-  
-  // ✅ NEW: Social media links (stored as JSON)
-  socialLinks Json? // { instagram, tiktok, twitter, youtube, other }
+  socialLinks Json?
 
-  // User's payout settings (from feature branch)
   payoutSchedule    PayoutSchedule @default(WEEKLY)
-  payoutMinimum     Decimal        @default(10) @db.Decimal(10, 2)
+  payoutMinimum     Decimal        @default("10.00") @db.Decimal(10, 2)
   isPayoutBlocked   Boolean        @default(false)
-  payoutBlockReason String?
-
-  // Payment system fields
-  payoutBlocked       Boolean @default(false)
-  payoutBlockedReason String? @db.Text
+  payoutBlockReason String?        @db.Text
+  payoutBlocked     Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
   user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   callOffers           CallOffer[]
   callRequestsReceived CallRequest[]      @relation("CreatorRequests")
   reviewsReceived      Review[]           @relation("CreatorReviews")
   payouts              Payout[]
   payoutAuditLogs      PayoutAuditLog[]
-  payoutScheduleNew    PayoutScheduleNew?
   refundsInitiated     Refund[]           @relation("RefundInitiator")
+  payoutScheduleNew    PayoutScheduleNew?
 
   @@index([userId])
-  @@index([isPayoutBlocked])
   @@index([currency])
+  @@index([isPayoutBlocked])
 }
+
 
 model CallOffer {
   id          String  @id @default(cuid())
@@ -524,7 +516,7 @@ model PayoutAuditLog {
   action         PayoutAction
   amount         Decimal?      @db.Decimal(10, 2)
   status         PayoutStatus?
-  stripePayoutId String?
+  stripePayoutId String?       @unique
   adminId        String?
   reason         String?       @db.Text
   metadata       String?       @db.Text // JSON string for additional data
