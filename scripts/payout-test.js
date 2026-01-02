@@ -19,7 +19,7 @@ const AMOUNT = 5000; // 50.00
    STRIPE INIT
 ================================ */
 
-const stripe = new Stripe("", {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
 });
 
