@@ -152,32 +152,44 @@ export async function PUT(request: NextRequest) {
     // This ensures atomicity - if Stripe update fails, database is not updated
     if (creator.stripeAccountId && payoutSchedule) {
       try {
-        // Map our schedule enum to Stripe's interval format
-        const stripeInterval = payoutSchedule === 'DAILY' ? 'daily'
-                            : payoutSchedule === 'WEEKLY' ? 'weekly'
-                            : 'manual';
+        let scheduleConfig: any;
 
-        console.log(`[Payout Settings] Updating Stripe account ${creator.stripeAccountId} payout schedule to ${stripeInterval}`);
+        if (payoutSchedule === 'DAILY') {
+          scheduleConfig = {
+            interval: 'daily',
+          };
+        } else if (payoutSchedule === 'WEEKLY') {
+          scheduleConfig = {
+            interval: 'weekly',
+            weekly_anchor: 'monday', // ✅ OBLIGATOIRE
+          };
+        } else {
+          scheduleConfig = {
+            interval: 'manual',
+          };
+        }
+
+        console.log(
+          `[Payout Settings] Updating Stripe account ${creator.stripeAccountId} payout schedule`,
+          scheduleConfig
+        );
 
         await stripe.accounts.update(creator.stripeAccountId, {
           settings: {
             payouts: {
-              schedule: {
-                interval: stripeInterval as 'daily' | 'weekly' | 'manual',
-              },
+              schedule: scheduleConfig,
             },
           },
         });
 
-        console.log(`[Payout Settings] ✅ Stripe account updated successfully`);
+        console.log('[Payout Settings] ✅ Stripe account updated successfully');
       } catch (stripeError: any) {
         console.error('[Payout Settings] ❌ Error updating Stripe account:', stripeError);
-        
-        // Return error to prevent database update
+
         return NextResponse.json(
-          { 
+          {
             error: 'Erreur lors de la synchronisation avec Stripe',
-            details: stripeError.message || 'Impossible de mettre à jour les paramètres Stripe'
+            details: stripeError.message,
           },
           { status: 500 }
         );
