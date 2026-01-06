@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
         stripeAccountId: creator.stripeAccountId,
         isStripeOnboarded: creator.isStripeOnboarded,
         payoutBlocked: creator.payoutBlocked,
-        payoutBlockedReason: creator.payoutBlockedReason,
+        payoutBlockReason: creator.payoutBlockReason,
       },
       payoutSchedule: creator.payoutScheduleNew,
       platformSettings: {

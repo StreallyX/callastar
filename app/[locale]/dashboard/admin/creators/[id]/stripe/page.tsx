@@ -45,7 +45,7 @@ interface Creator {
   stripeAccountId: string | null;
   isStripeOnboarded: boolean;
   payoutBlocked: boolean;
-  payoutBlockedReason: string | null;
+  payoutBlockReason: string | null;
 }
 
 interface PayoutSchedule {
@@ -521,12 +521,12 @@ export default function CreatorStripePage() {
                   </Badge>
                 </div>
 
-                {creator.payoutBlocked && creator.payoutBlockedReason && (
+                {creator.payoutBlocked && creator.payoutBlockReason && (
                   <Alert className="bg-red-50 border-red-200">
                     <AlertTriangle className="w-4 h-4 text-red-600" />
                     <AlertDescription className="text-red-800">
                       <p className="font-semibold">Raison du blocage:</p>
-                      <p className="text-sm mt-1">{creator.payoutBlockedReason}</p>
+                      <p className="text-sm mt-1">{creator.payoutBlockReason}</p>
                     </AlertDescription>
                   </Alert>
                 )}

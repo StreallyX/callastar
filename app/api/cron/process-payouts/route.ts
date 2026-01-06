@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
             id: true,
             stripeAccountId: true,
             payoutBlocked: true,
-            payoutBlockedReason: true,
+            payoutBlockReason: true,
             user: {
               select: {
                 name: true,
