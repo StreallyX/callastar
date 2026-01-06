@@ -1,16 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/process-payouts",
-      "schedule": "0 2 * * *"
-    },
-    {
       "path": "/api/cron/cleanup-logs",
       "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/process-automatic-payouts",
-      "schedule": "0 2 * * *"
     }
   ]
 }
