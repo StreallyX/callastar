@@ -53,7 +53,7 @@ export async function POST(
       select: {
         id: true,
         payoutBlocked: true,
-        payoutBlockedReason: true,
+        payoutBlockReason: true,
         user: {
           select: {
             name: true,
@@ -75,7 +75,7 @@ export async function POST(
       where: { id: creatorId },
       data: {
         payoutBlocked: blocked,
-        payoutBlockedReason: blocked ? reason : null,
+        payoutBlockReason: blocked ? reason : null,
       },
     });
 
@@ -94,7 +94,7 @@ export async function POST(
         reason: reason || 'N/A',
         previousStatus: {
           payoutBlocked: creator.payoutBlocked,
-          payoutBlockedReason: creator.payoutBlockedReason,
+          payoutBlockReason: creator.payoutBlockReason,
         },
       },
     });
@@ -111,7 +111,7 @@ export async function POST(
       creator: {
         id: updatedCreator.id,
         payoutBlocked: updatedCreator.payoutBlocked,
-        payoutBlockedReason: updatedCreator.payoutBlockedReason,
+        payoutBlockReason: updatedCreator.payoutBlockReason,
       },
     });
   } catch (error: any) {
