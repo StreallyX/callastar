@@ -2,32 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyToken } from '@/lib/auth';
 import { getSystemLogs, deleteLogsByDateRange, deleteLogsByFilters } from '@/lib/system-logger';
-import { LogStatus, LogActor } from '@prisma/client';
+import { LogStatus, LogType } from '@prisma/client';
 
 // Schema validation for query parameters (GET)
 const logsQuerySchema = z.object({
-  level: z.nativeEnum(LogStatus).optional(),
-  type: z.string().optional(),
-  actor: z.nativeEnum(LogActor).optional(),
-  actorId: z.string().optional(),
-  startDate: z.string().optional(), // ISO date string
-  endDate: z.string().optional(), // ISO date string
+  status: z.nativeEnum(LogStatus).optional(), // ✅ CORRECT
+  type: z.nativeEnum(LogType).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
   search: z.string().optional(),
-  limit: z.string().optional().transform(val => val ? parseInt(val, 10) : 100),
-  offset: z.string().optional().transform(val => val ? parseInt(val, 10) : 0),
-  page: z.string().optional().transform(val => val ? parseInt(val, 10) : 1),
+  limit: z.string().optional().transform(v => v ? parseInt(v, 10) : 100),
+  offset: z.string().optional().transform(v => v ? parseInt(v, 10) : 0),
+  page: z.string().optional().transform(v => v ? parseInt(v, 10) : 1),
   orderBy: z.enum(['asc', 'desc']).optional(),
 });
+
 
 // Schema validation for delete request (DELETE)
 const deleteLogsSchema = z.object({
   deleteType: z.enum(['dateRange', 'filters']),
-  startDate: z.string().optional(), // ISO date string (required for dateRange)
-  endDate: z.string().optional(), // ISO date string (required for dateRange)
-  level: z.nativeEnum(LogStatus).optional(),
-  type: z.string().optional(),
-  actor: z.nativeEnum(LogActor).optional(),
-  actorId: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  status: z.nativeEnum(LogStatus).optional(),
+  type: z.nativeEnum(LogType).optional(),
 });
 
 /**
@@ -76,10 +73,8 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const queryParams = {
-      level: searchParams.get('level') || undefined,
+      status: searchParams.get('status') || undefined,
       type: searchParams.get('type') || undefined,
-      actor: searchParams.get('actor') || undefined,
-      actorId: searchParams.get('actorId') || undefined,
       startDate: searchParams.get('startDate') || undefined,
       endDate: searchParams.get('endDate') || undefined,
       search: searchParams.get('search') || undefined,
@@ -88,6 +83,7 @@ export async function GET(request: NextRequest) {
       page: searchParams.get('page') || undefined,
       orderBy: searchParams.get('orderBy') || undefined,
     };
+
 
     // Validate query parameters
     const validatedParams = logsQuerySchema.parse(queryParams);
@@ -103,17 +99,16 @@ export async function GET(request: NextRequest) {
 
     // Fetch logs with filters
     const filters = {
-      level: validatedParams.level,
+      status: validatedParams.status,
       type: validatedParams.type,
-      actor: validatedParams.actor,
-      actorId: validatedParams.actorId,
       startDate: validatedParams.startDate ? new Date(validatedParams.startDate) : undefined,
       endDate: validatedParams.endDate ? new Date(validatedParams.endDate) : undefined,
       search: validatedParams.search,
       limit,
       offset,
-      orderBy: validatedParams.orderBy || 'desc',
+      orderBy: validatedParams.orderBy ?? 'desc',
     };
+
 
     const result = await getSystemLogs(filters);
 
@@ -220,15 +215,13 @@ export async function DELETE(request: NextRequest) {
       deletedCount = await deleteLogsByDateRange(
         startDate,
         endDate,
-        validatedData.level
+        validatedData.status
       );
     } else {
       // Delete by filters
       const filters = {
-        level: validatedData.level,
+        status: validatedData.status,
         type: validatedData.type,
-        actor: validatedData.actor,
-        actorId: validatedData.actorId,
         startDate: validatedData.startDate ? new Date(validatedData.startDate) : undefined,
         endDate: validatedData.endDate ? new Date(validatedData.endDate) : undefined,
       };
