@@ -2162,7 +2162,7 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
       eventuallyDue,
       pastDue,
       payoutBlocked: shouldBlockPayout,
-      payoutBlockedReason: blockReason,
+      payoutBlockReason: blockReason,
     },
   });
 
@@ -2172,7 +2172,7 @@ async function handleAccountUpdated(event: Stripe.Event): Promise<void> {
     payoutsEnabled: accountStatus.payoutsEnabled,
     isFullyOnboarded: accountStatus.isFullyOnboarded,
     payoutBlocked: shouldBlockPayout,
-    payoutBlockedReason: blockReason,
+    payoutBlockReason: blockReason,
     currentlyDue,
   });
 }

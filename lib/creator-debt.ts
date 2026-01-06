@@ -232,7 +232,7 @@ export async function checkAndBlockPayouts(
         where: { id: creatorId },
         data: {
           payoutBlocked: true,
-          payoutBlockedReason: `Dette impayée de ${debtInfo.totalDebt.toFixed(2)} EUR (remboursements: ${debtInfo.refundDebt.toFixed(2)} EUR, contestations: ${debtInfo.disputeDebt.toFixed(2)} EUR)`,
+          payoutBlockReason: `Dette impayée de ${debtInfo.totalDebt.toFixed(2)} EUR (remboursements: ${debtInfo.refundDebt.toFixed(2)} EUR, contestations: ${debtInfo.disputeDebt.toFixed(2)} EUR)`,
         },
       });
 
@@ -352,7 +352,7 @@ export async function checkAndUnblockPayouts(creatorId: string): Promise<void> {
         where: { id: creatorId },
         data: {
           payoutBlocked: false,
-          payoutBlockedReason: null,
+          payoutBlockReason: null,
         },
       });
 

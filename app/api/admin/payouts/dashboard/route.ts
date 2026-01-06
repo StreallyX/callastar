@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       },
       select: {
         id: true,
-        payoutBlockedReason: true,
+        payoutBlockReason: true,
         user: {
           select: {
             name: true,
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         stripeAccountId: true,
         isStripeOnboarded: true,
         payoutBlocked: true,
-        payoutBlockedReason: true,
+        payoutBlockReason: true,
         user: {
           select: {
             name: true,
@@ -346,7 +346,7 @@ export async function GET(request: NextRequest) {
         id: c.id,
         name: c.user.name || c.user.email,
         email: c.user.email,
-        reason: c.payoutBlockedReason,
+        reason: c.payoutBlockReason,
       })),
       creatorsWithIssues: creatorsWithIssues.map((c) => ({
         id: c.id,
@@ -355,7 +355,7 @@ export async function GET(request: NextRequest) {
         issues: [
           !c.stripeAccountId && 'No Stripe account',
           !c.isStripeOnboarded && 'Stripe not onboarded',
-          c.payoutBlocked && `Blocked: ${c.payoutBlockedReason || 'Unknown'}`,
+          c.payoutBlocked && `Blocked: ${c.payoutBlockReason || 'Unknown'}`,
         ].filter(Boolean),
       })),
       recentSuccessfulPayouts: recentSuccessfulPayouts.map((p) => ({

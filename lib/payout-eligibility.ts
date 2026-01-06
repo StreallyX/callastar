@@ -15,7 +15,7 @@ export interface PayoutEligibilityResult {
     hasStripeAccount: boolean;
     stripeAccountId?: string;
     payoutBlocked: boolean;
-    payoutBlockedReason?: string;
+    payoutBlockReason?: string;
     chargesEnabled: boolean;
     payoutsEnabled: boolean;
     kycComplete: boolean;
@@ -67,7 +67,7 @@ export async function checkPayoutEligibility(
         id: true,
         stripeAccountId: true,
         payoutBlocked: true,
-        payoutBlockedReason: true,
+        payoutBlockReason: true,
         isStripeOnboarded: true,
       },
     });
@@ -99,13 +99,13 @@ export async function checkPayoutEligibility(
 
     // 3. Check if payout is blocked by admin
     if (creator.payoutBlocked) {
-      requirements.push(`Payouts blocked: ${creator.payoutBlockedReason || 'Unknown reason'}`);
+      requirements.push(`Payouts blocked: ${creator.payoutBlockReason || 'Unknown reason'}`);
       details.payoutBlocked = true;
-      details.payoutBlockedReason = creator.payoutBlockedReason || undefined;
+      details.payoutBlockReason = creator.payoutBlockReason || undefined;
       
       return {
         eligible: false,
-        reason: `Payouts blocked: ${creator.payoutBlockedReason || 'Unknown reason'}`,
+        reason: `Payouts blocked: ${creator.payoutBlockReason || 'Unknown reason'}`,
         requirements,
         details,
       };

@@ -35,7 +35,7 @@ export async function GET(
         stripeAccountId: true,
         isStripeOnboarded: true,
         payoutBlocked: true,
-        payoutBlockedReason: true,
+        payoutBlockReason: true,
         user: {
           select: {
             name: true,
@@ -104,7 +104,7 @@ export async function GET(
         stripeAccountId: creator.stripeAccountId,
         isStripeOnboarded: creator.isStripeOnboarded,
         payoutBlocked: creator.payoutBlocked,
-        payoutBlockedReason: creator.payoutBlockedReason,
+        payoutBlockReason: creator.payoutBlockReason,
       },
       payoutSchedule,
       eligibility,
